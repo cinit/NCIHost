@@ -1,4 +1,4 @@
-package cc.ioctl.nfcncihost;
+package cc.ioctl.nfcncihost.service;
 
 import android.os.Build;
 import android.service.controls.Control;
