@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="initializing">正在初始化…</string>
+    <string name="text_warn_app_risk">NCI Host 使用root权限直接与您的NFC驱动程序进行通信，如果使用不当，可能会损坏您的系统以及NFC硬件。\
+NCI Host 的开发人员不对使用此应用程序造成的任何损失负责。如果您不完全了解root的工作原理，那么您可能不应该使用此应用程序，直到您完全了解风险。\
+如果您使用 NCI Host，您将自行承担使用本软件全部后果，包括但不限于由此引起的任何数据丢失，硬件损坏或其他损失。\
+使用此应用程序，即表示您将自己承担使用该应用程序的所有后果，并同意此软件的开发者不对此承担任何责任。</string>
+    <string name="title_warning">警告</string>
+    <string name="btn_continue">下一步</string>
+    <string name="checkbox_accept_risk">我已知晓并接受这些风险</string>
+    <string name="action_settings">设置</string>
+
+</resources>
