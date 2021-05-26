@@ -31,7 +31,7 @@
     <string name="title_warning">Warning</string>
     <string name="btn_continue">Continue</string>
     <string name="checkbox_accept_risk">I\'m aware and accept these risks.</string>
-    <string name="text_warn_app_risk">NCI Host required root access to communicate directly with your NFC driver and this could possibly damage your system and/or your NFC hardware if used incorrectly.\
+    <string name="text_warn_app_risk">NCI Host requires root access to communicate directly with your NFC driver and this could possibly damage your system and/or your NFC hardware if used incorrectly.\
 NCI Host is not responsible for any damages made by using this application. If you are not fully aware of how root works then you probably should not use this application until you are fully aware of the risks.\
 \
 By using NCI Host, you accept full responsibility of your own usage and accept no damages, claims or monetary value will be given due to misuse. \

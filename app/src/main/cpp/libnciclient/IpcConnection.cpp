@@ -77,7 +77,7 @@ void *fIpcListenProc(void *) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_cc_ioctl_nfcncihost_ipc_IpcNativeHandle_initForSocketDir
+Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntInitForSocketDir
         (JNIEnv *env, jclass clazz, jstring name) {
     char buf[256];
     lock_guard<mutex> _(*gIpcNativeLock);
@@ -146,8 +146,8 @@ Java_cc_ioctl_nfcncihost_ipc_IpcNativeHandle_initForSocketDir
 
 extern "C"
 JNIEXPORT jobject JNICALL
-Java_cc_ioctl_nfcncihost_ipc_IpcNativeHandle_peekConnection
+Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntPeekConnection
         (JNIEnv *env, jclass clazz) {
-    // TODO: implement peekConnection()
+    // TODO: implement ntPeekConnection()
     return nullptr;
 }

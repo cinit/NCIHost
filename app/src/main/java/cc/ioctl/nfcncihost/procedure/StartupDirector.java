@@ -118,7 +118,7 @@ public class StartupDirector implements Runnable {
     @UiThread
     public void onForegroundStartupFinish() {
         if (!mForegroundStartupFinished) {
-            Log.i(TAG, "onForegroundStartupFinish: execute");
+            Log.d(TAG, "onForegroundStartupFinish: execute");
             mBackgroundStepsDone = true;
             mForegroundStartupFinished = true;
             mSplashActivity = null;

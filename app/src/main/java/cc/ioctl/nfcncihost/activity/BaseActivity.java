@@ -17,8 +17,9 @@ import androidx.fragment.app.FragmentManager;
 
 import java.lang.reflect.Field;
 
-import cc.ioctl.nfcncihost.BaseApplication;
 import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
+import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
+import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
 public class BaseActivity extends AppCompatActivity {
@@ -42,7 +43,7 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         Intent intent = getIntent();
-        this.mIsSplashing = BaseApplication.sApplication.onActivityCreate(this, intent);
+        this.mIsSplashing = BaseApplicationImpl.sApplication.onActivityCreate(this, intent);
         if (this.mIsSplashing) {
             this.mOnCreateBundle = savedInstanceState;
             if (savedInstanceState != null) {
@@ -378,7 +379,7 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     public void startActivityForResult(Intent intent, int requestCode, @Nullable Bundle options) {
         if (this instanceof SplashActivity) {
-            StartupDirector director = BaseApplication.sDirector;
+            StartupDirector director = MainApplicationImpl.sDirector;
             if (director != null && director.isStartup()) {
                 director.setDisableInterrupt(true);
             }

@@ -4,6 +4,7 @@
     package="cc.ioctl.nfcncihost"
     tools:ignore="ProtectedPermissions,ScopedStorage">
 
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.NFC_TRANSACTION_EVENT" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -26,7 +27,7 @@
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
 
     <application
-        android:name=".BaseApplication"
+        android:name=".procedure.BaseApplicationDelegate"
         android:allowBackup="true"
         android:appCategory="productivity"
         android:directBootAware="true"
@@ -62,7 +63,8 @@
         <service
             android:name=".service.CardEmuCtrlSvc"
             android:label="@string/app_name"
-            android:permission="android.permission.BIND_CONTROLS">
+            android:permission="android.permission.BIND_CONTROLS"
+            android:process=":daemon">
             <intent-filter>
                 <action android:name="android.service.controls.ControlsProviderService" />
             </intent-filter>

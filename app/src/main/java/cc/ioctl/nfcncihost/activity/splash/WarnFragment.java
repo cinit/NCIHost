@@ -14,8 +14,8 @@ import androidx.appcompat.app.AlertDialog;
 
 import java.util.Locale;
 
-import cc.ioctl.nfcncihost.BaseApplication;
 import cc.ioctl.nfcncihost.R;
+import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
@@ -36,7 +36,7 @@ public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
                 })
                 .setNegativeButton(android.R.string.cancel, (dailog, which) -> {
                     activity.finish();
-                    StartupDirector director = BaseApplication.sDirector;
+                    StartupDirector director = MainApplicationImpl.sDirector;
                     if (director != null) {
                         director.cancelAllPendingActivity();
                     }

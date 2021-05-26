@@ -19,12 +19,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 
-import cc.ioctl.nfcncihost.BaseApplication;
+import cc.ioctl.nfcncihost.procedure.BaseApplicationDelegate;
 import cc.ioctl.nfcncihost.BuildConfig;
 import cc.ioctl.nfcncihost.R;
 import cc.ioctl.nfcncihost.activity.BaseActivity;
 import cc.ioctl.nfcncihost.activity.DashboardActivity;
 import cc.ioctl.nfcncihost.activity.config.ConfigManager;
+import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
 /**
@@ -63,7 +64,7 @@ public class SplashActivity extends BaseActivity {
 
     @UiThread
     private void finishInteractiveStartup() {
-        StartupDirector director = BaseApplication.sDirector;
+        StartupDirector director = MainApplicationImpl.sDirector;
         if (director != null) {
             director.onForegroundStartupFinish();
         }

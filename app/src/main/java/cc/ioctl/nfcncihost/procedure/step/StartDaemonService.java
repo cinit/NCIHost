@@ -6,10 +6,11 @@ import com.tencent.mmkv.MMKV;
 
 import java.io.File;
 
+import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcncihost.procedure.BaseApplicationDelegate;
 import cc.ioctl.nfcncihost.procedure.Step;
 
-public class LoadNativeLibs extends Step {
+public class StartDaemonService extends Step {
     @Override
     public boolean doStep() {
         Context ctx = BaseApplicationDelegate.sApplication;
@@ -19,6 +20,13 @@ public class LoadNativeLibs extends Step {
         if (!dir.exists()) {
             dir.mkdirs();
         }
+        System.loadLibrary("nciclient");
+        IpcNativeHandler.initForSocketDir(dir.getAbsolutePath());
+//        try {
+//            Thread.sleep(300);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         return true;
     }
 }

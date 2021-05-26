@@ -15,7 +15,7 @@ public class SettingsActivity extends BaseActivity {
     @Override
     protected boolean doOnCreate(Bundle savedInstanceState) {
         super.doOnCreate(savedInstanceState);
-        Log.i(TAG, "doOnCreate: invoked");
+        Log.d(TAG, "doOnCreate: invoked");
         setContentView(R.layout.settings_activity);
         if (savedInstanceState == null) {
             getSupportFragmentManager()
