@@ -39,7 +39,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "MissingPermission"})
 public class BaseApplicationDelegate extends BaseApplicationImpl {
     private BaseApplicationImpl mDelegate = null;
 
@@ -54,13 +54,15 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
                 Log.e("HiddenApiBypass", "failed, SDK=" + Build.VERSION.SDK_INT, e);
             }
         }
-        if (isDaemonProcess()) {
-            mDelegate = new DaemonApplicationImpl();
-        } else {
+        if (isMainProcess()) {
             mDelegate = new MainApplicationImpl();
+        } else if (isDaemonProcess()) {
+            mDelegate = new DaemonApplicationImpl();
         }
-        mDelegate.attachToContextImpl(super.getBaseContext());
-        mDelegate.doOnCreate();
+        if (mDelegate != null) {
+            mDelegate.attachToContextImpl(super.getBaseContext());
+            mDelegate.doOnCreate();
+        }
         BaseApplicationImpl.sApplication = mDelegate;
     }
 
@@ -749,6 +751,5 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
             super.onConfigurationChanged(newConfig);
         }
         this.mDelegate.onConfigurationChanged(newConfig);
-
     }
 }

@@ -37,4 +37,7 @@ NCI Host is not responsible for any damages made by using this application. If y
 By using NCI Host, you accept full responsibility of your own usage and accept no damages, claims or monetary value will be given due to misuse. \
 \
 By using this application, you accept all responsibility using it and agree that I am not responsible for any actions you make that has an adverse affect on your device.</string>
+    <string name="name_nfc_ctrl_svc">NFC Controller Service</string>
+    <string name="name_emu_pwm_ctrl_svc">NFC Emulation Controls Service</string>
+    <string name="action_stop">Stop</string>
 </resources>

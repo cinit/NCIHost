@@ -4,7 +4,6 @@
     package="cc.ioctl.nfcncihost"
     tools:ignore="ProtectedPermissions,ScopedStorage">
 
-    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.NFC_TRANSACTION_EVENT" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -35,6 +34,7 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/cfg_network_security"
         android:resizeableActivity="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -46,6 +46,7 @@
             android:name=".activity.SettingsActivity"
             android:exported="true"
             android:label="@string/title_activity_settings" />
+
         <activity
             android:name=".activity.DashboardActivity"
             android:theme="@style/Theme.NCIHost.NoActionBar">
@@ -56,19 +57,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".activity.splash.SplashActivity"
             android:launchMode="singleTop" />
 
         <service
             android:name=".service.CardEmuCtrlSvc"
-            android:label="@string/app_name"
+            android:label="@string/name_emu_pwm_ctrl_svc"
             android:permission="android.permission.BIND_CONTROLS"
             android:process=":daemon">
             <intent-filter>
                 <action android:name="android.service.controls.ControlsProviderService" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".service.IsolatedExecService"
+            android:isolatedProcess="true"
+            android:process=":isolated" />
+
+        <service
+            android:name=".service.NfcControllerManagerService"
+            android:exported="false"
+            android:label="@string/name_nfc_ctrl_svc"
+            android:process=":daemon" />
 
         <meta-data
             android:name="com.sec.android.support.multiwindow"

@@ -41,6 +41,10 @@ public abstract class BaseApplicationImpl extends Application {
         return getProcessName().endsWith(PROC_SUFFIX_DAEMON);
     }
 
+    public static boolean isMainProcess() {
+        return !getProcessName().contains(":");
+    }
+
     public static String getProcessName() {
         if (mProcName != null) {
             return mProcName;
