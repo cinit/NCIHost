@@ -15,10 +15,6 @@ public class LoadNativeLibs extends Step {
         Context ctx = BaseApplicationDelegate.sApplication;
         System.loadLibrary("mmkv");
         MMKV.initialize(ctx);
-        File dir = ctx.getNoBackupFilesDir();
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
         return true;
     }
 }

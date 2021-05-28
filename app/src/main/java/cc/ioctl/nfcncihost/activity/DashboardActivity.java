@@ -1,9 +1,15 @@
 package cc.ioctl.nfcncihost.activity;
 
+import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
@@ -18,14 +24,47 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import cc.ioctl.nfcncihost.R;
+import cc.ioctl.nfcncihost.ipc.NfcControllerManager;
+import cc.ioctl.nfcncihost.service.NfcCardEmuFgSvc;
+import cc.ioctl.nfcncihost.service.NfcControllerManagerService;
+import cc.ioctl.nfcncihost.util.ThreadManager;
 
 public class DashboardActivity extends BaseActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
+    private volatile NfcControllerManager nfcMgr;
+    private Intent mSvcIntent;
+    final private ServiceConnection mNfcMgrConn = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            try {
+                nfcMgr = new NfcControllerManager(service);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            nfcMgr = null;
+            if (!isFinishing()) {
+                ThreadManager.post(() -> Toast.makeText(DashboardActivity.this,
+                        "onServiceDisconnected", Toast.LENGTH_SHORT).show());
+            }
+        }
+    };
 
     @Override
     protected boolean doOnCreate(Bundle savedInstanceState) {
         super.doOnCreate(savedInstanceState);
+        mSvcIntent = new Intent(this, NfcControllerManagerService.class);
+        if (!bindService(mSvcIntent, mNfcMgrConn, BIND_AUTO_CREATE)) {
+            mSvcIntent = null;
+            new AlertDialog.Builder(this).setTitle("Error").setMessage("bind error")
+                    .setCancelable(false).setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                finish();
+            }).show();
+        }
         setContentView(R.layout.activity_dashboard);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -68,8 +107,24 @@ public class DashboardActivity extends BaseActivity {
                 startActivity(new Intent(this, SettingsActivity.class));
                 return true;
             }
+            case R.id.action_tmp_start: {
+                NfcCardEmuFgSvc.requestStartEmulation(this, "0");
+                return true;
+            }
+            case R.id.action_tmp_stop: {
+                NfcCardEmuFgSvc.requestStopEmulation(this);
+                return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    protected void doOnDestroy() {
+        super.doOnDestroy();
+        if (mSvcIntent != null) {
+            unbindService(mNfcMgrConn);
         }
     }
 }

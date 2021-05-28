@@ -83,9 +83,28 @@
             android:label="@string/name_nfc_ctrl_svc"
             android:process=":daemon" />
 
+        <service
+            android:name=".service.NfcCoreService"
+            android:exported="false"
+            android:label="@string/name_nfc_core_svc"
+            android:process=":daemon" />
+
+        <service
+            android:name=".service.NfcCardEmuFgSvc"
+            android:exported="false"
+            android:label="@string/name_nfc_emu_svc"
+            android:process=":daemon" />
+
+        <receiver
+            android:name=".service.BootCompleteReceiver"
+            android:process=":daemon">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="com.sec.android.support.multiwindow"
             android:value="true" />
     </application>
-
 </manifest>

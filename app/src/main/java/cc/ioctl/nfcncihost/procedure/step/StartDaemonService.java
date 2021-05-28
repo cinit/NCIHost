@@ -20,8 +20,6 @@ public class StartDaemonService extends Step {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-        System.loadLibrary("nciclient");
-        IpcNativeHandler.initForSocketDir(dir.getAbsolutePath());
 //        try {
 //            Thread.sleep(300);
 //        } catch (InterruptedException e) {

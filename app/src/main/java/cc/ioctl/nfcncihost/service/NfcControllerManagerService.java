@@ -3,20 +3,26 @@ package cc.ioctl.nfcncihost.service;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcncihost.ipc.INfcControllerManager;
+import cc.ioctl.nfcncihost.ipc.NfcControllerManager;
+import cc.ioctl.nfcncihost.ipc.NfcOperatingMode;
+import cc.ioctl.nfcncihost.procedure.DaemonApplicationImpl;
 
 public class NfcControllerManagerService extends Service {
 
     private final Object mLock = new Object();
+    private static final String TAG = "NfcCtrlMgrSvc";
 
     private final INfcControllerManager.Stub mBinder = new INfcControllerManager.Stub() {
 
         @Override
         public boolean requestStartDaemon() {
-            return false;
+            return IpcNativeHandler.isConnected();
         }
 
         @Override
@@ -36,23 +42,32 @@ public class NfcControllerManagerService extends Service {
 
         @Override
         public int getNfcOperatingMode() {
-            return 0;
+            return NfcOperatingMode.DEFAULT.getId();
         }
 
         @Override
         public int setNfcOperatingMode(int mode) {
-            return 0;
+            return NfcControllerManager.ERR_NO_DEVICE;
         }
     };
 
     @NonNull
     @Override
     public IBinder onBind(Intent intent) {
+        IpcNativeHandler.init(this);
         return mBinder;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i(TAG, "onCreate");
+        DaemonApplicationImpl.get().initIpcSocketAsync();
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
     }
 }

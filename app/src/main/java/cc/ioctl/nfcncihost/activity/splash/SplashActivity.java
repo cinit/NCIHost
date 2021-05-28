@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 
-import cc.ioctl.nfcncihost.procedure.BaseApplicationDelegate;
 import cc.ioctl.nfcncihost.BuildConfig;
 import cc.ioctl.nfcncihost.R;
 import cc.ioctl.nfcncihost.activity.BaseActivity;

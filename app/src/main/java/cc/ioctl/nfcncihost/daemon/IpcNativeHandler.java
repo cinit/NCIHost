@@ -1,10 +1,18 @@
 package cc.ioctl.nfcncihost.daemon;
 
+import android.content.Context;
+
+import androidx.annotation.NonNull;
+
+import java.io.File;
+
 import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 
 public class IpcNativeHandler {
 
     private final long mNativeHandler;
+
+    private static volatile boolean sInit = false;
 
     private IpcNativeHandler(final long h) {
         mNativeHandler = h;
@@ -12,6 +20,26 @@ public class IpcNativeHandler {
 
     private IpcNativeHandler() {
         throw new AssertionError("No instance for you!");
+    }
+
+    public static boolean isInit() {
+        return sInit;
+    }
+
+    public static void init(@NonNull Context ctx) {
+        if (sInit) {
+            return;
+        }
+        synchronized (IpcNativeHandler.class) {
+            if (!sInit) {
+                System.loadLibrary("nciclient");
+                File dir = ctx.getNoBackupFilesDir();
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                sInit = true;
+            }
+        }
     }
 
     public static void initForSocketDir(String name) {

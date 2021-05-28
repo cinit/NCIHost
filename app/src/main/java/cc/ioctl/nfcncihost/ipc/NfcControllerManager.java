@@ -7,13 +7,13 @@ public class NfcControllerManager {
 
     private final INfcControllerManager mManager;
 
-    private static final int ERR_NO_DEVICE = 1;
-    private static final int ERR_PERMISSION = 2;
-    private static final int ERR_UNSUPPORTED = 3;
+    public static final int ERR_NO_DEVICE = 1;
+    public static final int ERR_PERMISSION = 2;
+    public static final int ERR_UNSUPPORTED = 3;
 
 
     public NfcControllerManager(IBinder binder) throws RemoteException {
-        if (binder.isBinderAlive()) {
+        if (!binder.isBinderAlive()) {
             throw new RemoteException();
         }
         mManager = INfcControllerManager.Stub.asInterface(binder);
