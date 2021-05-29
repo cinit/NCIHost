@@ -9,9 +9,13 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="btn_continue">下一步</string>
     <string name="checkbox_accept_risk">我已知晓并接受这些风险</string>
     <string name="action_settings">设置</string>
-    <string name="name_nfc_ctrl_svc">NFC控制与管理服务</string>
     <string name="name_emu_pwm_ctrl_svc">NFC模拟管理器</string>
     <string name="action_stop">停止</string>
     <string name="action_start">启动</string>
+    <string name="name_nfc_emu_svc">NFC卡模拟服务</string>
+    <string name="ntf_chn_name_card_emu">NFC模拟</string>
+    <string name="ntf_ticker_emu_card_name">正在模拟 %s</string>
+    <string name="ntf_title_nfc_emu">NFC模拟</string>
+    <string name="ntf_text_req_perm">正在请求权限…</string>
 
 </resources>
