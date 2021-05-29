@@ -62,6 +62,10 @@
             android:name=".activity.splash.SplashActivity"
             android:launchMode="singleTop" />
 
+        <activity
+            android:name=".activity.MipmapGenActivity"
+            android:exported="true" />
+
         <service
             android:name=".service.CardEmuCtrlSvc"
             android:label="@string/name_emu_pwm_ctrl_svc"

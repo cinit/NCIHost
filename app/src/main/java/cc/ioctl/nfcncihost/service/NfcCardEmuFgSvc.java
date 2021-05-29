@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.text.TextUtils;
 import android.util.Log;
@@ -127,9 +128,13 @@ public class NfcCardEmuFgSvc extends Service {
     }
 
     public static void requestStartEmulation(Context ctx, String id) {
-        ctx.startService(new Intent(ctx, NfcCardEmuFgSvc.class)
-                .setAction(NfcCardEmuFgSvc.ACTION_START_CARD_EMU)
-                .putExtra(ARGV_CARD_ID, id));
+        Intent intent = new Intent(ctx, NfcCardEmuFgSvc.class)
+                .setAction(NfcCardEmuFgSvc.ACTION_START_CARD_EMU).putExtra(ARGV_CARD_ID, id);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ctx.startForegroundService(intent);
+        } else {
+            ctx.startService(intent);
+        }
     }
 
     public static void requestStopEmulation(Context ctx) {
