@@ -35,6 +35,7 @@
 }
 
 -dontobfuscate
+-dontshrink
 -dontoptimize
 
 -dontwarn javax.**
