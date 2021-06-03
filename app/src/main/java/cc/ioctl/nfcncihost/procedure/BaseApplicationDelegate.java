@@ -7,6 +7,7 @@ import android.content.ComponentCallbacks;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
@@ -38,6 +39,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 
 @SuppressWarnings({"deprecation", "MissingPermission"})
 public class BaseApplicationDelegate extends BaseApplicationImpl {
@@ -62,8 +64,57 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
         if (mDelegate != null) {
             mDelegate.attachToContextImpl(super.getBaseContext());
             mDelegate.doOnCreate();
+            resetActivityThreadApplication(mDelegate);
         }
         BaseApplicationImpl.sApplication = mDelegate;
+    }
+
+    /**
+     * Reset the Application for current ActivityThread, must be called before any activity or
+     * service starts.
+     * see {@link android.app.ActivityThread#mInitialApplication}
+     * see {@link android.app.LoadedApk#mApplication}
+     * see {@link android.app.Application#mLoadedApk}
+     *
+     * @param app new Application that has been attached to base context
+     */
+    @SuppressWarnings("JavadocReference")
+    @SuppressLint("PrivateApi")
+    private static void resetActivityThreadApplication(@NonNull Application app) {
+        Context ctxImpl = getContextImpl(app);
+        try {
+            // get sCurrentActivityThread
+            Class<?> cActivityThread = Class.forName("android.app.ActivityThread");
+            Field fAt = cActivityThread.getDeclaredField("sCurrentActivityThread");
+            fAt.setAccessible(true);
+            Object activityThread = fAt.get(null);
+            // ActivityThread#mInitialApplication
+            Field fInitApp = cActivityThread.getDeclaredField("mInitialApplication");
+            fInitApp.setAccessible(true);
+            fInitApp.set(activityThread, app);
+            // LoadedApk#mApplication
+            Class<?> cContextImpl = Class.forName("android.app.ContextImpl");
+            Field fPkgInfo = cContextImpl.getDeclaredField("mPackageInfo");
+            fPkgInfo.setAccessible(true);
+            Object loadedApk = fPkgInfo.get(ctxImpl);
+            Field fLdApp = Class.forName("android.app.LoadedApk").getDeclaredField("mApplication");
+            fLdApp.setAccessible(true);
+            fLdApp.set(loadedApk, app);
+            // optional: set LoadedApk for Application
+            Field fLoadedApk = Application.class.getDeclaredField("mLoadedApk");
+            fLoadedApk.setAccessible(true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Context getContextImpl(Context context) {
+        Context nextContext;
+        while ((context instanceof ContextWrapper) &&
+                (nextContext = ((ContextWrapper) context).getBaseContext()) != null) {
+            context = nextContext;
+        }
+        return context;
     }
 
     @Override
