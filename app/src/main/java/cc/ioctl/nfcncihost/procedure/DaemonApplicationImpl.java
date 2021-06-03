@@ -1,5 +1,6 @@
 package cc.ioctl.nfcncihost.procedure;
 
+import android.app.Application;
 import android.util.Log;
 
 import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
@@ -22,6 +23,18 @@ public class DaemonApplicationImpl extends BaseApplicationImpl {
     public void initIpcSocketAsync() {
         if (!IpcNativeHandler.isInit()) {
             ThreadManager.execute(() -> IpcNativeHandler.init(this));
+        }
+    }
+
+    public static MainApplicationImpl getInstance() {
+        Application app = BaseApplicationImpl.sApplication;
+        if (app == null) {
+            throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
+        }
+        if (app instanceof MainApplicationImpl) {
+            return (MainApplicationImpl) app;
+        } else {
+            throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
         }
     }
 }

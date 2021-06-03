@@ -1,6 +1,7 @@
 package cc.ioctl.nfcncihost.procedure;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
 
@@ -25,5 +26,17 @@ public class MainApplicationImpl extends BaseApplicationImpl {
             return false;
         }
         return sDirector.onActivityCreate(activity, intent);
+    }
+
+    public static MainApplicationImpl getInstance() {
+        Application app = BaseApplicationImpl.sApplication;
+        if (app == null) {
+            throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
+        }
+        if (app instanceof MainApplicationImpl) {
+            return (MainApplicationImpl) app;
+        } else {
+            throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
+        }
     }
 }

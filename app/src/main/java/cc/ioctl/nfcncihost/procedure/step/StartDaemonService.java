@@ -6,14 +6,13 @@ import com.tencent.mmkv.MMKV;
 
 import java.io.File;
 
-import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
-import cc.ioctl.nfcncihost.procedure.BaseApplicationDelegate;
+import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.Step;
 
 public class StartDaemonService extends Step {
     @Override
     public boolean doStep() {
-        Context ctx = BaseApplicationDelegate.sApplication;
+        Context ctx = BaseApplicationImpl.getInstance();
         System.loadLibrary("mmkv");
         MMKV.initialize(ctx);
         File dir = ctx.getNoBackupFilesDir();

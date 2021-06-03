@@ -10,8 +10,8 @@ import java.util.List;
 
 public abstract class BaseApplicationImpl extends Application {
 
-    public static BaseApplicationImpl sApplication;
-    private static volatile String mProcName = null;
+    protected static BaseApplicationImpl sApplication;
+    private static volatile String sProcName = null;
     private static final String PROC_SUFFIX_DAEMON = ":daemon";
     private static final String TAG = "BaseApplicationImpl";
 
@@ -46,8 +46,8 @@ public abstract class BaseApplicationImpl extends Application {
     }
 
     public static String getProcessName() {
-        if (mProcName != null) {
-            return mProcName;
+        if (sProcName != null) {
+            return sProcName;
         }
         List<ActivityManager.RunningAppProcessInfo> runningAppProcesses =
                 ((ActivityManager) sApplication.getSystemService(Context.ACTIVITY_SERVICE))
@@ -56,11 +56,19 @@ public abstract class BaseApplicationImpl extends Application {
             for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcesses) {
                 if (runningAppProcessInfo != null
                         && runningAppProcessInfo.pid == android.os.Process.myPid()) {
-                    mProcName = runningAppProcessInfo.processName;
+                    sProcName = runningAppProcessInfo.processName;
                     return runningAppProcessInfo.processName;
                 }
             }
         }
-        return mProcName;
+        return sProcName;
+    }
+
+    public static BaseApplicationImpl getInstance() {
+        BaseApplicationImpl app = BaseApplicationImpl.sApplication;
+        if (app == null) {
+            throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
+        }
+        return app;
     }
 }

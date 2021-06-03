@@ -43,7 +43,7 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         Intent intent = getIntent();
-        this.mIsSplashing = BaseApplicationImpl.sApplication.onActivityCreate(this, intent);
+        this.mIsSplashing = MainApplicationImpl.getInstance().onActivityCreate(this, intent);
         if (this.mIsSplashing) {
             this.mOnCreateBundle = savedInstanceState;
             if (savedInstanceState != null) {
