@@ -115,6 +115,10 @@ public class DashboardActivity extends BaseActivity {
                 NfcCardEmuFgSvc.requestStopEmulation(this);
                 return true;
             }
+            case R.id.action_exit: {
+                finish();
+                return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }

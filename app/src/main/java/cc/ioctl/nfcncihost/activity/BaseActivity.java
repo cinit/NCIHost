@@ -18,7 +18,6 @@ import androidx.fragment.app.FragmentManager;
 import java.lang.reflect.Field;
 
 import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
-import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
@@ -381,7 +380,7 @@ public class BaseActivity extends AppCompatActivity {
         if (this instanceof SplashActivity) {
             StartupDirector director = MainApplicationImpl.sDirector;
             if (director != null && director.isStartup()) {
-                director.setDisableInterrupt(true);
+                director.setDisableInterception(true);
             }
         }
         super.startActivityForResult(intent, requestCode, options);

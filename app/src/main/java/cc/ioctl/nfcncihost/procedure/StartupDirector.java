@@ -17,7 +17,7 @@ public class StartupDirector implements Runnable {
 
     private SplashActivity mSplashActivity;
     private final HashSet<BaseActivity> mSuspendedActivities = new HashSet<>();
-    private volatile boolean mDisableInterrupt = false;
+    private volatile boolean mDisableInterception = false;
     private volatile boolean mBackgroundStepsDone = false;
     private volatile boolean mForegroundStartupFinished = false;
     private volatile boolean mIsShowingSplash = false;
@@ -30,7 +30,7 @@ public class StartupDirector implements Runnable {
     }
 
     public boolean onActivityCreate(Activity activity, Intent intent) {
-        if (mForegroundStartupFinished || mDisableInterrupt) {
+        if (mForegroundStartupFinished || mDisableInterception) {
             return false;
         }
         if (activity instanceof BaseActivity) {
@@ -93,8 +93,8 @@ public class StartupDirector implements Runnable {
         return !mForegroundStartupFinished;
     }
 
-    public void setDisableInterrupt(boolean disableInterrupt) {
-        this.mDisableInterrupt = disableInterrupt;
+    public void setDisableInterception(boolean disableInterception) {
+        this.mDisableInterception = disableInterception;
     }
 
     private void startSplashActivity(Activity activity) {

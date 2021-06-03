@@ -3,8 +3,8 @@
     <string name="title_activity_dashboard">DashboardActivity</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">NFC Device Host</string>
+    <string name="nav_header_subtitle">Freedom of 13.56MHz</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
@@ -45,4 +45,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ntf_text_req_perm">Requesting for permission…</string>
     <string name="name_nfc_emu_svc">NFC Card Emulation Service</string>
     <string name="action_start">Start</string>
+    <string name="action_exit">Exit</string>
 </resources>
