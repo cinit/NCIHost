@@ -5,7 +5,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.TextView;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -32,8 +31,8 @@ public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
                              @Nullable Bundle savedInstanceState) {
         ViewGroup root = (ViewGroup) inflater.inflate(R.layout.frag_warn_app_risk, container, false);
         final CheckBox cb = root.findViewById(R.id.dialog_warnAppRisk_informed);
-        TextView tvContinue = root.findViewById(android.R.id.button1);
-        TextView tvCancel = root.findViewById(android.R.id.button2);
+        View tvContinue = root.findViewById(android.R.id.button1);
+        View tvCancel = root.findViewById(android.R.id.button2);
         tvContinue.setOnClickListener(v -> {
             mOnBackPressedCallback.setEnabled(false);
             mOnBackPressedCallback.remove();

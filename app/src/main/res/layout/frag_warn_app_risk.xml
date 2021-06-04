@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -44,25 +46,78 @@
             android:layout_margin="8dp"
             android:background="?android:attr/listDivider" />
 
-        <Button
+        <LinearLayout
             android:id="@android:id/button1"
-            style="@style/CommonFlatFatButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:contentDescription="@string/btn_continue"
             android:enabled="false"
+            android:focusable="true"
             android:gravity="start|center_vertical"
-            android:src="@drawable/ic_continue_24"
-            android:text="@string/btn_continue"
-            android:textColor="@color/stateful_accent" />
+            android:orientation="horizontal"
+            android:paddingLeft="24dp"
+            android:paddingTop="20dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="20dp">
 
-        <Button
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginEnd="20dp"
+                android:duplicateParentState="true"
+                android:src="@drawable/ic_continue_24"
+                app:tint="@color/stateful_accent"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:duplicateParentState="true"
+                android:gravity="start|center_vertical"
+                android:text="@string/btn_continue"
+                android:textAllCaps="true"
+                android:textColor="@color/stateful_accent"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:id="@android:id/button2"
-            style="@style/CommonFlatFatButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:drawableStart="@drawable/ic_cross_24"
-            android:text="@android:string/cancel"
-            android:textColor="@color/stateful_accent" />
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:contentDescription="@android:string/cancel"
+            android:focusable="true"
+            android:gravity="start|center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="24dp"
+            android:paddingTop="20dp"
+            android:paddingRight="24dp"
+            android:paddingBottom="20dp">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginEnd="20dp"
+                android:duplicateParentState="true"
+                android:src="@drawable/ic_cross_24"
+                app:tint="@color/stateful_accent"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:duplicateParentState="true"
+                android:gravity="start|center_vertical"
+                android:text="@android:string/cancel"
+                android:textAllCaps="true"
+                android:textColor="@color/stateful_accent"
+                android:textSize="16sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

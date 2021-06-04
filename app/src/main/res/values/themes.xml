@@ -34,8 +34,6 @@
         <item name="android:layout_height">?android:attr/listPreferredItemHeight</item>
         <item name="android:minWidth">0dp</item>
         <item name="android:drawablePadding">24dp</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
         <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
         <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
     </style>
