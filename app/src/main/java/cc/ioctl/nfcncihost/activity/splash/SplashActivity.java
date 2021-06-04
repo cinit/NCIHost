@@ -121,6 +121,14 @@ public class SplashActivity extends BaseActivity {
         return fragments;
     }
 
+    public void abortInteractiveStartup() {
+        StartupDirector director = MainApplicationImpl.sDirector;
+        if (director != null) {
+            director.cancelAllPendingActivity();
+        }
+        finish();
+    }
+
     public interface InteractiveStep {
         int getOrder();
 

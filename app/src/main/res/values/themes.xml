@@ -22,4 +22,22 @@
     <style name="Theme.NCIHost.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.NCIHost.PopupOverlay" parent="ThemeOverlay.AppCompat.DayNight" />
+
+    <style name="CommonFlatFatButton">
+        <item name="android:textColor">@color/stateful_accent</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:gravity">clip_horizontal</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">?android:attr/listPreferredItemHeight</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:drawablePadding">24dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
+        <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
+    </style>
+
 </resources>

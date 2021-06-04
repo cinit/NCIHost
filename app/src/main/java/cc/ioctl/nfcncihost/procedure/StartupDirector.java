@@ -22,6 +22,7 @@ public class StartupDirector implements Runnable {
     private volatile boolean mForegroundStartupFinished = false;
     private volatile boolean mIsShowingSplash = false;
     private volatile boolean mIsForeground = false;
+    private volatile boolean mStartSplashRequested = false;
 
     public static StartupDirector onAppStart() {
         StartupDirector director = new StartupDirector();
@@ -98,13 +99,17 @@ public class StartupDirector implements Runnable {
     }
 
     private void startSplashActivity(Activity activity) {
-        Intent splash = new Intent(activity, SplashActivity.class);
-        splash.putExtra(SplashActivity.TAG_SHADOW_SPLASH, true);
-        activity.startActivity(splash);
+        if (!mStartSplashRequested) {
+            Intent splash = new Intent(activity, SplashActivity.class);
+            splash.putExtra(SplashActivity.TAG_SHADOW_SPLASH, true);
+            activity.startActivity(splash);
+            mStartSplashRequested = true;
+        }
     }
 
     @UiThread
     public void cancelAllPendingActivity() {
+        mStartSplashRequested = false;
         if (!mForegroundStartupFinished) {
             for (BaseActivity activity : mSuspendedActivities) {
                 activity.finish();
@@ -117,6 +122,7 @@ public class StartupDirector implements Runnable {
 
     @UiThread
     public void onForegroundStartupFinish() {
+        mStartSplashRequested = false;
         if (!mForegroundStartupFinished) {
             Log.d(TAG, "onForegroundStartupFinish: execute");
             mBackgroundStepsDone = true;
