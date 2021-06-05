@@ -10,13 +10,8 @@
         <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_200</item>
         <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
+        <item name="actionBarTheme">@style/ThemeOverlay.AppDefault.ActionBar</item>
         <item name="android:statusBarColor">?android:colorBackground</item>
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">false</item>
-    </style>
-
-    <style name="Theme.AppDefault.ActionBar" parent="ThemeOverlay.MaterialComponents.ActionBar">
-        <item name="elevation">0dp</item>
-        <item name="android:background">?android:colorBackground</item>
     </style>
 </resources>
