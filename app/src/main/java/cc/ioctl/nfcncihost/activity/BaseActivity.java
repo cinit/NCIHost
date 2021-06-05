@@ -3,16 +3,11 @@ package cc.ioctl.nfcncihost.activity;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 
 import java.lang.reflect.Field;
@@ -21,7 +16,10 @@ import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
 import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
-public class BaseActivity extends AppCompatActivity {
+/**
+ * Late-onCreate feature for Activity
+ */
+public class BaseActivity extends AppActivity {
     private static final String FRAGMENTS_TAG = "android:support:fragments";
     private boolean mIsFinishingInOnCreate = false;
     private boolean mIsResultWaiting;
@@ -36,7 +34,6 @@ public class BaseActivity extends AppCompatActivity {
     private int mResultCode;
     private Intent mResultData;
     private int mWindowFocusState = -1;
-    private boolean mImmersiveStatusBar = false;
 
     @Deprecated
     @Override
@@ -55,28 +52,12 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
-    protected void setImmersiveStatusBar(boolean immersive) {
-        mImmersiveStatusBar = immersive;
-        View decor = getWindow().getDecorView();
-        if (mImmersiveStatusBar) {
-            Window window = getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(Color.TRANSPARENT);
-            decor.setSystemUiVisibility(decor.getWindowSystemUiVisibility()
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-        } else {
-            decor.setSystemUiVisibility(decor.getWindowSystemUiVisibility()
-                    & ~(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN));
-        }
-    }
-
     protected boolean doOnCreate(@Nullable Bundle savedInstanceState) {
         this.mOnCreateBundle = null;
         return true;
     }
 
+    @Override
     @Deprecated
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
@@ -87,6 +68,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -97,6 +79,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
@@ -178,6 +161,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -188,6 +172,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         if (!this.mIsSplashing) {
@@ -201,6 +186,7 @@ public class BaseActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, intent);
     }
 
+    @Override
     @Deprecated
     protected void onStart() {
         super.onStart();
@@ -211,6 +197,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     public boolean dispatchKeyEvent(KeyEvent event) {
         if (this.mIsSplashing) {
@@ -223,6 +210,7 @@ public class BaseActivity extends AppCompatActivity {
         return super.dispatchKeyEvent(event);
     }
 
+    @Override
     @Deprecated
     protected void onStop() {
         if (!this.mIsSplashing) {
@@ -233,6 +221,7 @@ public class BaseActivity extends AppCompatActivity {
         super.onStop();
     }
 
+    @Override
     @Deprecated
     protected void onResume() {
         try {
@@ -252,6 +241,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     protected void onPostResume() {
         super.onPostResume();
@@ -260,6 +250,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     public void onConfigurationChanged(Configuration newConfig) {
         if (!this.mIsSplashing) {
@@ -269,6 +260,7 @@ public class BaseActivity extends AppCompatActivity {
     }
 
 
+    @Override
     @Deprecated
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -279,6 +271,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     public void onBackPressed() {
         if (!this.mIsSplashing) {
@@ -286,6 +279,7 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
+    @Override
     @Deprecated
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (this.mIsSplashing) {
@@ -294,6 +288,7 @@ public class BaseActivity extends AppCompatActivity {
         return doOnKeyDown(keyCode, event);
     }
 
+    @Override
     @Deprecated
     protected void onUserLeaveHint() {
         if (!this.mIsSplashing) {
@@ -302,6 +297,7 @@ public class BaseActivity extends AppCompatActivity {
         super.onUserLeaveHint();
     }
 
+    @Override
     @Deprecated
     protected void onPause() {
         if (!this.mIsSplashing) {
@@ -337,12 +333,6 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     protected void doOnWindowFocusChanged(boolean hasFocus) {
-        if (hasFocus && mImmersiveStatusBar) {
-            View decorView = getWindow().getDecorView();
-            decorView.setSystemUiVisibility(decorView.getWindowSystemUiVisibility()
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-        }
     }
 
     protected void doOnConfigurationChanged(Configuration newConfig) {

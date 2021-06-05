@@ -39,14 +39,15 @@ public class SplashActivity extends BaseActivity {
     public static final String TAG_SHADOW_SPLASH = SplashActivity.class.getName() + ".TAG_SHADOW_SPLASH";
     private Iterator<AbsInteractiveStepFragment> steps;
     private Fragment currentFragment;
-
-    private static final String PREF_INT_LAST_EULA_VERSION = "PREF_KEY_LAST_EULA_VERSION";
+    private Bundle mSavedFragmentsInstance = null;
+    private static final String SAVED_FRAGMENT_DATA = "SAVED_FRAGMENT_DATA";
 
     @Override
     protected boolean doOnCreate(@Nullable Bundle savedInstanceState) {
-        setTheme(R.style.Theme_NCIHost);
-        super.doOnCreate(savedInstanceState);
-        setImmersiveStatusBar(false);
+        super.doOnCreate(null);
+        if (savedInstanceState != null) {
+            mSavedFragmentsInstance = savedInstanceState.getBundle(SAVED_FRAGMENT_DATA);
+        }
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.show();
@@ -77,6 +78,20 @@ public class SplashActivity extends BaseActivity {
     }
 
     @Override
+    protected void doOnSaveInstanceState(Bundle outState) {
+        super.doOnSaveInstanceState(outState);
+        if (currentFragment != null) {
+            Fragment.SavedState ss = getSupportFragmentManager()
+                    .saveFragmentInstanceState(currentFragment);
+            if (ss != null) {
+                Bundle bundle = new Bundle();
+                bundle.putParcelable(currentFragment.getClass().getName(), ss);
+                outState.putBundle(SAVED_FRAGMENT_DATA, bundle);
+            }
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         doOnBackPressed();
     }
@@ -88,7 +103,6 @@ public class SplashActivity extends BaseActivity {
         if (actionBar != null) {
             actionBar.hide();
         }
-        setImmersiveStatusBar(true);
         setContentView(R.layout.activity_splash);
         TextView tvVersion = findViewById(R.id.splash_version);
         tvVersion.setText("version " + BuildConfig.VERSION_NAME + "-"
@@ -98,6 +112,7 @@ public class SplashActivity extends BaseActivity {
     @UiThread
     void switchToNextStep() {
         if (!steps.hasNext()) {
+            currentFragment = null;
             finishInteractiveStartup();
         } else {
             currentFragment = steps.next();
@@ -114,6 +129,13 @@ public class SplashActivity extends BaseActivity {
         ArrayList<AbsInteractiveStepFragment> fragments = new ArrayList<>();
         for (AbsInteractiveStepFragment f : candidates) {
             if (!f.isDone()) {
+                if (mSavedFragmentsInstance != null) {
+                    Fragment.SavedState ss = (Fragment.SavedState)
+                            mSavedFragmentsInstance.get(f.getClass().getName());
+                    if (ss != null) {
+                        f.setInitialSavedState(ss);
+                    }
+                }
                 fragments.add(f);
             }
         }

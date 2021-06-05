@@ -2,12 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="cc.ioctl.nfcncihost"
+    android:installLocation="internalOnly"
     tools:ignore="ProtectedPermissions,ScopedStorage">
 
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.NFC_TRANSACTION_EVENT" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -25,6 +28,22 @@
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" />
 
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.nfc.hce"
+        android:required="false" />
+
     <application
         android:name=".procedure.BaseApplicationDelegate"
         android:allowBackup="true"
@@ -38,7 +57,7 @@
         android:resizeableActivity="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NCIHost"
+        android:theme="@style/Theme.AppDefault"
         android:usesNonSdkApi="true"
         tools:targetApi="o">
 
@@ -49,7 +68,7 @@
 
         <activity
             android:name=".activity.DashboardActivity"
-            android:theme="@style/Theme.NCIHost.NoActionBar">
+            android:theme="@style/Theme.AppDefault.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

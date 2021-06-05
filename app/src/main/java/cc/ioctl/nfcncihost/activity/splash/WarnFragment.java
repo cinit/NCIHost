@@ -17,6 +17,9 @@ import cc.ioctl.nfcncihost.util.ThreadManager;
 
 public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
     private static final String PREF_BOOL_USAGE_WARN = "PREF_BOOL_ABOUT_WARN";
+    private static final String SS_TIME_LEFT = "SS_TIME_LEFT";
+    private static final int FORCE_READ_TIME_SEC = 5;
+    private volatile int mTimeLeftSec;
 
     private final OnBackPressedCallback mOnBackPressedCallback = new OnBackPressedCallback(true) {
         @Override
@@ -39,31 +42,33 @@ public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
             config.putBoolean(PREF_BOOL_USAGE_WARN, true);
             activity.switchToNextStep();
         });
-        tvCancel.setOnClickListener(v -> {
-            activity.abortInteractiveStartup();
-        });
+        tvCancel.setOnClickListener(v -> activity.abortInteractiveStartup());
         tvContinue.setEnabled(false);
         cb.setOnCheckedChangeListener((self, checked) -> tvContinue.setEnabled(checked));
-        cb.setEnabled(false);
-        ThreadManager.execute(() -> {
-            int j = 5;
-            while (j > 0) {
-                final int i = j;
-                ThreadManager.post(() -> cb.setText(String.format(Locale.ROOT, "%s(%ds)",
-                        cb.getContext().getText(R.string.checkbox_accept_risk), i)));
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
+        if (mTimeLeftSec > 0) {
+            cb.setEnabled(false);
+            ThreadManager.execute(() -> {
+                int j = mTimeLeftSec;
+                while (j > 0) {
+                    final int i = j;
+                    ThreadManager.post(() -> cb.setText(String.format(Locale.ROOT, "%s(%ds)",
+                            cb.getContext().getText(R.string.checkbox_accept_risk), i)));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    j--;
+                    mTimeLeftSec = j;
                 }
-                j--;
-            }
-            ThreadManager.post(() -> {
-                cb.setText(R.string.checkbox_accept_risk);
-                cb.setEnabled(true);
+                mTimeLeftSec = 0;
+                ThreadManager.post(() -> {
+                    cb.setText(R.string.checkbox_accept_risk);
+                    cb.setEnabled(true);
+                });
             });
-        });
+        }
         requireActivity().getOnBackPressedDispatcher().addCallback(mOnBackPressedCallback);
         return root;
     }
@@ -77,6 +82,22 @@ public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
         mOnBackPressedCallback.setEnabled(false);
         mOnBackPressedCallback.remove();
         super.onDestroy();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mTimeLeftSec = savedInstanceState.getInt(SS_TIME_LEFT, FORCE_READ_TIME_SEC);
+        } else {
+            mTimeLeftSec = FORCE_READ_TIME_SEC;
+        }
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(SS_TIME_LEFT, mTimeLeftSec);
     }
 
     @Override
