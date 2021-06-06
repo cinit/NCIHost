@@ -26,7 +26,6 @@
 
     <style name="Widget.AppDefault.ActionBar" parent="@style/Widget.MaterialComponents.Light.ActionBar.Solid">
         <item name="elevation">0dp</item>
-        <item name="android:background">?android:colorBackground</item>
         <item name="background">?android:colorBackground</item>
         <item name="backgroundSplit">?android:colorBackground</item>
         <item name="backgroundStacked">?android:colorBackground</item>

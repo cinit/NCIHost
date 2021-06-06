@@ -8,9 +8,11 @@
     tools:context=".activity.DashboardActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        style="@style/Widget.AppDefault.ActionBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:theme="@style/Widget.AppDefault.ActionBar">
+        android:background="?android:attr/colorBackground"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
