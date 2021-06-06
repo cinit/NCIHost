@@ -32,9 +32,9 @@ import cc.ioctl.nfcncihost.util.ThreadManager;
 public class DashboardActivity extends BaseActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
-    private volatile NfcControllerManager nfcMgr;
+    volatile NfcControllerManager nfcMgr;
     private Intent mSvcIntent;
-    final private ServiceConnection mNfcMgrConn = new ServiceConnection() {
+    final ServiceConnection mNfcMgrConn = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             try {
