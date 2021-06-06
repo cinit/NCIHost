@@ -35,6 +35,10 @@ public class BaseActivity extends AppActivity {
     private Intent mResultData;
     private int mWindowFocusState = -1;
 
+    protected boolean isTranslucentSystemUi() {
+        return true;
+    }
+
     @Deprecated
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,6 +58,9 @@ public class BaseActivity extends AppActivity {
 
     protected boolean doOnCreate(@Nullable Bundle savedInstanceState) {
         this.mOnCreateBundle = null;
+        if (isTranslucentSystemUi()) {
+            requestTranslucentSystemUi();
+        }
         return true;
     }
 

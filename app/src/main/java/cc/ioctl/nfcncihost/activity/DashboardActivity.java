@@ -131,4 +131,5 @@ public class DashboardActivity extends BaseActivity {
             unbindService(mNfcMgrConn);
         }
     }
+
 }

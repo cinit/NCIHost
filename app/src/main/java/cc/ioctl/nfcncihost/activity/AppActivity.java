@@ -3,12 +3,10 @@ package cc.ioctl.nfcncihost.activity;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Build;
-import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
@@ -16,13 +14,15 @@ import androidx.appcompat.app.AppCompatActivity;
  */
 public class AppActivity extends AppCompatActivity {
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Window window = getWindow();
-        View decorView = window.getDecorView();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            decorView.post(() -> {
+    protected void requestTranslucentSystemUi() {
+        final Window window = getWindow();
+        final View decorView = window.getDecorView();
+        decorView.post(() -> {
+            int option = decorView.getSystemUiVisibility()
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+            decorView.setSystemUiVisibility(option);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowInsets insets = decorView.getRootWindowInsets();
                 int h = 0;
                 if (insets != null) {
@@ -41,8 +41,8 @@ public class AppActivity extends AppCompatActivity {
                         window.setNavigationBarContrastEnforced(true);
                     }
                 }
-            });
-        }
+            }
+        });
     }
 
     public final int dip2px(float dpValue) {

@@ -1,23 +1,34 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.AppDefault" parent="Theme.MaterialComponents.DayNight">
-        <!-- Primary brand color. -->
         <item name="colorAccent">#71D2FF</item>
         <item name="colorPrimary">@color/purple_200</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/black</item>
-        <!-- Secondary brand color. -->
+        <!-- color. -->
         <item name="colorSecondary">@color/teal_200</item>
         <item name="colorSecondaryVariant">@color/teal_200</item>
         <item name="colorOnSecondary">@color/black</item>
+        <!-- status bar -->
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <!-- magic -->
         <item name="actionBarTheme">@style/ThemeOverlay.AppDefault.ActionBar</item>
         <item name="actionBarStyle">@style/Widget.AppDefault.ActionBar</item>
-        <item name="android:statusBarColor">?android:colorBackground</item>
-        <item name="android:windowLightStatusBar" tools:ignore="NewApi">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">#00000000</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">
+            shortEdges
+        </item>
     </style>
 
     <style name="Widget.AppDefault.ActionBar" parent="@style/Widget.MaterialComponents.ActionBar.Solid">
         <item name="elevation">0dp</item>
+        <item name="android:background">?android:colorBackground</item>
+        <item name="background">?android:colorBackground</item>
+        <item name="backgroundSplit">?android:colorBackground</item>
+        <item name="backgroundStacked">?android:colorBackground</item>
     </style>
 
 </resources>
