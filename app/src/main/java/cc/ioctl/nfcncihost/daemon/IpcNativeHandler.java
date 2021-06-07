@@ -13,6 +13,7 @@ public class IpcNativeHandler {
     private final long mNativeHandler;
 
     private static volatile boolean sInit = false;
+    private static volatile String sDirPath = null;
 
     private IpcNativeHandler(final long h) {
         mNativeHandler = h;
@@ -37,17 +38,15 @@ public class IpcNativeHandler {
                 if (!dir.exists()) {
                     dir.mkdirs();
                 }
+                sDirPath = dir.getAbsolutePath();
                 sInit = true;
             }
         }
     }
 
-    public static void initForSocketDir(String name) {
-        if (!name.startsWith("/")) {
-            throw new IllegalArgumentException("absolute path required");
-        }
+    public static void initForSocketDir() {
         checkProcess();
-        ntInitForSocketDir(name);
+        ntInitForSocketDir(sDirPath);
     }
 
     private static void checkProcess() {

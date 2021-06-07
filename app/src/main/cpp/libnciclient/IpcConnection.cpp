@@ -12,6 +12,7 @@
 #include <cerrno>
 #include <sys/un.h>
 #include "android/log.h"
+#include "jni.h"
 
 using namespace std;
 

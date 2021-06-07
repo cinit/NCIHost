@@ -22,6 +22,7 @@ public class NfcControllerManagerService extends Service {
 
         @Override
         public boolean requestStartDaemon() {
+            IpcNativeHandler.initForSocketDir();
             return IpcNativeHandler.isConnected();
         }
 
@@ -62,7 +63,7 @@ public class NfcControllerManagerService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
-        DaemonApplicationImpl.get().initIpcSocketAsync();
+        DaemonApplicationImpl.getInstance().initIpcSocketAsync();
     }
 
     @Override

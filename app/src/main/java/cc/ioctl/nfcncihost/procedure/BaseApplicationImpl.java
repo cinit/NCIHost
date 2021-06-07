@@ -17,7 +17,7 @@ public abstract class BaseApplicationImpl extends Application {
 
     public void attachToContextImpl(Context base) {
         if (base instanceof BaseApplicationDelegate) {
-            throw new IllegalArgumentException("recursion ahead");
+            throw new StackOverflowError("BaseApplicationImpl.attachToContextImpl(Context)V");
         }
         super.attachBaseContext(base);
     }

@@ -5,7 +5,7 @@
 #ifndef NCI_HOST_IPCCONNECTION_H
 #define NCI_HOST_IPCCONNECTION_H
 
-#include "jni.h"
+#include <cstdint>
 
 #define IPC_SHM_SIZE (1*1024*1024)
 

@@ -10,10 +10,6 @@ public class DaemonApplicationImpl extends BaseApplicationImpl {
     private static final String TAG = "DaemonApplicationImpl";
     final Object mNativeLock = new Object();
 
-    public static DaemonApplicationImpl get() {
-        return (DaemonApplicationImpl) BaseApplicationImpl.sApplication;
-    }
-
     @Override
     public void doOnCreate() {
         super.doOnCreate();
@@ -22,17 +18,20 @@ public class DaemonApplicationImpl extends BaseApplicationImpl {
 
     public void initIpcSocketAsync() {
         if (!IpcNativeHandler.isInit()) {
-            ThreadManager.execute(() -> IpcNativeHandler.init(this));
+            ThreadManager.execute(() -> {
+                IpcNativeHandler.init(this);
+                IpcNativeHandler.initForSocketDir();
+            });
         }
     }
 
-    public static MainApplicationImpl getInstance() {
+    public static DaemonApplicationImpl getInstance() {
         Application app = BaseApplicationImpl.sApplication;
         if (app == null) {
             throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
         }
-        if (app instanceof MainApplicationImpl) {
-            return (MainApplicationImpl) app;
+        if (app instanceof DaemonApplicationImpl) {
+            return (DaemonApplicationImpl) app;
         } else {
             throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
         }

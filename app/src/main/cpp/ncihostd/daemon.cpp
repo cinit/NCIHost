@@ -5,12 +5,14 @@
 #include "unistd.h"
 #include <cstdio>
 #include <cerrno>
+#include <cstddef>
 #include <algorithm>
 #include <cstring>
 #include <cstdlib>
 #include "fcntl.h"
 #include "sys/stat.h"
 #include <sys/inotify.h>
+#include <linux/limits.h>
 #include "sys/un.h"
 #include "sys/socket.h"
 #include "common.h"
@@ -33,7 +35,7 @@ bool doConnect(IpcSocketMeta &target, int uid) {
         return false;
     }
     targetAddr.sun_family = AF_UNIX;
-    memcpy(targetAddr.sun_path, target.name, min(108, UNIX_PATH_MAX));
+    memcpy(targetAddr.sun_path, target.name, 108);
     int size = offsetof(struct sockaddr_un, sun_path) + strlen(targetAddr.sun_path + 1) + 1;
     if (::connect(clientFd, (struct sockaddr *) &targetAddr, size) < 0) {
         perror("connect error");
@@ -52,6 +54,8 @@ bool doConnect(IpcSocketMeta &target, int uid) {
         close(clientFd);
         return false;
     }
+    // TODO: recv from cmsg SCM_RIGHTS
+
     printf("Connected...\n");
     sleep(10);
     close(clientFd);
