@@ -14,6 +14,8 @@
 #include "android/log.h"
 #include "jni.h"
 
+#include "../rpcprotocol/rpcprotocol.h"
+
 using namespace std;
 
 static mutex *gIpcNativeLock = nullptr;
@@ -21,7 +23,8 @@ pthread_t gIpcListenThread = 0;
 char gIpcAbsSocketName[108];
 char gIpcPidFilePath[256];
 volatile int gIpcListenFd = -1;
-volatile int gIpcClientConnFd = -1;
+volatile int gIpcClientHandOverConnFd = -1;
+volatile int gIpcConnFd = -1;
 volatile int gIpcThreadErrno = -1;
 
 
@@ -30,13 +33,52 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     gIpcNativeLock = new std::mutex;
     memset(gIpcAbsSocketName, 0, 108);
     gIpcListenThread = 0;
-    gIpcClientConnFd = -1;
+    gIpcClientHandOverConnFd = -1;
     gIpcListenFd = -1;
+    gIpcConnFd = -1;
     return JNI_VERSION_1_6;
 }
 
 bool handleSocketConnected() {
-    __android_log_print(ANDROID_LOG_INFO, "IPC", "connected, fd=%d", gIpcClientConnFd);
+    __android_log_print(ANDROID_LOG_INFO, "IPC",
+                        "try send sockpair over fd-%d", gIpcClientHandOverConnFd);
+    int socksFd[2] = {};
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, socksFd) != 0) {
+        __android_log_print(ANDROID_LOG_ERROR, "IPC",
+                            "sockpair error %s", strerror(errno));
+        return false;
+    }
+    struct msghdr msg;
+    struct iovec iov;
+    union {
+        struct cmsghdr cmsg;
+        char cmsgSpace[CMSG_LEN(sizeof(int))];
+    };
+    memset(&msg, 0, sizeof(msg));
+    memset(&iov, 0, sizeof(iov));
+    memset(cmsgSpace, 0, sizeof(cmsgSpace));
+    char c = 0;
+    iov.iov_base = &c;
+    iov.iov_len = 1;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = &cmsg;
+    msg.msg_controllen = sizeof(cmsgSpace);
+    cmsg.cmsg_len = sizeof(cmsgSpace);
+    cmsg.cmsg_level = SOL_SOCKET;
+    cmsg.cmsg_type = SCM_RIGHTS;
+    *reinterpret_cast<int *>(CMSG_DATA(&cmsg)) = socksFd[1];
+    if (sendmsg(gIpcClientHandOverConnFd, &msg, 0) < 0) {
+        __android_log_print(ANDROID_LOG_ERROR, "IPC",
+                            "sendfd error %s", strerror(errno));
+        close(socksFd[0]);
+        close(socksFd[1]);
+        return false;
+    }
+    close(gIpcConnFd);
+    close(gIpcListenFd);
+    // send GetVersion RPC request and wait for result blocking, timeout is 1000ms
+
     return true;
 }
 
@@ -49,20 +91,21 @@ void *fIpcListenProc(void *) {
     socklen_t socklen = sizeof(cliun);
     gIpcThreadErrno = 0;
     do {
-        if ((gIpcClientConnFd = accept(gIpcListenFd, (sockaddr *) (&cliun), &socklen)) < 0) {
+        if ((gIpcClientHandOverConnFd = accept(gIpcListenFd, (sockaddr *) (&cliun), &socklen)) <
+            0) {
             gIpcThreadErrno = errno;
         } else {
             ucred credentials = {};
             socklen_t ucred_length = sizeof(ucred);
-            if (::getsockopt(gIpcClientConnFd, SOL_SOCKET, SO_PEERCRED,
+            if (::getsockopt(gIpcClientHandOverConnFd, SOL_SOCKET, SO_PEERCRED,
                              &credentials, &ucred_length)) {
                 printf("getsockopt SO_PEERCRED error: %s\n", strerror(errno));
-                close(gIpcClientConnFd);
+                close(gIpcClientHandOverConnFd);
                 continue;
             }
             if (credentials.uid != 0) {
                 printf("Invalid daemon UID %d, expected 0\n", credentials.uid);
-                close(gIpcClientConnFd);
+                close(gIpcClientHandOverConnFd);
                 continue;
             }
             if (handleSocketConnected()) {

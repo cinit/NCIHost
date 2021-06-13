@@ -11,4 +11,4 @@ set_target_properties(nciclient PROPERTIES
         )
 target_compile_definitions(nciclient PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
 
-target_link_libraries(nciclient ${ANDROID_LIBS})
+target_link_libraries(nciclient rpcprotocol ${ANDROID_LIBS})
