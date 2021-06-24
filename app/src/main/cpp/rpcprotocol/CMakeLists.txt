@@ -5,7 +5,8 @@ project(rpcprotocol)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(rpcprotocol STATIC
-        ArgList.cpp rpc_proc.cpp ThreadPool.cpp shared_memory.cpp RemoteDaemonException.cpp)
+        ArgList.cpp rpc_proc.cpp ThreadPool.cpp shared_memory.cpp
+        RemoteDaemonException.cpp SharedBuffer.cpp)
 
 set_target_properties(rpcprotocol PROPERTIES
         CXX_EXTENSIONS OFF

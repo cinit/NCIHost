@@ -12,7 +12,6 @@
 #include <linux/types.h>
 #include <linux/memfd.h>
 #include <cerrno>
-#include <execution>
 #include <cstring>
 
 #define ASHMEM_NAME_DEF "dev/ashmem"
