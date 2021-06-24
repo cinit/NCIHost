@@ -5,9 +5,11 @@ project(rpcprotocol)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(rpcprotocol STATIC
-        ArgList.cpp rpc_proc.cpp)
+        ArgList.cpp rpc_proc.cpp ThreadPool.cpp shared_memory.cpp)
 
 set_target_properties(rpcprotocol PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
         )
+
+target_link_libraries(rpcprotocol)
