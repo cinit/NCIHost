@@ -58,6 +58,10 @@ android {
         }
     }
 
+    packagingOptions {
+        doNotStrip "*.so"
+    }
+
     buildFeatures {
         viewBinding true
     }
