@@ -102,6 +102,10 @@ static int ashmem_open_legacy() {
  */
 int ashmem_create_region(const char *name, size_t size) {
     int ret, save_errno;
+    size_t pagesize = getpagesize();
+    if (size % pagesize != 0) {
+        size = pagesize * (size / pagesize + 1);
+    }
     if (has_memfd_support()) {
         return memfd_create_region_post_q(name ? name : "none", size);
     }
