@@ -45,6 +45,7 @@ static int memfd_create_region_post_q(const char *name, size_t size) {
         return -1;
     }
     if (ftruncate(fd, size) == -1) {
+        close(fd);
         return -1;
     }
     return fd;
