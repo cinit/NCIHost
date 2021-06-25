@@ -9,11 +9,14 @@
 #include <cstring>
 #include <malloc.h>
 
+constexpr float LOAD_FACTOR = 0.75f;
+
 class SharedBufferImpl {
 private:
     mutable std::mutex mMutex;
     void *mBuffer = nullptr;
     size_t mSize = 0;
+    size_t mActualSize = 0;
 public:
 
     SharedBufferImpl() = default;
@@ -24,6 +27,7 @@ public:
             free(mBuffer);
             mBuffer = nullptr;
             mSize = 0;
+            mActualSize = 0;
         }
     }
 
@@ -39,24 +43,42 @@ public:
 
     [[nodiscard]] bool resetSize(size_t size, bool keepContent) noexcept {
         std::scoped_lock _(mMutex);
+        if (size == 0) {
+            mSize = 0;
+            return mBuffer != nullptr;
+        }
         if (mBuffer != nullptr) {
-            void *newBuffer = malloc(size);
-            if (newBuffer == nullptr) {
-                return false;
+            if (size * 2 < mActualSize || size > mActualSize) {
+                size_t newSize = int(float(size) / LOAD_FACTOR);
+                void *newBuffer = malloc(newSize);
+                if (newBuffer == nullptr) {
+                    return false;
+                }
+                if (keepContent) {
+                    size_t cpSize = std::min(size, mSize);
+                    memcpy(newBuffer, mBuffer, cpSize);
+                    size_t left = newSize - cpSize;
+                    if (left > 0) {
+                        memset((char *) (newBuffer) + cpSize, 0, left);
+                    }
+                } else {
+                    memset(newBuffer, 0, newSize);
+                }
+                free(mBuffer);
+                mBuffer = newBuffer;
+                mActualSize = newSize;
+                mSize = size;
+            } else {
+                mSize = size;
             }
-            if (keepContent) {
-                size_t cpSize = std::min(mSize, size);
-                memcpy(newBuffer, mBuffer, cpSize);
-            }
-            free(mBuffer);
-            mBuffer = newBuffer;
-            mSize = size;
+            return true;
         } else {
             mBuffer = malloc(size);
             if (mBuffer == nullptr) {
                 return false;
             }
-            mSize = size;
+            memset(mBuffer, 0, size);
+            mSize = mActualSize = size;
         }
         return true;
     }
