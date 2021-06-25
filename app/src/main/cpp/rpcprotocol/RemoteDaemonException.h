@@ -6,22 +6,23 @@
 
 #include <exception>
 #include <string>
+#include <cstdint>
 
 /* do not throw it */
 class RemoteDaemonException : public std::exception {
 public:
     RemoteDaemonException();
 
-    RemoteDaemonException(int type, int status, const char *msg = nullptr);
+    RemoteDaemonException(uint32_t type, uint32_t status, const char *msg = nullptr);
 
-    RemoteDaemonException(int type, int status, const std::string &msg);
+    RemoteDaemonException(uint32_t type, uint32_t status, const std::string &msg);
 
     ~RemoteDaemonException() noexcept override;
 
     const char *what() const noexcept override;
 
-    int typeId = 0;
-    int statusCode = 0;
+    uint32_t typeId = 0;
+    uint32_t statusCode = 0;
     std::string message;
 };
 

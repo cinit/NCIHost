@@ -9,7 +9,7 @@ RemoteDaemonException::RemoteDaemonException() = default;
 
 RemoteDaemonException::~RemoteDaemonException() noexcept = default;
 
-RemoteDaemonException::RemoteDaemonException(int type, int status, const char *msg)
+RemoteDaemonException::RemoteDaemonException(uint32_t type, uint32_t status, const char *msg)
         : typeId(type), statusCode(status) {
     std::ostringstream s;
     s << type << ":" << status;
@@ -19,7 +19,7 @@ RemoteDaemonException::RemoteDaemonException(int type, int status, const char *m
     message = s.str();
 }
 
-RemoteDaemonException::RemoteDaemonException(int type, int status, const std::string &msg)
+RemoteDaemonException::RemoteDaemonException(uint32_t type, uint32_t status, const std::string &msg)
         : typeId(type), statusCode(status) {
     std::ostringstream s;
     s << type << ":" << status;
