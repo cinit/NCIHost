@@ -24,12 +24,12 @@ public:
 
     ~SharedBuffer();
 
-    [[nodiscard]] size_t size() const;
+    [[nodiscard]] size_t size() const noexcept;
 
-    [[nodiscard]] void *get() const;
+    [[nodiscard]] void *get() const noexcept;
 
     template<class T>
-    [[nodiscard]] const T *at(size_t s) const {
+    [[nodiscard]] const T *at(size_t s) const noexcept {
         if (s + sizeof(T) > s) {
             return nullptr;
         } else {
@@ -38,7 +38,7 @@ public:
     }
 
     template<class T>
-    [[nodiscard]] T *at(size_t s) {
+    [[nodiscard]] T *at(size_t s) noexcept {
         if (s + sizeof(T) > s) {
             return nullptr;
         } else {
@@ -46,9 +46,9 @@ public:
         }
     }
 
-    [[nodiscard]] bool ensureCapacity(size_t size);
+    [[nodiscard]] bool ensureCapacity(size_t size) noexcept;
 
-    [[nodiscard]] bool resetSize(size_t size, bool keepContent = true);
+    [[nodiscard]] bool resetSize(size_t size, bool keepContent = true) noexcept;
 
 private:
     std::shared_ptr<SharedBufferImpl> pImpl;

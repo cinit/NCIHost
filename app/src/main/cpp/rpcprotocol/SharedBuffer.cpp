@@ -90,7 +90,7 @@ SharedBuffer::SharedBuffer(const SharedBuffer &o) = default;
 
 SharedBuffer::~SharedBuffer() = default;
 
-size_t SharedBuffer::size() const {
+size_t SharedBuffer::size() const noexcept {
     const SharedBufferImpl *p = pImpl.get();
     if (p == nullptr) {
         return 0;
@@ -99,7 +99,7 @@ size_t SharedBuffer::size() const {
     }
 }
 
-void *SharedBuffer::get() const {
+void *SharedBuffer::get() const noexcept {
     const SharedBufferImpl *p = pImpl.get();
     if (p == nullptr) {
         return nullptr;
@@ -108,7 +108,7 @@ void *SharedBuffer::get() const {
     }
 }
 
-bool SharedBuffer::ensureCapacity(size_t size) {
+bool SharedBuffer::ensureCapacity(size_t size) noexcept {
     SharedBufferImpl *p = pImpl.get();
     if (p == nullptr) {
         p = new SharedBufferImpl();
@@ -123,7 +123,7 @@ bool SharedBuffer::ensureCapacity(size_t size) {
     }
 }
 
-bool SharedBuffer::resetSize(size_t size, bool keepContent) {
+bool SharedBuffer::resetSize(size_t size, bool keepContent) noexcept {
     SharedBufferImpl *p = pImpl.get();
     if (p == nullptr) {
         p = new SharedBufferImpl();
