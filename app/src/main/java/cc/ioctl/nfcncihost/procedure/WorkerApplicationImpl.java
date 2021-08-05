@@ -6,8 +6,8 @@ import android.util.Log;
 import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
-public class DaemonApplicationImpl extends BaseApplicationImpl {
-    private static final String TAG = "DaemonApplicationImpl";
+public class WorkerApplicationImpl extends BaseApplicationImpl {
+    private static final String TAG = "WorkerApplicationImpl";
     final Object mNativeLock = new Object();
 
     @Override
@@ -25,13 +25,13 @@ public class DaemonApplicationImpl extends BaseApplicationImpl {
         }
     }
 
-    public static DaemonApplicationImpl getInstance() {
+    public static WorkerApplicationImpl getInstance() {
         Application app = BaseApplicationImpl.sApplication;
         if (app == null) {
             throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
         }
-        if (app instanceof DaemonApplicationImpl) {
-            return (DaemonApplicationImpl) app;
+        if (app instanceof WorkerApplicationImpl) {
+            return (WorkerApplicationImpl) app;
         } else {
             throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
         }

@@ -50,7 +50,7 @@ public class IpcNativeHandler {
     }
 
     private static void checkProcess() {
-        if (!BaseApplicationImpl.isDaemonProcess()) {
+        if (!BaseApplicationImpl.isServiceProcess()) {
             throw new IllegalStateException("only daemon process may access IpcNativeHandler");
         }
     }

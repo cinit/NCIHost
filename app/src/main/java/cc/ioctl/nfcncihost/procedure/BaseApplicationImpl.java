@@ -12,7 +12,7 @@ public abstract class BaseApplicationImpl extends Application {
 
     protected static BaseApplicationImpl sApplication;
     private static volatile String sProcName = null;
-    private static final String PROC_SUFFIX_DAEMON = ":daemon";
+    private static final String PROC_SUFFIX_DAEMON = ":service";
     private static final String TAG = "BaseApplicationImpl";
 
     public void attachToContextImpl(Context base) {
@@ -37,7 +37,7 @@ public abstract class BaseApplicationImpl extends Application {
         return false;
     }
 
-    public static boolean isDaemonProcess() {
+    public static boolean isServiceProcess() {
         return getProcessName().endsWith(PROC_SUFFIX_DAEMON);
     }
 

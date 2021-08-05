@@ -58,8 +58,8 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
         }
         if (isMainProcess()) {
             mDelegate = new MainApplicationImpl();
-        } else if (isDaemonProcess()) {
-            mDelegate = new DaemonApplicationImpl();
+        } else if (isServiceProcess()) {
+            mDelegate = new WorkerApplicationImpl();
         }
         if (mDelegate != null) {
             mDelegate.attachToContextImpl(super.getBaseContext());

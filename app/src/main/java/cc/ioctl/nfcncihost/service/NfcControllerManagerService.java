@@ -11,7 +11,7 @@ import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcncihost.ipc.INfcControllerManager;
 import cc.ioctl.nfcncihost.ipc.NfcControllerManager;
 import cc.ioctl.nfcncihost.ipc.NfcOperatingMode;
-import cc.ioctl.nfcncihost.procedure.DaemonApplicationImpl;
+import cc.ioctl.nfcncihost.procedure.WorkerApplicationImpl;
 
 public class NfcControllerManagerService extends Service {
 
@@ -63,7 +63,7 @@ public class NfcControllerManagerService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "onCreate");
-        DaemonApplicationImpl.getInstance().initIpcSocketAsync();
+        WorkerApplicationImpl.getInstance().initIpcSocketAsync();
     }
 
     @Override
