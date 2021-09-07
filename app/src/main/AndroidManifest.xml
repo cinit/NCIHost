@@ -88,6 +88,7 @@
 
         <service
             android:name=".service.CardEmuCtrlSvc"
+            android:exported="true"
             android:label="@string/name_emu_pwm_ctrl_svc"
             android:permission="android.permission.BIND_CONTROLS"
             android:process=":service">
@@ -114,6 +115,7 @@
 
         <receiver
             android:name=".service.BootCompleteReceiver"
+            android:exported="true"
             android:process=":service">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
