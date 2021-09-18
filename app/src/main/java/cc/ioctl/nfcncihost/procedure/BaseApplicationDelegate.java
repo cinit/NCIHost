@@ -78,8 +78,8 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
      *
      * @param app new Application that has been attached to base context
      */
-    @SuppressWarnings("JavadocReference")
-    @SuppressLint("PrivateApi")
+    @SuppressWarnings({"JavadocReference", "JavaReflectionMemberAccess"})
+    @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
     private static void resetActivityThreadApplication(@NonNull Application app) {
         Context ctxImpl = getContextImpl(app);
         try {
@@ -104,7 +104,7 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
             Field fLoadedApk = Application.class.getDeclaredField("mLoadedApk");
             fLoadedApk.setAccessible(true);
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
+            throw (IllegalAccessError) new IllegalAccessError("resetActivityThreadApplication failed").initCause(e);
         }
     }
 

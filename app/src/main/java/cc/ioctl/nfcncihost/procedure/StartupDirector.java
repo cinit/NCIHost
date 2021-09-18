@@ -12,6 +12,7 @@ import cc.ioctl.nfcncihost.activity.BaseActivity;
 import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
+@SuppressWarnings("MapOrSetKeyShouldOverrideHashCodeEquals")
 public class StartupDirector implements Runnable {
     private static final String TAG = "StartupDirector";
 
@@ -30,6 +31,7 @@ public class StartupDirector implements Runnable {
         return director;
     }
 
+    @SuppressWarnings("unused")
     public boolean onActivityCreate(Activity activity, Intent intent) {
         if (mForegroundStartupFinished || mDisableInterception) {
             return false;

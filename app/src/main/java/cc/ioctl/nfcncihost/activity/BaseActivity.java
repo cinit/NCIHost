@@ -1,5 +1,6 @@
 package cc.ioctl.nfcncihost.activity;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -39,6 +40,9 @@ public class BaseActivity extends AppActivity {
         return true;
     }
 
+    /**
+     * @deprecated use {@link #doOnCreate(Bundle)} instead.
+     */
     @Deprecated
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -56,6 +60,7 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    @SuppressWarnings("unused")
     protected boolean doOnCreate(@Nullable Bundle savedInstanceState) {
         this.mOnCreateBundle = null;
         if (isTranslucentSystemUi()) {
@@ -64,6 +69,9 @@ public class BaseActivity extends AppActivity {
         return true;
     }
 
+    /**
+     * @deprecated use {@link #doOnPostCreate(Bundle)} instead.
+     */
     @Override
     @Deprecated
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
@@ -75,6 +83,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnRestoreInstanceState(Bundle)} instead.
+     */
     @Override
     @Deprecated
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
@@ -86,6 +97,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnSaveInstanceState(Bundle)} instead.
+     */
     @Override
     @Deprecated
     protected void onSaveInstanceState(@NonNull Bundle outState) {
@@ -95,6 +109,10 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+
+    /**
+     * @deprecated use {@link #doOnDestroy()} instead.
+     */
     @Override
     @Deprecated
     protected void onDestroy() {
@@ -145,7 +163,8 @@ public class BaseActivity extends AppActivity {
         }
     }
 
-    private static final Field fStateSaved, fStopped;
+    private static final Field fStateSaved;
+    private static final Field fStopped;
 
     static {
         Class<?> clz = androidx.fragment.app.FragmentManager.class;
@@ -155,7 +174,8 @@ public class BaseActivity extends AppActivity {
             fStopped = clz.getDeclaredField("mStopped");
             fStopped.setAccessible(true);
         } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            // we can hardly do anything here, we just want to die die die...
+            throw new NoSuchFieldError(e.getMessage());
         }
     }
 
@@ -165,9 +185,13 @@ public class BaseActivity extends AppActivity {
             fStopped.set(fragmentMgr, false);
             fStateSaved.set(fragmentMgr, false);
         } catch (IllegalAccessException ignored) {
+            // should not happen
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnNewIntent(Intent)} instead.
+     */
     @Override
     @Deprecated
     protected void onNewIntent(Intent intent) {
@@ -179,6 +203,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnActivityResult(int, int, Intent)} instead.
+     */
     @Override
     @Deprecated
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -193,6 +220,9 @@ public class BaseActivity extends AppActivity {
         super.onActivityResult(requestCode, resultCode, intent);
     }
 
+    /**
+     * @deprecated use {@link #doOnStart()} instead.
+     */
     @Override
     @Deprecated
     protected void onStart() {
@@ -204,6 +234,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doDispatchKeyEvent(KeyEvent)} instead.
+     */
     @Override
     @Deprecated
     public boolean dispatchKeyEvent(KeyEvent event) {
@@ -217,6 +250,9 @@ public class BaseActivity extends AppActivity {
         return super.dispatchKeyEvent(event);
     }
 
+    /**
+     * @deprecated use {@link #doOnStop()} instead.
+     */
     @Override
     @Deprecated
     protected void onStop() {
@@ -228,8 +264,13 @@ public class BaseActivity extends AppActivity {
         super.onStop();
     }
 
+    /**
+     * @deprecated use {@link #doOnResume()} instead.
+     */
     @Override
     @Deprecated
+    @SuppressWarnings("JavaReflectionMemberAccess")
+    @SuppressLint("DiscouragedPrivateApi")
     protected void onResume() {
         try {
             super.onResume();
@@ -238,9 +279,12 @@ public class BaseActivity extends AppActivity {
                 Field mCalled = Activity.class.getDeclaredField("mCalled");
                 mCalled.setAccessible(true);
                 mCalled.set(this, true);
-            } catch (Exception ignored) {
+            } catch (ReflectiveOperationException ignored) {
+                throw (NoSuchFieldError) new NoSuchFieldError("set Activity.mCalled failed while super.onResume() throw IllegalArgumentException")
+                        .initCause(e);
             }
-        } catch (NullPointerException e6) {
+        } catch (NullPointerException ignored) {
+            // i don't know
         }
         this.mIsResume = true;
         if (!this.mIsSplashing) {
@@ -248,6 +292,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnPostResume()} instead.
+     */
     @Override
     @Deprecated
     protected void onPostResume() {
@@ -257,16 +304,21 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnConfigurationChanged(Configuration)} instead.
+     */
     @Override
     @Deprecated
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         if (!this.mIsSplashing) {
             doOnConfigurationChanged(newConfig);
         }
         super.onConfigurationChanged(newConfig);
     }
 
-
+    /**
+     * @deprecated use {@link #doOnWindowFocusChanged(boolean)} instead.
+     */
     @Override
     @Deprecated
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -278,6 +330,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnBackPressed()} instead.
+     */
     @Override
     @Deprecated
     public void onBackPressed() {
@@ -286,6 +341,9 @@ public class BaseActivity extends AppActivity {
         }
     }
 
+    /**
+     * @deprecated use {@link #doOnKeyDown(int, KeyEvent)} instead.
+     */
     @Override
     @Deprecated
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -295,6 +353,9 @@ public class BaseActivity extends AppActivity {
         return doOnKeyDown(keyCode, event);
     }
 
+    /**
+     * @deprecated use {@link #doOnUserLeaveHint()} instead.
+     */
     @Override
     @Deprecated
     protected void onUserLeaveHint() {
@@ -304,6 +365,9 @@ public class BaseActivity extends AppActivity {
         super.onUserLeaveHint();
     }
 
+    /**
+     * @deprecated use {@link #doOnPause()} instead.
+     */
     @Override
     @Deprecated
     protected void onPause() {
@@ -314,42 +378,53 @@ public class BaseActivity extends AppActivity {
         super.onPause();
     }
 
+    @SuppressWarnings("unused")
     protected void doOnPostCreate(Bundle bundle) {
         this.mPostCreateBundle = null;
     }
 
+    @SuppressWarnings("unused")
     protected void doOnRestoreInstanceState(Bundle bundle) {
+        // to implement
     }
 
     protected void doOnSaveInstanceState(Bundle outState) {
+        // to implement
     }
 
     protected void doOnStart() {
+        // to implement
     }
 
+    @SuppressWarnings("unused")
     protected void doOnNewIntent(Intent intent) {
+        // to implement
     }
 
+    @SuppressWarnings("unused")
     protected void doOnActivityResult(int requestCode, int resultCode, Intent intent) {
+        // to implement
     }
 
     protected void doOnResume() {
+        // to implement
     }
 
     protected void doOnPostResume() {
+        // to implement
     }
 
+    @SuppressWarnings("unused")
     protected void doOnWindowFocusChanged(boolean hasFocus) {
+        // to implement
     }
 
-    protected void doOnConfigurationChanged(Configuration newConfig) {
+    @SuppressWarnings("unused")
+    protected void doOnConfigurationChanged(Configuration newConfig) {// to implement
     }
 
     protected void doOnBackPressed() {
-        try {
-            super.onBackPressed();
-        } catch (Throwable th) {
-        }
+        super.onBackPressed();
     }
 
     protected boolean doOnKeyDown(int keyCode, KeyEvent event) {
@@ -357,15 +432,19 @@ public class BaseActivity extends AppActivity {
     }
 
     protected void doOnUserLeaveHint() {
+        // to implement
     }
 
     protected void doOnPause() {
+        // to implement
     }
 
     protected void doOnStop() {
+        // to implement
     }
 
     protected void doOnDestroy() {
+        // to implement
     }
 
     protected final boolean isResume() {
@@ -373,6 +452,7 @@ public class BaseActivity extends AppActivity {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void startActivityForResult(Intent intent, int requestCode, @Nullable Bundle options) {
         if (this instanceof SplashActivity) {
             StartupDirector director = MainApplicationImpl.sDirector;
