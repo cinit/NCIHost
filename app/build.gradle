@@ -59,7 +59,8 @@ android {
     }
 
     packagingOptions {
-        doNotStrip "*.so"
+        doNotStrip "*/*/libncihostd.so"
+        doNotStrip "*/*/libnxphalpatch.so"
     }
 
     buildFeatures {
