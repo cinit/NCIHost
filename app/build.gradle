@@ -2,6 +2,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
+String BUILD_UUID = UUID.randomUUID().toString()
+println "Current build ID is " + BUILD_UUID
+
 android {
     compileSdkVersion 31
     buildToolsVersion "31.0.0"
@@ -12,6 +15,7 @@ android {
         targetSdkVersion 31
         versionCode 1
         versionName "1.0" + (getGitHeadRefsSuffix.call() as String)
+        buildConfigField "String", "BUILD_UUID", '"' + BUILD_UUID + '"'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -20,7 +24,7 @@ android {
         }
         externalNativeBuild {
             cmake {
-                arguments "-DNCI_HOST_VERSION=" + versionName, "-DANDROID_PLATFORM=android-21"
+                arguments "-DNCI_HOST_VERSION=" + versionName, "-DNCI_HOST_BUILD_UUID=" + BUILD_UUID, "-DANDROID_PLATFORM=android-21"
             }
         }
 

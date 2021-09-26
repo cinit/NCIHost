@@ -22,10 +22,12 @@
 __attribute__((used, section("NCI_HOST_VERSION")))
 const char g_nci_host_version[] = NCI_HOST_VERSION;
 
+__attribute__((used, section("NCI_HOST_BUILD_UUID")))
+const char g_nci_host_build_uuid[] = NCI_HOST_BUILD_UUID;
+
 static void printVersionAndExit() {
-    puts("NCI Host daemon libncihostd.so");
-    printf("Version ");
-    puts(g_nci_host_version);
+    printf("NCI Host daemon libncihostd.so\n");
+    printf("Version %s, BuildID %s\n", g_nci_host_version, g_nci_host_build_uuid);
     _exit(1);
 }
 
