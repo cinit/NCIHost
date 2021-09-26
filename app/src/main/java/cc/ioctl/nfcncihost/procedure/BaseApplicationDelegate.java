@@ -45,6 +45,7 @@ import java.lang.reflect.Field;
 public class BaseApplicationDelegate extends BaseApplicationImpl {
     private BaseApplicationImpl mDelegate = null;
 
+    @SuppressLint("PrivateApi")
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,6 +56,12 @@ public class BaseApplicationDelegate extends BaseApplicationImpl {
             } catch (NoClassDefFoundError e) {
                 Log.e("HiddenApiBypass", "failed, SDK=" + Build.VERSION.SDK_INT, e);
             }
+        }
+        try {
+            Class.forName("com.android.tools.r8.GeneratedOutlineSupport");
+            throw new AssertionError("please disable R8 method outline optimization");
+        } catch (ClassNotFoundException ignored) {
+            // everything is ok
         }
         if (isMainProcess()) {
             mDelegate = new MainApplicationImpl();
