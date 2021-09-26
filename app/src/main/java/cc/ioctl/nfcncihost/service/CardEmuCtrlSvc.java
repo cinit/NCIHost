@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import cc.ioctl.nfcncihost.procedure.BaseApplicationDelegate;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
+@SuppressWarnings("Since15")
 @RequiresApi(api = Build.VERSION_CODES.R)
 public class CardEmuCtrlSvc extends ControlsProviderService {
 
