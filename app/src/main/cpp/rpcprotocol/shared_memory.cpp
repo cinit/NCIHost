@@ -40,19 +40,21 @@ struct ashmem_pin {
 static int memfd_create_region_post_q(const char *name, size_t size) {
     // This code needs to build on old API levels, so we can't use the libc
     // wrapper.
-    int fd(syscall(__NR_memfd_create, name, MFD_CLOEXEC | MFD_ALLOW_SEALING));
+    int fd = (int) syscall(__NR_memfd_create, name, MFD_CLOEXEC | MFD_ALLOW_SEALING);
     if (fd == -1) {
-        return -1;
+        return -errno;
     }
     if (ftruncate(fd, size) == -1) {
+        int orig = errno;
         close(fd);
-        return -1;
+        errno = orig;
+        return -orig;
     }
     return fd;
 }
 
 static bool testMemfdSupport() {
-    int fd = syscall(__NR_memfd_create, "test_support_memfd", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    int fd = (int) syscall(__NR_memfd_create, "test_support_memfd", MFD_CLOEXEC | MFD_ALLOW_SEALING);
     if (fd == -1) {
         return false;
     }
