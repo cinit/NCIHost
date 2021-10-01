@@ -20,7 +20,7 @@ public:
 
     SharedBuffer(const SharedBuffer &o);
 
-    SharedBuffer &operator=(const SharedBuffer &o) = delete;
+    SharedBuffer &operator=(const SharedBuffer &o);
 
     ~SharedBuffer();
 
@@ -30,7 +30,7 @@ public:
 
     template<class T>
     [[nodiscard]] const T *at(size_t s) const noexcept {
-        if (s + sizeof(T) > s) {
+        if (s + sizeof(T) > size()) {
             return nullptr;
         } else {
             return (const T *) (((const char *) get()) + s);
@@ -39,7 +39,7 @@ public:
 
     template<class T>
     [[nodiscard]] T *at(size_t s) noexcept {
-        if (s + sizeof(T) > s) {
+        if (s + sizeof(T) > size()) {
             return nullptr;
         } else {
             return (T *) (((char *) get()) + s);

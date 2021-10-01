@@ -88,6 +88,8 @@ SharedBuffer::SharedBuffer() = default;
 
 SharedBuffer::SharedBuffer(const SharedBuffer &o) = default;
 
+SharedBuffer &SharedBuffer::operator=(const SharedBuffer &o) = default;
+
 SharedBuffer::~SharedBuffer() = default;
 
 size_t SharedBuffer::size() const noexcept {
