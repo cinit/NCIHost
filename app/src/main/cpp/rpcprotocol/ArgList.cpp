@@ -68,7 +68,7 @@ SharedBuffer ArgList::Builder::build() {
     SharedBuffer buffer;
     int regStart = 8 + (mCount + 7) / 8 * 8;
     int poolStart = regStart + 8 * mCount;
-    buffer.ensureCapacity(poolStart);
+    if (!buffer.ensureCapacity(poolStart)) { throw std::bad_alloc(); }
     *buffer.at<uint32_t>(4) = mCount;
     size_t pos = poolStart;
     for (int i = 0; i < mCount; i++) {
@@ -80,14 +80,14 @@ SharedBuffer ArgList::Builder::build() {
             if (size == 0 || argbuf->get() == nullptr) {
                 *buffer.at<uint32_t>(regStart + i * 8) = (uint32_t) pos;
                 *buffer.at<uint32_t>(regStart + i * 8 + 4) = 0;
-                buffer.ensureCapacity(pos + 8);
+                if (!buffer.ensureCapacity(pos + 8)) { throw std::bad_alloc(); }
                 pos += 8;
             } else {
                 *buffer.at<uint32_t>(regStart + i * 8) = (uint32_t) pos;
                 *buffer.at<uint32_t>(regStart + i * 8 + 4) =
                         mArgInlineVars.containsKey(i) ? ((uint32_t) *mArgInlineVars.get(i)) : ((uint32_t) size);
                 size_t allocSize = (size + 7) / 8 * 8;
-                buffer.ensureCapacity(pos + allocSize);
+                if (!buffer.ensureCapacity(pos + allocSize)) { throw std::bad_alloc(); }
                 memcpy(buffer.at<uchar>(pos), argbuf->get(), size);
                 pos += allocSize;
             }
