@@ -117,29 +117,9 @@ public:
         }
 
     public:
-        ArgList::Builder &push(const std::string &value) {
-            const char *buffer = nullptr;
-            size_t size = 0;
-            extractStringBuffer(value, &buffer, &size);
-            if (buffer == nullptr) {
-                pushRawInline(Types::TYPE_STRING, 0);
-            } else {
-                pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
-            }
-            return *this;
-        }
+        ArgList::Builder &push(const std::string &value);
 
-        ArgList::Builder &push(const char *value) {
-            const char *buffer = nullptr;
-            size_t size = 0;
-            extractStringBuffer(value, &buffer, &size);
-            if (buffer == nullptr) {
-                pushRawInline(Types::TYPE_STRING, 0);
-            } else {
-                pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
-            }
-            return *this;
-        }
+        ArgList::Builder &push(const char *value);
 
         template<class T>
         ArgList::Builder &push(T value) {
@@ -156,22 +136,9 @@ public:
                 *reinterpret_cast<T *>(&v) = value;
                 pushRawInline(Types::TYPE_DOUBLE, v);
             } else {
-                uchar sign = std::is_unsigned<T>() ? Types::F_UNSIGNED : Types::F_SIGNED;
-                uchar len;
-                static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8, "size error");
-                if (sizeof(T) == 1) {
-                    len = Types::L_8;
-                } else if (sizeof(T) == 2) {
-                    len = Types::L_16;
-                } else if (sizeof(T) == 4) {
-                    len = Types::L_32;
-                } else {
-                    len = Types::L_64;
-                }
-                uchar type = Types::T_NUMBER | len | sign;
                 uint64_t v = 0;
                 *reinterpret_cast<T *>(&v) = value;
-                pushRawInline(type, v);
+                pushRawInline(Types::getTypeId<T>(), v);
             }
             return *this;
         }

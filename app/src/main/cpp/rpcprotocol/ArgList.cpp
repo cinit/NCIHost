@@ -40,6 +40,30 @@ void ArgList::Builder::pushRawBuffer(uchar type, const void *buffer, size_t size
     mCount++;
 }
 
+ArgList::Builder &ArgList::Builder::push(const string &value) {
+    const char *buffer = nullptr;
+    size_t size = 0;
+    extractStringBuffer(value, &buffer, &size);
+    if (buffer == nullptr) {
+        pushRawInline(Types::TYPE_STRING, 0);
+    } else {
+        pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
+    }
+    return *this;
+}
+
+ArgList::Builder &ArgList::Builder::push(const char *value) {
+    const char *buffer = nullptr;
+    size_t size = 0;
+    extractStringBuffer(value, &buffer, &size);
+    if (buffer == nullptr) {
+        pushRawInline(Types::TYPE_STRING, 0);
+    } else {
+        pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
+    }
+    return *this;
+}
+
 SharedBuffer ArgList::Builder::build() {
     SharedBuffer buffer;
     int regStart = 8 + (mCount + 7) / 8 * 8;
