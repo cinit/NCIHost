@@ -18,11 +18,29 @@ class ArgList {
 public:
     using uchar = unsigned char;
 
+    /**
+     * uchar type
+     * | -7- + -6- + -5- + -4- + -3- + -2- + -1- + -0- |
+     *   [7] RFU
+     *        [6] is array
+     *              [5 ... 4] type: map(3), number(2), string(1), raw(0)
+     *              |
+     *              + for type number(2)
+     *              |           [3 ... 2] number length 64/32/16/8=3/2/1/0
+     *              |                        [1] is bool or float or double
+     *              |                              [0] signed or unsigned
+     *              |
+     *              + for type string(1)
+     *              |           [3 ... 2] encoding UCS-32/UTF-16/UTF-8=2/1/0
+     *              |                     currently only support UTF-8
+     *              + for type raw(0)
+     *              |                               [0] must be 1
+     */
     class Types {
     private:
         constexpr static uchar T_ARRAY = 1u << 6u;
         constexpr static uchar T_STRING = 1u << 4u;
-        constexpr static uchar T_RAW = 2u << 4u;
+        constexpr static uchar T_RAW = 0u << 4u | 1u;
         constexpr static uchar T_MAP = 3u << 4u;
         constexpr static uchar L_FLOAT = 2u << 2u;
         constexpr static uchar L_DOUBLE = 3u << 2u;
@@ -35,7 +53,7 @@ public:
         constexpr static uchar L_16 = 1u << 2u;
         constexpr static uchar L_32 = 2u << 2u;
         constexpr static uchar L_64 = 3u << 2u;
-        constexpr static uchar T_NUMBER = 0u << 4u;
+        constexpr static uchar T_NUMBER = 2u << 4u;
         constexpr static uchar MASK_ARRAY = T_ARRAY;
         constexpr static uchar TYPE_BOOLEAN = T_NUMBER | L_8 | F_BOOLEAN;
         constexpr static uchar TYPE_FLOAT = T_NUMBER | L_FLOAT | F_DECIMAL;
@@ -43,6 +61,7 @@ public:
         constexpr static uchar TYPE_STRING = T_STRING;
         constexpr static uchar TYPE_MAP = T_MAP;
         constexpr static uchar TYPE_RAW = T_RAW;
+        constexpr static uchar TYPE_INVALID = 0u;
 
         template<typename T>
         constexpr static uchar getTypeId() {
@@ -71,12 +90,24 @@ public:
                 }
                 return T_NUMBER | len | sign;
             } else {
-                return 0xFF;
+                return 0;
             }
         }
 
         template<class T>
         constexpr static uchar getTypeId(T) { return getTypeId<T>(); }
+
+        constexpr static bool isDouble(uchar type) {
+            return type == TYPE_DOUBLE;
+        }
+
+        constexpr static bool isFloat(uchar type) {
+            return type == TYPE_FLOAT;
+        }
+
+        constexpr static bool isString(uchar type) {
+            return type == TYPE_STRING;
+        }
     };
 
     class Builder {
@@ -225,6 +256,13 @@ public:
         }
         *out = std::string(reinterpret_cast<const char *>(mBuffer ) + offset, len);
         return true;
+    }
+
+    [[nodiscard]] inline uchar getType(int index) const {
+        if (!mIsValid || index < 0 || index >= mCount) {
+            return Types::TYPE_INVALID;
+        }
+        return *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index);
     }
 };
 
