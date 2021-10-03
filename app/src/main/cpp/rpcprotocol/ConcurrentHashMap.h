@@ -53,16 +53,16 @@ public:
     template<typename AnyMap>
     explicit ConcurrentHashMap(const AnyMap &map) {
         const auto entries = map.entrySet();
-        for (const auto &entry:entries) {
-            backend.insert_or_assign(entry->getKey(), std::shared_ptr<Entry>
-                    (new Entry(entry->getKey(), *entry->getValue())));
+        for (const auto &entry: entries) {
+            backend.insert_or_assign(entry->getKey(), std::make_shared<Entry>
+                    (entry->getKey(), *entry->getValue()));
         }
     }
 
     [[nodiscard]] std::set<std::shared_ptr<Entry>> entrySet() const {
         std::scoped_lock<std::mutex> _(mutex);
         std::set<std::shared_ptr<Entry>> copy = std::set<std::shared_ptr<Entry>>();
-        for (const auto &entry:backend) {
+        for (const auto &entry: backend) {
             copy.emplace(entry.second);
         }
         return copy;
@@ -94,14 +94,14 @@ public:
 
     template<typename... Args>
     void put(const K &key, Args &&...args) {
-        auto entry = std::shared_ptr<Entry>(new Entry(key, V(std::forward<Args>(args)...)));
+        auto entry = std::make_shared<Entry>(key, V(std::forward<Args>(args)...));
         std::scoped_lock<std::mutex> _(mutex);
         backend.insert_or_assign(key, entry);
     }
 
     template<typename... Args>
     bool putIfAbsent(const K &key, Args &&...args) {
-        auto entry = std::shared_ptr<Entry>(new Entry(key, V(std::forward<Args>(args)...)));
+        auto entry = std::make_shared<Entry>(key, V(std::forward<Args>(args)...));
         std::scoped_lock<std::mutex> _(mutex);
         auto result = backend.try_emplace(key, entry);
         return result.second;
@@ -121,9 +121,9 @@ public:
     void putAll(const AnyMap &map) {
         const auto entries = map.entrySet();
         std::scoped_lock<std::mutex> _(mutex);
-        for (const auto &entry:entries) {
-            backend.insert_or_assign(entry->getKey(), std::shared_ptr<Entry>
-                    (new Entry(entry->getKey(), *entry->getValue())));
+        for (const auto &entry: entries) {
+            backend.insert_or_assign(entry->getKey(), std::make_shared<Entry>
+                    (entry->getKey(), *entry->getValue()));
         }
     }
 };
