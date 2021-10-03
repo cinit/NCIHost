@@ -22,7 +22,7 @@ void ArgList::Builder::pushRawInlineArray(uchar type, const uint64_t *values, in
     mArgInlineVars.put(mCount, count);
     SharedBuffer buffer;
     if (!buffer.ensureCapacity(count * 8)) {
-        abort();
+        throw std::bad_alloc();
     }
     memcpy(buffer.get(), values, count * 8);
     mCount++;
@@ -33,7 +33,7 @@ void ArgList::Builder::pushRawBuffer(uchar type, const void *buffer, size_t size
     mArgInlineVars.put(mCount, size);
     SharedBuffer sb;
     if (size != 0 && !sb.ensureCapacity(size)) {
-        abort();
+        throw std::bad_alloc();
     }
     memcpy(sb.get(), buffer, size);
     mArgBuffers.put(mCount, sb);
