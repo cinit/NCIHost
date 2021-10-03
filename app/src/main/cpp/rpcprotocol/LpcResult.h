@@ -2,8 +2,8 @@
 // Created by kinit on 2021-10-02.
 //
 
-#ifndef RPCPROTOCOL_IPCRESULT_H
-#define RPCPROTOCOL_IPCRESULT_H
+#ifndef RPCPROTOCOL_LPCRESULT_H
+#define RPCPROTOCOL_LPCRESULT_H
 
 #include "cstdint"
 #include "string"
@@ -11,7 +11,7 @@
 #include "ArgList.h"
 #include "RemoteException.h"
 
-class IpcResult {
+class LpcResult {
 private:
     bool mIsValid = false;
     bool mHasException = false;
@@ -73,4 +73,4 @@ public:
 };
 
 
-#endif //RPCPROTOCOL_IPCRESULT_H
+#endif //RPCPROTOCOL_LPCRESULT_H
