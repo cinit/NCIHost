@@ -8,6 +8,9 @@
 #include <cstddef>
 #include <algorithm>
 #include <cstring>
+#include <string>
+#include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include "fcntl.h"
 #include "sys/stat.h"
@@ -16,6 +19,7 @@
 #include "sys/un.h"
 #include "sys/socket.h"
 #include "common.h"
+#include "pthread.h"
 #include "daemon.h"
 
 using namespace std;
@@ -26,6 +30,8 @@ typedef struct {
 } IpcSocketMeta;
 
 static_assert(sizeof(IpcSocketMeta) == 112, "IpcSocketMeta size error");
+
+void startRssWatchdog();
 
 bool doConnect(IpcSocketMeta &target, int uid) {
     sockaddr_un targetAddr = {};
@@ -67,6 +73,7 @@ void startDaemon(int uid, int ipcFileFd, int inotifyFd) {
     char inotifyBuffer[sizeof(struct inotify_event) + NAME_MAX + 1] = {};
     inotify_event &inotifyEvent = *((inotify_event *) &inotifyBuffer);
     char buf64[64];
+    startRssWatchdog();
     do {
         lseek(ipcFileFd, 0, SEEK_SET);
         IpcSocketMeta meta = {};
@@ -96,4 +103,39 @@ void startDaemon(int uid, int ipcFileFd, int inotifyFd) {
         printf("try reconnect\n");
         usleep(300000);
     } while (true);
+}
+
+static void *rss_watchdog_procedure(void *) {
+    using std::ios_base;
+    using std::ifstream;
+    using std::string;
+    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+    while (1) {
+        ifstream stat_stream("/proc/self/stat", ios_base::in);
+        // dummy vars for leading entries in stat that we don't care about
+        string pid, comm, state, ppid, pgrp, session, tty_nr;
+        string tpgid, flags, minflt, cminflt, majflt, cmajflt;
+        string utime, stime, cutime, cstime, priority, nice;
+        string O, itrealvalue, starttime;
+        // the two fields we want
+        uint32_t vsize;
+        uint32_t rss;
+        stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
+                    >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
+                    >> utime >> stime >> cutime >> cstime >> priority >> nice
+                    >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
+        stat_stream.close();
+        int resident_set = rss * page_size_kb;
+        printf("rss = %dK\n", resident_set);
+        if (resident_set > 64 * 1024) {
+            printf("kill process\n");
+            _exit(3);
+        }
+        usleep(30000);
+    }
+}
+
+void startRssWatchdog() {
+    pthread_t tid;
+    pthread_create(&tid, nullptr, &rss_watchdog_procedure, nullptr);
 }
