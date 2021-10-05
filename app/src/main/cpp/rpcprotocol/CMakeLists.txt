@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_library(rpcprotocol STATIC
         ArgList.cpp rpc_proc.cpp FixedThreadPool.cpp shared_memory.cpp
-        RemoteException.cpp SharedBuffer.cpp IpcProxy.cpp IpcProxy.h LpcResult.cpp LpcResult.h)
+        RemoteException.cpp SharedBuffer.cpp IpcProxy.cpp IpcProxy.h LpcResult.cpp LpcResult.h Log.cpp Log.h)
 
 set_target_properties(rpcprotocol PROPERTIES
         CXX_EXTENSIONS OFF
