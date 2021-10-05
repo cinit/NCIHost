@@ -44,6 +44,7 @@ void FixedThreadPool::execute(const Task &task) {
 
 void FixedThreadPool::run() {
     // every thread will compete to pick up task from the queue to do the task
+    pthread_setname_np(pthread_self(), "pool-worker");
     while (mIsRunning) {
         Task task;
         {
