@@ -41,6 +41,16 @@ public:
         return mSize;
     }
 
+    void reset() noexcept {
+        std::scoped_lock _(mMutex);
+        if (mBuffer != nullptr) {
+            free(mBuffer);
+            mBuffer = nullptr;
+            mSize = 0;
+            mActualSize = 0;
+        }
+    }
+
     [[nodiscard]] bool resetSize(size_t size, bool keepContent) noexcept {
         std::scoped_lock _(mMutex);
         if (size == 0) {
@@ -133,5 +143,12 @@ bool SharedBuffer::resetSize(size_t size, bool keepContent) noexcept {
         return p->resetSize(size, keepContent);
     } else {
         return p->resetSize(size, keepContent);
+    }
+}
+
+void SharedBuffer::reset() noexcept {
+    SharedBufferImpl *p = pImpl.get();
+    if (p != nullptr) {
+        p->reset();
     }
 }

@@ -50,6 +50,8 @@ public:
 
     [[nodiscard]] bool resetSize(size_t size, bool keepContent = true) noexcept;
 
+    void reset() noexcept;
+
 private:
     std::shared_ptr<SharedBufferImpl> pImpl;
 };
