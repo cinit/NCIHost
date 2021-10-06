@@ -28,6 +28,8 @@ public:
 
     [[nodiscard]] void *get() const noexcept;
 
+    [[nodiscard]] SharedBuffer copy() const;
+
     template<class T>
     [[nodiscard]] const T *at(size_t s) const noexcept {
         if (s + sizeof(T) > size()) {
