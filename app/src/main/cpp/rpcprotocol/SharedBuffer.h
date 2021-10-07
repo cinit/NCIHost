@@ -48,7 +48,13 @@ public:
         }
     }
 
-    [[nodiscard]] bool ensureCapacity(size_t size) noexcept;
+    [[nodiscard]] bool ensureCapacity(size_t size, std::nothrow_t) noexcept;
+
+    inline void ensureCapacity(size_t size) {
+        if (size != 0 && !ensureCapacity(size, std::nothrow)) {
+            throw std::bad_alloc();
+        }
+    }
 
     [[nodiscard]] bool resetSize(size_t size, bool keepContent = true) noexcept;
 

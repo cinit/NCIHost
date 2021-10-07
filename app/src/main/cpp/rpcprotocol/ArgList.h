@@ -188,7 +188,7 @@ public:
         template<class T>
         inline ArgList::Builder &operator<<(const T &value) { return push(value); }
 
-        [[nodiscard]] SharedBuffer build();
+        [[nodiscard]] SharedBuffer build() const;
 
         [[nodiscard]] inline int count() const noexcept {
             return mCount;

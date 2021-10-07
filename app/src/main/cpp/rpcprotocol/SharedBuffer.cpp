@@ -123,15 +123,13 @@ void *SharedBuffer::get() const noexcept {
 SharedBuffer SharedBuffer::copy() const {
     SharedBuffer other;
     if (get() != nullptr && size() > 0) {
-        if (!other.ensureCapacity(size())) {
-            throw std::bad_alloc();
-        }
+        other.ensureCapacity(size());
         memcpy(other.get(), get(), size());
     }
     return other;
 }
 
-bool SharedBuffer::ensureCapacity(size_t size) noexcept {
+bool SharedBuffer::ensureCapacity(size_t size, std::nothrow_t) noexcept {
     SharedBufferImpl *p = pImpl.get();
     if (p == nullptr) {
         p = new SharedBufferImpl();

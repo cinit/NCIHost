@@ -21,9 +21,7 @@ void ArgList::Builder::pushRawInlineArray(uchar type, const uint64_t *values, in
     mArgTypes.put(mCount, type);
     mArgInlineVars.put(mCount, count);
     SharedBuffer buffer;
-    if (!buffer.ensureCapacity(count * 8)) {
-        throw std::bad_alloc();
-    }
+    buffer.ensureCapacity(count * 8);
     memcpy(buffer.get(), values, count * 8);
     mCount++;
 }
@@ -32,9 +30,7 @@ void ArgList::Builder::pushRawBuffer(uchar type, const void *buffer, size_t size
     mArgTypes.put(mCount, type);
     mArgInlineVars.put(mCount, size);
     SharedBuffer sb;
-    if (size != 0 && !sb.ensureCapacity(size)) {
-        throw std::bad_alloc();
-    }
+    sb.ensureCapacity(size ? size : 8);
     memcpy(sb.get(), buffer, size);
     mArgBuffers.put(mCount, sb);
     mCount++;
@@ -64,11 +60,11 @@ ArgList::Builder &ArgList::Builder::push(const char *value) {
     return *this;
 }
 
-SharedBuffer ArgList::Builder::build() {
+SharedBuffer ArgList::Builder::build() const {
     SharedBuffer buffer;
     int regStart = 8 + (mCount + 7) / 8 * 8;
     int poolStart = regStart + 8 * mCount;
-    if (!buffer.ensureCapacity(poolStart)) { throw std::bad_alloc(); }
+    buffer.ensureCapacity(poolStart);
     *buffer.at<uint32_t>(4) = mCount;
     size_t pos = poolStart;
     for (int i = 0; i < mCount; i++) {
@@ -80,14 +76,14 @@ SharedBuffer ArgList::Builder::build() {
             if (size == 0 || argbuf->get() == nullptr) {
                 *buffer.at<uint32_t>(regStart + i * 8) = (uint32_t) pos;
                 *buffer.at<uint32_t>(regStart + i * 8 + 4) = 0;
-                if (!buffer.ensureCapacity(pos + 8)) { throw std::bad_alloc(); }
+                buffer.ensureCapacity(pos + 8);
                 pos += 8;
             } else {
                 *buffer.at<uint32_t>(regStart + i * 8) = (uint32_t) pos;
                 *buffer.at<uint32_t>(regStart + i * 8 + 4) =
                         mArgInlineVars.containsKey(i) ? ((uint32_t) *mArgInlineVars.get(i)) : ((uint32_t) size);
                 size_t allocSize = (size + 7) / 8 * 8;
-                if (!buffer.ensureCapacity(pos + allocSize)) { throw std::bad_alloc(); }
+                buffer.ensureCapacity(pos + allocSize);
                 memcpy(buffer.at<uchar>(pos), argbuf->get(), size);
                 pos += allocSize;
             }
