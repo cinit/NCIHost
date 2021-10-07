@@ -203,7 +203,7 @@ void IpcProxy::runIpcLooper() {
                 }
             } else {
                 LOGE("epoll_wait return ev=%d fd=%d %s", event.events, event.data.fd, mName.c_str());
-                if (event.events & (EPOLLERR | EPOLLHUP) != 0) {
+                if ((event.events & (EPOLLERR | EPOLLHUP)) != 0) {
                     LOGI("pipe close, exit... %s", mName.c_str());
                     close(mSocketFd);
                     notifyWaitingCalls();
