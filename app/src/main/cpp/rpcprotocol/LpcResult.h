@@ -9,6 +9,7 @@
 #include "string"
 
 #include "ArgList.h"
+#include "rpc_struct.h"
 #include "RemoteException.h"
 
 class LpcResult {
@@ -18,12 +19,26 @@ private:
     uint32_t mErrorCode = 0;
     SharedBuffer mBuffer;
 public:
+    [[nodiscard]] inline bool isValid() const noexcept {
+        return mIsValid;
+    }
+
     [[nodiscard]] inline bool isSuccessful() const noexcept {
         return mIsValid && (mErrorCode == 0);
     }
 
     [[nodiscard]] inline bool hasException() const noexcept {
         return mIsValid && mHasException;
+    }
+
+    inline void setError(LpcErrorCode errorCode) noexcept {
+        mErrorCode = static_cast<uint32_t>(errorCode);
+        mHasException = true;
+        mIsValid = true;
+    }
+
+    [[nodiscard]] inline uint32_t getError() const noexcept {
+        return mErrorCode;
     }
 
     inline void throwException(const RemoteException &exception) {
@@ -70,6 +85,17 @@ public:
         }
         return false;
     }
+
+    inline void reset() noexcept {
+        mIsValid = false;
+        mHasException = false;
+        mErrorCode = 0;
+        mBuffer.reset();
+    }
+
+    [[nodiscard]] SharedBuffer buildLpcResponsePacket(uint32_t sequence) const;
+
+    [[nodiscard]] static LpcResult fromLpcRespPacketBuffer(const SharedBuffer &buffer);
 };
 
 
