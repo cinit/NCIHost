@@ -330,7 +330,7 @@ int IpcProxy::sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer 
     return sendRawPacket(result.get(), result.size());
 }
 
-LpcResult IpcProxy::executeRemoteProcedure(uint32_t funcId, const ArgList::Builder &args) {
+LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, const SharedBuffer &args) {
     LpcResult result;
     uint32_t seq = mCurrentSequence.fetch_add(1);
     SharedBuffer buffer;
@@ -351,7 +351,7 @@ LpcResult IpcProxy::executeRemoteProcedure(uint32_t funcId, const ArgList::Build
     }
     {
         std::unique_lock retlk(mtx);
-        if (sendLpcRequest(seq, funcId, args.build()) != 0) {
+        if (sendLpcRequest(seq, funcId, args) != 0) {
             mWaitingMap.remove(seq);
             result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
             return result;

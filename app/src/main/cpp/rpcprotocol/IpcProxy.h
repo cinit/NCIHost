@@ -111,7 +111,12 @@ public:
 
     int sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
 
-    [[nodiscard]] LpcResult executeRemoteProcedure(uint32_t funcId, const ArgList::Builder &args);
+    [[nodiscard]] LpcResult executeLpcTransaction(uint32_t funcId, const SharedBuffer &args);
+
+    template<class ... Args>
+    [[nodiscard]] inline LpcResult executeRemoteProcedure(uint32_t funcId, const Args &...args) {
+        return executeLpcTransaction(funcId, ArgList::Builder().pushArgs(args...).build());
+    }
 
     [[nodiscard]] inline EventHandler getEventHandler() const noexcept {
         return mEventHandler;
