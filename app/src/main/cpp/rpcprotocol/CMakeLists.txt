@@ -13,4 +13,4 @@ set_target_properties(rpcprotocol PROPERTIES
         POSITION_INDEPENDENT_CODE ON
         )
 
-target_link_libraries(rpcprotocol pthread)
+target_link_libraries(rpcprotocol)
