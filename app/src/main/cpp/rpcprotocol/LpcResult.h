@@ -48,11 +48,21 @@ public:
         mIsValid = true;
     }
 
+    template<class T>
+    inline void setException(const RemoteException &exception) {
+        throwException(exception);
+    }
+
     inline void returnVoid() {
         mBuffer = ArgList::Builder().build();
         mHasException = false;
         mErrorCode = 0;
         mIsValid = true;
+    }
+
+    template<class T>
+    inline void setResult(const T &result) {
+        returnResult(result);
     }
 
     template<class T>
