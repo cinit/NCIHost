@@ -2,7 +2,15 @@
 // Created by kinit on 2021-05-14.
 //
 
-#include "unistd.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <sys/stat.h>
+#include <sys/inotify.h>
+#include <sys/un.h>
+#include <sys/socket.h>
+#include <linux/limits.h>
+
 #include <cstdio>
 #include <cerrno>
 #include <cstddef>
@@ -12,14 +20,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
-#include "fcntl.h"
-#include "sys/stat.h"
-#include <sys/inotify.h>
-#include <linux/limits.h>
-#include "sys/un.h"
-#include "sys/socket.h"
+
 #include "common.h"
-#include "pthread.h"
 #include "daemon.h"
 
 using namespace std;

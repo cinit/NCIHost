@@ -2,16 +2,16 @@
 // Created by cinit on 2021-05-14.
 //
 
-#include "unistd.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "fcntl.h"
-#include "sys/stat.h"
-#include "memory.h"
-#include "string.h"
-#include "signal.h"
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/inotify.h>
 #include <sys/prctl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <memory.h>
+#include <string.h>
+#include <signal.h>
 
 #include "daemon.h"
 
@@ -25,7 +25,7 @@ const char g_nci_host_version[] = NCI_HOST_VERSION;
 __attribute__((used, section("NCI_HOST_BUILD_UUID")))
 const char g_nci_host_build_uuid[] = NCI_HOST_BUILD_UUID;
 
-static void printVersionAndExit() {
+__attribute__((noreturn)) static void printVersionAndExit() {
     printf("NCI Host daemon libncihostd.so\n");
     printf("Version %s, BuildID %s\n", g_nci_host_version, g_nci_host_build_uuid);
     _exit(1);
@@ -38,10 +38,10 @@ void setArgv(char **argv, int argc, const char *shortName, const char *longName)
         prctl(PR_SET_NAME, buf16, 0, 0, 0);
     }
     if (longName) {
-        int nameLen = strlen(longName);
-        int maxLength = strlen(argv[argc - 1]) + (argv[argc - 1] - argv[0]);
+        size_t nameLen = strlen(longName);
+        size_t maxLength = strlen(argv[argc - 1]) + (argv[argc - 1] - argv[0]);
         memset(argv[0], 0, maxLength);
-        int len = maxLength < nameLen ? maxLength : nameLen;
+        size_t len = maxLength < nameLen ? maxLength : nameLen;
         memcpy(argv[0], longName, len);
     }
 }
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     } else {
         const char *uidStr = argv[1];
         char *end;
-        int uid = strtol(uidStr, &end, 10);
+        int uid = (int) strtol(uidStr, &end, 10);
         if (uid <= 0 || *end != '\0') {
             printf("argv[1]: Invalid target UID.\n");
             _exit(1);
