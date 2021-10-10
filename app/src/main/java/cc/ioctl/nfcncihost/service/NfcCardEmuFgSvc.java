@@ -38,7 +38,7 @@ public class NfcCardEmuFgSvc extends Service {
         stopSelf();
     }
 
-    private void updateEmuationFgState(String cardName) {
+    private void updateEmulationFgState(String cardName) {
         PendingIntent configIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, DashboardActivity.class), 0);
         PendingIntent stopIntent = PendingIntent.getService(this, 0,
@@ -99,7 +99,7 @@ public class NfcCardEmuFgSvc extends Service {
                     String cardId = intent.getStringExtra(ARGV_CARD_ID);
                     if (!TextUtils.isEmpty(cardId)) {
                         updateRequestPermFgState();
-                        ThreadManager.postDelayed(2000, () -> updateEmuationFgState("Test"));
+                        ThreadManager.postDelayed(2000, () -> updateEmulationFgState("Test"));
                     }
                     break;
                 }
