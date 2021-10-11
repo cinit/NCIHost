@@ -48,7 +48,7 @@
         android:name=".procedure.BaseApplicationDelegate"
         android:allowBackup="true"
         android:appCategory="productivity"
-        android:directBootAware="true"
+        android:directBootAware="false"
         android:extractNativeLibs="true"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
