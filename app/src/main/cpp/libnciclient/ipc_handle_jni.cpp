@@ -2,19 +2,31 @@
 // Created by kinit on 2021-05-15.
 //
 
-#include "IpcConnection.h"
-#include "algorithm"
-#include "mutex"
-#include "unistd.h"
-#include "fcntl.h"
-#include "sys/stat.h"
-#include "sys/socket.h"
-#include <cerrno>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/un.h>
-#include "android/log.h"
-#include "jni.h"
+#include <pthread.h>
+#include <jni.h>
 
+#include <climits>
+#include <csignal>
+#include <cerrno>
+#include <mutex>
+#include <algorithm>
+
+#include "ipc_handle_jni.h"
+#include "IpcConnector.h"
+#include "../rpcprotocol/Log.h"
 #include "../rpcprotocol/rpcprotocol.h"
+#include "../rpcprotocol/io_utils.h"
+
+#ifndef UNIX_PATH_MAX
+#define UNIX_PATH_MAX 108
+#endif
+
+#define LOG_TAG "IPC"
 
 using namespace std;
 
@@ -27,9 +39,7 @@ volatile int gIpcClientHandOverConnFd = -1;
 volatile int gIpcConnFd = -1;
 volatile int gIpcThreadErrno = -1;
 
-
-extern "C" JNIEXPORT
-jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     gIpcNativeLock = new std::mutex;
     memset(gIpcAbsSocketName, 0, 108);
     gIpcListenThread = 0;
@@ -40,12 +50,10 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 }
 
 bool handleSocketConnected() {
-    __android_log_print(ANDROID_LOG_INFO, "IPC",
-                        "try send sockpair over fd-%d", gIpcClientHandOverConnFd);
+    LOGI("try send sockpair over fd %d", gIpcClientHandOverConnFd);
     int socksFd[2] = {};
-    if (socketpair(AF_UNIX, SOCK_STREAM, 0, socksFd) != 0) {
-        __android_log_print(ANDROID_LOG_ERROR, "IPC",
-                            "sockpair error %s", strerror(errno));
+    if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, socksFd) != 0) {
+        LOGE("sockpair error %s", strerror(errno));
         return false;
     }
     struct msghdr msg;
@@ -69,15 +77,38 @@ bool handleSocketConnected() {
     cmsg.cmsg_type = SCM_RIGHTS;
     *reinterpret_cast<int *>(CMSG_DATA(&cmsg)) = socksFd[1];
     if (sendmsg(gIpcClientHandOverConnFd, &msg, 0) < 0) {
-        __android_log_print(ANDROID_LOG_ERROR, "IPC",
-                            "sendfd error %s", strerror(errno));
+        LOGE("sendfd error %s", strerror(errno));
         close(socksFd[0]);
         close(socksFd[1]);
         return false;
+    } else {
+        int r = wait_for_input(socksFd[0], 300);
+        if (r > 0) {
+            char buf[24];
+            ssize_t s = recv(socksFd[0], buf, 24, 0);
+            if (s < 0) {
+                LOGE("wait for end point send error %d %s", -r, strerror(-r));
+                close(socksFd[0]);
+                close(socksFd[1]);
+            } else {
+                close(socksFd[1]);
+                ..
+            }
+        } else {
+            if (r < 0) {
+                LOGE("wait for end point send error %d %s", -r, strerror(-r));
+            } else {
+                LOGE("wait for end point timeout");
+            }
+            close(socksFd[0]);
+            close(socksFd[1]);
+        }
     }
     close(gIpcConnFd);
+    gIpcConnFd = -1;
     close(gIpcListenFd);
-    // send GetVersion RPC request and wait for result blocking, timeout is 1000ms
+    gIpcListenFd = -1;
+    // send GetVersion RPC request and wait for result blocking, timeout is 300ms
 
     return true;
 }
@@ -91,8 +122,7 @@ void *fIpcListenProc(void *) {
     socklen_t socklen = sizeof(cliun);
     gIpcThreadErrno = 0;
     do {
-        if ((gIpcClientHandOverConnFd = accept(gIpcListenFd, (sockaddr *) (&cliun), &socklen)) <
-            0) {
+        if ((gIpcClientHandOverConnFd = accept(gIpcListenFd, (sockaddr *) (&cliun), &socklen)) < 0) {
             gIpcThreadErrno = errno;
         } else {
             ucred credentials = {};
@@ -126,10 +156,10 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntInitForSocketDir
     char buf[256];
     lock_guard<mutex> _(*gIpcNativeLock);
     if (gIpcListenThread != 0 && pthread_kill(gIpcListenThread, 0) == EINVAL) {
-        __android_log_print(ANDROID_LOG_INFO, "IPC", "started, ignored");
+        LOGI("started, ignored");
         return;
     }
-    __android_log_print(ANDROID_LOG_INFO, "IPC", "init ipc thread");
+    LOGI("init ipc thread");
     int len = env->GetStringLength(name);
     if (len > 255) {
         env->ThrowNew(env->FindClass("java/lang/RuntimeException"), "path too long");

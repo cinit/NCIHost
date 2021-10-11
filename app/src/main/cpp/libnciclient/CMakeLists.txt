@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(nciclient)
 
 add_library(nciclient SHARED
-        version.c IpcConnection.cpp)
+        version.c ipc_handle_jni.cpp IpcConnector.cpp)
 
 set_target_properties(nciclient PROPERTIES
         CXX_EXTENSIONS OFF
