@@ -12,6 +12,7 @@
 #include <memory.h>
 #include <string.h>
 #include <signal.h>
+#include <errno.h>
 
 #include "daemon.h"
 
@@ -49,53 +50,53 @@ void setArgv(char **argv, int argc, const char *shortName, const char *longName)
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
         printVersionAndExit();
-        return 0;
-    } else if (argc == 2) {
-        printf("libncihostd.so [PID] [PATH]\n");
-        return 1;
-    } else {
-        const char *uidStr = argv[1];
+    } else if (argc == 4) {
         char *end;
-        int uid = (int) strtol(uidStr, &end, 10);
+        int uid = (int) strtol(argv[1], &end, 10);
         if (uid <= 0 || *end != '\0') {
             printf("argv[1]: Invalid target UID.\n");
             _exit(1);
         }
+        int pid = (int) strtol(argv[2], &end, 10);
+        if (pid <= 0 || *end != '\0') {
+            printf("argv[2]: Invalid target PID.\n");
+            _exit(1);
+        }
+        int targetFd = (int) strtol(argv[3], &end, 10);
+        if (targetFd <= 0 || *end != '\0') {
+            printf("argv[3]: Invalid target FD.\n");
+            _exit(1);
+        }
         if (getegid() != 0) {
             printf("Root(uid=0) is required.\n");
-//            _exit(1);
+            // _exit(1);
         }
-        char *ipcFilePath = argv[2];
-        if (*ipcFilePath != '/') {
-            printf("Absolute path required.\n");
-            _exit(1);
+        char buf[108] = {};
+        snprintf(buf, 108, "/proc/%d/fd/%d", uid, targetFd);
+        if (access(buf, R_OK) != 0) {
+            printf("access %s failed: %d, %s\n", buf, errno, strerror(errno));
+            return 1;
         }
-        int ipcFileFd = open(ipcFilePath, O_RDONLY | O_CLOEXEC);
-        if (ipcFilePath < 0) {
-            perror("open_ipc");
-            _exit(1);
+        char ipcFilePath[108] = {};
+        if (readlink(buf, ipcFilePath, 108) < 0) {
+            printf("readlink %s failed: %d, %s\n", buf, errno, strerror(errno));
+            return 1;
         }
-        int inotifyFd = inotify_init1(O_CLOEXEC);
-        if (ipcFilePath < 0) {
-            perror("inotify_init1");
-            _exit(1);
+        if (access(ipcFilePath, R_OK) != 0) {
+            printf("target real path access %s failed: %d, %s\n", ipcFilePath, errno, strerror(errno));
+            return 1;
         }
-        int ipcWatchFd = inotify_add_watch(inotifyFd, ipcFilePath, IN_MODIFY | IN_CLOSE_WRITE);
-        if (ipcWatchFd < 0) {
-            perror("inotify_add_watch");
-            _exit(1);
-        }
-        printf("Stub, skip setns /proc/1/ns/mnt\n");
-        if (ipcFilePath < 0) {
-            perror("inotify_init1");
-            _exit(1);
-        }
+        printf("using path: %s\n", ipcFilePath);
         // TODO: daemonize here...(dup /dev/null)
-        char buf[32] = {};
-        snprintf(buf, 32, "ncihostd: [uid %d]", uid);
-        setArgv(argv, argc, "ncihostd", buf);
+        printf("Stub, skip setns /proc/1/ns/mnt\n");
+        char namebuf[32] = {};
+        snprintf(namebuf, 32, "ncihostd: [uid %d]", uid);
+        setArgv(argv, argc, "ncihostd", namebuf);
         signal(SIGPIPE, SIG_IGN);
-        startDaemon(uid, ipcFileFd, inotifyFd);
+        startDaemon(uid, ipcFilePath);
+    } else {
+        printf("$0 <UID> <PID> <FD>\n");
+        return 1;
     }
     return 0;
 }

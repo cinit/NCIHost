@@ -7,11 +7,11 @@
 
 #ifdef __cplusplus
 
-extern "C" void startDaemon(int uid, int ipcFileFd, int inotifyFd);
+extern "C" void startDaemon(int uid, const char *ipcFilePath);
 
 #else
 
-void startDaemon(int uid, int ipcFileFd, int inotifyFd);
+void startDaemon(int uid, const char *ipcFilePath);
 
 #endif
 
