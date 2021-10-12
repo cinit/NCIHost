@@ -278,9 +278,7 @@ int IpcProxy::sendRawPacket(const void *buffer, size_t size) {
 
 int IpcProxy::sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuffer &args) {
     SharedBuffer result;
-    if (!result.ensureCapacity(sizeof(LpcTransactionHeader) + args.size(), std::nothrow_t())) {
-        throw std::bad_alloc();
-    }
+    result.ensureCapacity(sizeof(LpcTransactionHeader) + args.size());
     memcpy(result.at<char>(sizeof(LpcTransactionHeader)), args.get(), args.size());
     auto *h = result.at<LpcTransactionHeader>(0);
     h->header.length = (uint32_t) result.size();

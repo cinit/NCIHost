@@ -79,6 +79,12 @@ bool waitForInotifyWriteEvent(const char *path) {
     return access(path, R_OK) == 0;
 }
 
+void handleLinkStart(int fd) {
+    LOGI("link start, fd=%d", fd);
+    IpcStateController::getInstance().attachIpcSeqPacketSocket(fd);
+    LOGI("link disconnected");
+}
+
 bool doConnect(const IpcSocketMeta &target, int uid) {
     sockaddr_un targetAddr = {};
     int clientFd;
@@ -105,21 +111,47 @@ bool doConnect(const IpcSocketMeta &target, int uid) {
     ucred credentials = {};
     socklen_t ucred_length = sizeof(ucred);
     if (::getsockopt(clientFd, SOL_SOCKET, SO_PEERCRED, &credentials, &ucred_length) < 0) {
-        printf("getsockopt SO_PEERCRED error: %s\n", strerror(errno));
+        LOGE("getsockopt SO_PEERCRED error: %s\n", strerror(errno));
         close(clientFd);
         return false;
     }
     if (credentials.uid != uid) {
-        printf("Invalid UID %d ,expected %d\n", credentials.uid, uid);
+        LOGE("Invalid UID %d ,expected %d\n", credentials.uid, uid);
         close(clientFd);
         return false;
     }
-    // TODO: recv from cmsg SCM_RIGHTS
-
-    printf("Connected...\n");
-    sleep(10);
+    LOGI("Connecting...\n");
+    // recv from cmsg SCM_RIGHTS
+    char cmptrBuf[CMSG_LEN(sizeof(int))];
+    cmsghdr *cmsg = (cmsghdr *) cmptrBuf;
+    char dummy[1]; // the max buf in msg.
+    iovec iov[1];
+    iov[0].iov_base = dummy;
+    iov[0].iov_len = 1;
+    msghdr msg;
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 1;
+    msg.msg_name = nullptr;
+    msg.msg_namelen = 0;
+    msg.msg_control = cmsg;
+    msg.msg_controllen = CMSG_LEN(sizeof(int));
+    ssize_t ret = recvmsg(clientFd, &msg, 0);
+    if (ret == -1) {
+        LOGE("SCM_RIGHTS recvmsg error: %d: %s", errno, strerror(errno));
+        return false;
+    }
+    int targetFd = *(int *) CMSG_DATA(cmsg);
+    EventTransactionHeader h = {{sizeof(EventTransactionHeader), TrxnType::TRXN_TYPE_EVENT},
+                                0, 0, 0, 0};
+    if (send(targetFd, &h, sizeof(EventTransactionHeader), 0) < 0) {
+        LOGE("send test msg on SCM_RIGHTS fd error: %d: %s", errno, strerror(errno));
+        close(clientFd);
+        close(targetFd);
+        return false;
+    }
     close(clientFd);
-    printf("disconnected\n");
+    handleLinkStart(targetFd);
+    LOGI("disconnected\n");
     return true;
 }
 
