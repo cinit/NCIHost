@@ -254,7 +254,7 @@ static void *rss_watchdog_procedure(void *) {
                 _exit(12);
             }
         }
-        usleep(30000);
+        usleep(3000000);
     }
 }
 
