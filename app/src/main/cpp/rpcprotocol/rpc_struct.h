@@ -4,7 +4,7 @@
 #include <cstdint>
 
 typedef struct TrxnPacketHeader {
-    uint32_t length; // for payload
+    uint32_t length; // size of entire packet
     uint32_t type;
 } TrxnPacketHeader;
 
