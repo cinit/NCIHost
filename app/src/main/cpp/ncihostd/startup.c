@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
             // _exit(1);
         }
         char buf[108] = {};
-        snprintf(buf, 108, "/proc/%d/fd/%d", uid, targetFd);
+        snprintf(buf, 108, "/proc/%d/fd/%d", pid, targetFd);
         if (access(buf, R_OK) != 0) {
             printf("access %s failed: %d, %s\n", buf, errno, strerror(errno));
             return 1;
