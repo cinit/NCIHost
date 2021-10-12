@@ -24,10 +24,14 @@
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
+#include <memory>
 
 #include "common.h"
 #include "daemon.h"
+#include "IpcStateController.h"
 #include "../rpcprotocol/Log.h"
+#include "../rpcprotocol/rpc_struct.h"
+#include "../rpcprotocol/IpcProxy.h"
 
 #define LOG_TAG "ncihostd"
 
@@ -51,7 +55,7 @@ bool waitForInotifyWriteEvent(const char *path) {
         LOGE("inotify_init1: %d, %s", errno, strerror(errno));
         return false;
     }
-    if (inotify_add_watch(inotifyFd, path, IN_MODIFY | IN_CLOSE_WRITE | IN_MOVE | IN_DELETE_SELF | IN_DELETE)) {
+    if (inotify_add_watch(inotifyFd, path, IN_MODIFY | IN_CLOSE_WRITE | IN_MOVE | IN_DELETE_SELF | IN_DELETE) < 0) {
         LOGE("inotify_add_watch: %d, %s", errno, strerror(errno));
         close(inotifyFd);
         return false;
@@ -189,30 +193,34 @@ extern "C" void startDaemon(int uid, const char *ipcFilePath) {
 
 
 static void *rss_watchdog_procedure(void *) {
-    using std::ios_base;
-    using std::ifstream;
-    using std::string;
-    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
     while (true) {
-        ifstream stat_stream("/proc/self/stat", ios_base::in);
-        // dummy vars for leading entries in stat that we don't care about
-        string pid, comm, state, ppid, pgrp, session, tty_nr;
-        string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-        string utime, stime, cutime, cstime, priority, nice;
-        string O, itrealvalue, starttime;
-        // the two fields we want
-        uint32_t vsize;
-        uint32_t rss;
-        stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
-                    >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
-                    >> utime >> stime >> cutime >> cstime >> priority >> nice
-                    >> O >> itrealvalue >> starttime >> vsize >> rss; // don't care about the rest
-        stat_stream.close();
-        int resident_set = rss * page_size_kb;
-        LOGD("rss = %dK", resident_set);
-        if (resident_set > 64 * 1024) {
-            LOGE("Rss too large %dK, kill process", resident_set);
-            _exit(12);
+        int fd;
+        char buf[256] = {0};
+        fd = open("/proc/self/status", O_RDONLY);
+        SharedBuffer buffer;
+        ssize_t i;
+        ssize_t current = 0;
+        while ((i = read(fd, buf, 128)) > 0) {
+            buffer.ensureCapacity(current + i);
+            memcpy(buffer.at<char>(current), buf, i);
+            current += i;
+        }
+        close(fd);
+        std::string status = {reinterpret_cast<char *>( buffer.get()), (size_t) current};
+        int startpos = (int) status.find("VmRSS:") + (int) strlen("VmRSS:");
+        int endpos = (int) status.find("kB", startpos);
+        memset(buf, 0, 128);
+        memcpy(buf, reinterpret_cast<char *>(buffer.get()) + startpos, endpos - startpos);
+        int rss_kb = 0;
+        sscanf(buf, "%d", &rss_kb);
+        if (rss_kb == 0) {
+            LOGE("error read VmRSS");
+        } else {
+            LOGD("rss = %dK", rss_kb);
+            if (rss_kb > 64 * 1024) {
+                LOGE("Rss too large %dK, kill process", rss_kb);
+                _exit(12);
+            }
         }
         usleep(30000);
     }
