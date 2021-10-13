@@ -38,9 +38,8 @@ private:
     FixedThreadPool mExecutor = FixedThreadPool(4);
     std::mutex mStatusLock;
     std::mutex mTxLock;
-    std::mutex mJoinWaitCondVarMutex;
     std::condition_variable mJoinWaitCondVar;
-    std::mutex mRunningEntryMutex;
+    std::mutex mRunningEntryMutex; // must be released in finite time
     std::condition_variable mRunningEntryStartCondVar;
     volatile bool mIsRunning = false;
     std::mutex mReadThreadMutex;

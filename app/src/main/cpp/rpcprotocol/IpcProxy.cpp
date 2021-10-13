@@ -49,21 +49,20 @@ int IpcProxy::attach(int fd) {
 }
 
 void IpcProxy::join() {
+    LOGD("---> join() start");
     {
-        std::scoped_lock<std::mutex> wait_if_shutdown(mStatusLock);
+        std::unique_lock lk(mStatusLock);
+        if (mIsRunning) {
+            mJoinWaitCondVar.wait(lk);
+        }
     }
-    std::unique_lock lk(mJoinWaitCondVarMutex);
-    if (mIsRunning) {
-        mJoinWaitCondVar.wait(lk);
-    }
-    {
-        std::scoped_lock<std::mutex> wait_if_shutdown(mStatusLock);
-    }
+    LOGD("---> join() end");
 }
 
 void IpcProxy::start() {
     {
         std::scoped_lock<std::mutex> lk(mStatusLock);
+        std::unique_lock startLock(mRunningEntryMutex);
         if (!mReady) {
             if (mInterruptEventFd == -1) {
                 mInterruptEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -79,18 +78,17 @@ void IpcProxy::start() {
             mExecutor.start();
             mReady = true;
         }
+        pthread_t tid = 0;
+        int result = pthread_create(&tid, nullptr,
+                                    reinterpret_cast<void *(*)(void *)>(&IpcProxy::runIpcLooperProc), this);
+        if (result != 0) {
+            char buf[64];
+            snprintf(buf, 64, "create thread failed errno=%d", result);
+            LOGE("create thread failed errno=%d", result);
+            throw std::runtime_error(buf);
+        }
+        mRunningEntryStartCondVar.wait(startLock);
     }
-    std::unique_lock startLock(mRunningEntryMutex);
-    pthread_t tid = 0;
-    int result = pthread_create(&tid, nullptr,
-                                reinterpret_cast<void *(*)(void *)>(&IpcProxy::runIpcLooperProc), this);
-    if (result != 0) {
-        char buf[64];
-        snprintf(buf, 64, "create thread failed errno=%d", result);
-        LOGE("create thread failed errno=%d", result);
-        throw std::runtime_error(buf);
-    }
-    mRunningEntryStartCondVar.wait(startLock);
 }
 
 int IpcProxy::detach() {
@@ -160,20 +158,17 @@ void IpcProxy::notifyWaitingCalls() {
 }
 
 void IpcProxy::runIpcLooper() {
+    // do NOT touch mStatusMutex here
+    SharedBuffer sharedBuffer;
+    sharedBuffer.ensureCapacity(65536);
+    void *buffer = sharedBuffer.get();
+    int epollFd = -1;
     std::scoped_lock<std::mutex> runLock(mReadThreadMutex);
     {
         std::scoped_lock<std::mutex> lk(mRunningEntryMutex);
         pthread_setname_np(pthread_self(), "IPC-trxn");
-        mRunningEntryStartCondVar.notify_all();
-    }
-    if (mSocketFd >= 0 && mInterruptEventFd >= 0) {
-        SharedBuffer sharedBuffer;
-        if (!sharedBuffer.ensureCapacity(65536, std::nothrow_t())) {
-            throw std::bad_alloc();
-        }
-        void *buffer = sharedBuffer.get();
-        int epollFd = epoll_create(2);
-        {
+        if (mSocketFd >= 0 && mInterruptEventFd >= 0) {
+            epollFd = epoll_create(2);
             epoll_event ev = {};
             ev.events = EPOLLIN | EPOLLERR | EPOLLHUP;
             ev.data.fd = mSocketFd;
@@ -189,73 +184,77 @@ void IpcProxy::runIpcLooper() {
                 close(epollFd);
                 return;
             }
+            mIsRunning = true;
         }
-        LOGI("pid=%d, mSocketFd=%d, mInterruptEventFd=%d %s", getpid(), mSocketFd, mInterruptEventFd, mName.c_str());
-        mIsRunning = true;
-        while (mSocketFd != -1 && mInterruptEventFd != -1) {
-            epoll_event event = {};
-            if (epoll_wait(epollFd, &event, 1, -1) < 0) {
-                int err = errno;
-                LOGE("epoll_wait error: %d %s", err, mName.c_str());
-                if (err != EINTR) {
-                    abort();
-                    break;
-                }
-            } else {
-                LOGE("epoll_wait return ev=%d fd=%d %s", event.events, event.data.fd, mName.c_str());
-                if ((event.events & (EPOLLERR | EPOLLHUP)) != 0) {
-                    LOGI("pipe close, exit... %s", mName.c_str());
-                    close(mSocketFd);
-                    notifyWaitingCalls();
-                    mSocketFd = -1;
-                    break;
-                } else if (event.data.fd == mInterruptEventFd) {
-                    uint64_t u64 = 0;
-                    // consume event
-                    read(mInterruptEventFd, &u64, 8);
-                    LOGI("interrupt event received, exit... %s", mName.c_str());
-                    break;
-                } else if (event.data.fd == mSocketFd) {
-                    LOGI("epoll: socket fd, %d %s", event.events, mName.c_str());
-                    int size = (int) recv(mSocketFd, buffer, 65536, 0);
-                    if (size < 0) {
-                        int err = errno;
-                        if (err != EINTR) {
-                            if (err == EPIPE) {
-                                LOGI("pipe close, exit... %s", mName.c_str());
-                                close(mSocketFd);
-                                notifyWaitingCalls();
-                                mSocketFd = -1;
-                                break;
-                            } else {
-                                LOGE("recv() failed, %d, %s %s", errno, strerror(errno), mName.c_str());
-                                close(mSocketFd);
-                                notifyWaitingCalls();
-                                mSocketFd = -1;
-                                break;
-                            }
-                        }
-                    } else {
-                        uint32_t trunkSize = *(uint32_t *) (buffer);
-                        if (trunkSize != size) {
-                            LOGE("read size(%u) does not match chunk size(%u) %s", size, trunkSize, mName.c_str());
+        // set all status before unlock!
+        mRunningEntryStartCondVar.notify_all();
+    }
+    LOGI("pid=%d, mSocketFd=%d, mInterruptEventFd=%d %s", getpid(), mSocketFd, mInterruptEventFd, mName.c_str());
+    while (epollFd != -1 && mSocketFd != -1 && mInterruptEventFd != -1) {
+        epoll_event event = {};
+        if (epoll_wait(epollFd, &event, 1, -1) < 0) {
+            int err = errno;
+            LOGE("epoll_wait error: %d %s", err, mName.c_str());
+            if (err != EINTR) {
+                abort();
+                break;
+            }
+        } else {
+            LOGE("epoll_wait return ev=%d fd=%d %s", event.events, event.data.fd, mName.c_str());
+            if ((event.events & (EPOLLERR | EPOLLHUP)) != 0) {
+                LOGI("pipe close, exit... %s", mName.c_str());
+                close(mSocketFd);
+                notifyWaitingCalls();
+                mSocketFd = -1;
+                break;
+            } else if (event.data.fd == mInterruptEventFd) {
+                uint64_t u64 = 0;
+                // consume event
+                read(mInterruptEventFd, &u64, 8);
+                LOGI("interrupt event received, exit... %s", mName.c_str());
+                break;
+            } else if (event.data.fd == mSocketFd) {
+                LOGI("epoll: socket fd, %d %s", event.events, mName.c_str());
+                int size = (int) recv(mSocketFd, buffer, 65536, 0);
+                if (size < 0) {
+                    int err = errno;
+                    if (err != EINTR) {
+                        if (err == EPIPE) {
+                            LOGI("pipe close, exit... %s", mName.c_str());
+                            close(mSocketFd);
+                            notifyWaitingCalls();
+                            mSocketFd = -1;
+                            break;
                         } else {
-                            handleReceivedPacket(buffer, size);
+                            LOGE("recv() failed, %d, %s %s", errno, strerror(errno), mName.c_str());
+                            close(mSocketFd);
+                            notifyWaitingCalls();
+                            mSocketFd = -1;
+                            break;
                         }
                     }
-                } else if (event.events == 0) {
-                    LOGI("EAGAIN %s", mName.c_str());
-                    continue;
                 } else {
-                    LOGE("unexpected event");
-                    *(volatile int *) 0 = 0;
-                    abort();
+                    uint32_t trunkSize = *(uint32_t *) (buffer);
+                    if (trunkSize != size) {
+                        LOGE("read size(%u) does not match chunk size(%u) %s", size, trunkSize, mName.c_str());
+                    } else {
+                        handleReceivedPacket(buffer, size);
+                    }
                 }
+            } else if (event.events == 0) {
+                LOGI("EAGAIN %s", mName.c_str());
+                continue;
+            } else {
+                LOGE("unexpected event");
+                *(volatile int *) 0 = 0;
+                abort();
             }
         }
-        mIsRunning = false;
+    }
+    mIsRunning = false;
+    mJoinWaitCondVar.notify_all();
+    if (epollFd != -1) {
         close(epollFd);
-        mJoinWaitCondVar.notify_all();
     }
 }
 
