@@ -111,16 +111,16 @@ bool doConnect(const IpcSocketMeta &target, int uid) {
     ucred credentials = {};
     socklen_t ucred_length = sizeof(ucred);
     if (::getsockopt(clientFd, SOL_SOCKET, SO_PEERCRED, &credentials, &ucred_length) < 0) {
-        LOGE("getsockopt SO_PEERCRED error: %s\n", strerror(errno));
+        LOGE("getsockopt SO_PEERCRED error: %s", strerror(errno));
         close(clientFd);
         return false;
     }
     if (credentials.uid != uid) {
-        LOGE("Invalid UID %d ,expected %d\n", credentials.uid, uid);
+        LOGE("Invalid UID %d ,expected %d", credentials.uid, uid);
         close(clientFd);
         return false;
     }
-    LOGI("Connecting...\n");
+    LOGI("Connecting...");
     // recv from cmsg SCM_RIGHTS
     char cmptrBuf[CMSG_LEN(sizeof(int))];
     cmsghdr *cmsg = (cmsghdr *) cmptrBuf;
@@ -151,7 +151,7 @@ bool doConnect(const IpcSocketMeta &target, int uid) {
     }
     close(clientFd);
     handleLinkStart(targetFd);
-    LOGI("disconnected\n");
+    LOGI("disconnected");
     return true;
 }
 
