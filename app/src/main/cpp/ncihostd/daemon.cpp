@@ -225,6 +225,7 @@ extern "C" void startDaemon(int uid, const char *ipcFilePath) {
 
 
 static void *rss_watchdog_procedure(void *) {
+    int lastRss = 0;
     while (true) {
         int fd;
         char buf[256] = {0};
@@ -248,7 +249,10 @@ static void *rss_watchdog_procedure(void *) {
         if (rss_kb == 0) {
             LOGE("error read VmRSS");
         } else {
-            LOGD("rss = %dK", rss_kb);
+            if (lastRss != rss_kb) {
+                LOGD("rss = %dK", rss_kb);
+                lastRss = rss_kb;
+            }
             if (rss_kb > 64 * 1024) {
                 LOGE("Rss too large %dK, kill process", rss_kb);
                 _exit(12);
