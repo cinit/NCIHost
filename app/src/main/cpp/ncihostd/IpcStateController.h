@@ -6,6 +6,8 @@
 #define NCIHOSTD_IPCSTATECONTROLLER_H
 
 #include "../rpcprotocol/IpcProxy.h"
+#include "../rpcprotocol/LpcArgListExtractor.h"
+#include "NciHostDaemonImpl.h"
 
 class IpcStateController {
 public:
@@ -15,14 +17,17 @@ public:
 
 private:
     IpcProxy mIpcProxy;
+    NciHostDaemonImpl mDaemon;
 
     void init();
 
-    void dispatchLpcRequest();
+    bool dispatchLpcRequest(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
 
     static bool cbLpcHandler(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
 
     static void cbEventHandler(const IpcProxy::LpcEnv &env, uint32_t funcId, const ArgList &args);
+
+
 };
 
 

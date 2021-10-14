@@ -35,9 +35,14 @@ void IpcStateController::init() {
 
 bool IpcStateController::cbLpcHandler(const IpcProxy::LpcEnv &env, LpcResult &result,
                                       uint32_t funcId, const ArgList &args) {
-    return false;
+    return IpcStateController::getInstance().dispatchLpcRequest(env, result, funcId, args);
 }
 
 void IpcStateController::cbEventHandler(const IpcProxy::LpcEnv &env, uint32_t funcId, const ArgList &args) {
     LOGI("ignore event %x", funcId);
+}
+
+bool IpcStateController::dispatchLpcRequest(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId,
+                                            const ArgList &args) {
+    return mDaemon.dispatchLpcInvocation(env, result, funcId, args);
 }

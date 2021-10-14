@@ -4,7 +4,7 @@ project(ncihostd)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ncihostd startup.c daemon.cpp IpcStateController.cpp IpcStateController.h LpcRequestDispatcher.cpp LpcRequestDispatcher.h)
+add_executable(ncihostd startup.c daemon.cpp IpcStateController.cpp IpcStateController.h NciHostDaemonImpl.cpp NciHostDaemonImpl.h)
 
 set_target_properties(ncihostd PROPERTIES
         CXX_EXTENSIONS OFF
