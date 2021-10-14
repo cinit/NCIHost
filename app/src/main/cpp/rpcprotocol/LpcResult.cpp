@@ -5,6 +5,14 @@
 #include "LpcResult.h"
 #include "rpc_struct.h"
 
+LpcResult::LpcResult(const LpcResult &result) = default;
+
+LpcResult::LpcResult() = default;
+
+LpcResult &LpcResult::operator=(const LpcResult &result) = default;
+
+LpcResult::~LpcResult() = default;
+
 LpcResult LpcResult::fromLpcRespPacketBuffer(const SharedBuffer &buffer) {
     LpcResult result;
     constexpr size_t headerSize = sizeof(LpcTransactionHeader);

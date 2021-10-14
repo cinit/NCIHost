@@ -5,12 +5,15 @@
 #ifndef RPCPROTOCOL_LPCRESULT_H
 #define RPCPROTOCOL_LPCRESULT_H
 
-#include "cstdint"
-#include "string"
+#include <cstdint>
+#include <string>
 
 #include "ArgList.h"
 #include "rpc_struct.h"
 #include "RemoteException.h"
+
+template<class T>
+class TypedLpcResult;
 
 class LpcResult {
 private:
@@ -19,6 +22,21 @@ private:
     uint32_t mErrorCode = 0;
     SharedBuffer mArgsBuffer;
 public:
+    LpcResult();
+
+    LpcResult(const LpcResult &result);
+
+    LpcResult &operator=(const LpcResult &result);
+
+    ~LpcResult();
+
+    template<class T>
+    explicit LpcResult(const TypedLpcResult<T> &result) :
+            mIsValid(result.mResult.mIsValid),
+            mHasException(result.mResult.mHasException),
+            mErrorCode(result.mResult.mErrorCode),
+            mArgsBuffer(result.mResult.mArgsBuffer) {}
+
     [[nodiscard]] inline bool isValid() const noexcept {
         return mIsValid;
     }
@@ -108,5 +126,136 @@ public:
     [[nodiscard]] static LpcResult fromLpcRespPacketBuffer(const SharedBuffer &buffer);
 };
 
+template<class T>
+class TypedLpcResult {
+private:
+    LpcResult mResult;
+    friend LpcResult;
+public:
+    TypedLpcResult() = default;
+
+    inline TypedLpcResult(const T &value) {
+        setResult(value);
+    }
+
+    TypedLpcResult(const TypedLpcResult &result) = default;
+
+    TypedLpcResult &operator=(const TypedLpcResult &result) = default;
+
+    ~TypedLpcResult() = default;
+
+    explicit TypedLpcResult(const LpcResult &result) : mResult(result) {
+    }
+
+    [[nodiscard]] inline bool isValid() const noexcept {
+        return mResult.isValid();
+    }
+
+    [[nodiscard]] inline bool isSuccessful() const noexcept {
+        return mResult.isSuccessful();
+    }
+
+    [[nodiscard]] inline bool hasException() const noexcept {
+        return mResult.hasException();
+    }
+
+    inline void setError(LpcErrorCode errorCode) noexcept {
+        mResult.setError(errorCode);
+    }
+
+    [[nodiscard]] inline uint32_t getError() const noexcept {
+        return mResult.getError();
+    }
+
+    inline void throwException(const RemoteException &exception) {
+        mResult.throwException(exception);
+    }
+
+    inline void setException(const RemoteException &exception) {
+        mResult.throwException(exception);
+    }
+
+    inline void returnVoid() {
+        mResult.returnVoid();
+    }
+
+    inline void setResult(const T &result) {
+        mResult.setResult<T>(result);
+    }
+
+    inline void returnResult(const T &result) {
+        mResult.returnResult<T>(result);
+    }
+
+    [[nodiscard]] inline bool getResult(T *result) const {
+        return mResult.getResult<T>(result);
+    }
+
+    [[nodiscard]] inline bool getException(RemoteException *exception) const {
+        return mResult.getException(exception);
+    }
+
+    inline void reset() noexcept {
+        mResult.reset();
+    }
+};
+
+template<>
+class TypedLpcResult<void> {
+private:
+    LpcResult mResult;
+    friend LpcResult;
+public:
+    TypedLpcResult() = default;
+
+    TypedLpcResult(const TypedLpcResult &result) = default;
+
+    TypedLpcResult &operator=(const TypedLpcResult &result) = default;
+
+    ~TypedLpcResult() = default;
+
+    explicit TypedLpcResult(const LpcResult &result) : mResult(result) {
+    }
+
+    [[nodiscard]] inline bool isValid() const noexcept {
+        return mResult.isValid();
+    }
+
+    [[nodiscard]] inline bool isSuccessful() const noexcept {
+        return mResult.isSuccessful();
+    }
+
+    [[nodiscard]] inline bool hasException() const noexcept {
+        return mResult.hasException();
+    }
+
+    inline void setError(LpcErrorCode errorCode) noexcept {
+        mResult.setError(errorCode);
+    }
+
+    [[nodiscard]] inline uint32_t getError() const noexcept {
+        return mResult.getError();
+    }
+
+    inline void throwException(const RemoteException &exception) {
+        mResult.throwException(exception);
+    }
+
+    inline void setException(const RemoteException &exception) {
+        mResult.throwException(exception);
+    }
+
+    inline void returnVoid() {
+        mResult.returnVoid();
+    }
+
+    [[nodiscard]] inline bool getException(RemoteException *exception) const {
+        return mResult.getException(exception);
+    }
+
+    inline void reset() noexcept {
+        mResult.reset();
+    }
+};
 
 #endif //RPCPROTOCOL_LPCRESULT_H
