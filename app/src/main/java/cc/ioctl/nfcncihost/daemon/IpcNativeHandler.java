@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 
+import cc.ioctl.nfcncihost.daemon.internal.NciHostDaemonProxy;
 import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 
 public class IpcNativeHandler {
@@ -14,6 +15,7 @@ public class IpcNativeHandler {
 
     private static volatile boolean sInit = false;
     private static volatile String sDirPath = null;
+    private static NciHostDaemonProxy mProxy = null;
 
     private IpcNativeHandler(final long h) {
         mNativeHandler = h;
@@ -31,6 +33,7 @@ public class IpcNativeHandler {
         if (sInit) {
             return;
         }
+        mProxy = new NciHostDaemonProxy();
         synchronized (IpcNativeHandler.class) {
             if (!sInit) {
                 System.loadLibrary("nciclient");
@@ -55,17 +58,35 @@ public class IpcNativeHandler {
         }
     }
 
-    public static IpcNativeHandler peekConnection() {
+    public static INciHostDaemon peekConnection() {
         checkProcess();
-        return ntPeekConnection();
+        if (ntPeekConnection()) {
+            return mProxy;
+        }
+        return null;
     }
 
     private static native void ntInitForSocketDir(String name);
 
-    private static native IpcNativeHandler ntPeekConnection();
+    private static native boolean ntPeekConnection();
+
+    private static native boolean ntRequestConnection();
+
+    private static native boolean ntWaitForConnection(int timeout);
 
     public static boolean isConnected() {
-        return peekConnection() != null;
+        return ntPeekConnection();
+    }
+
+    public static INciHostDaemon connect(int timeout) {
+        if (!sInit) {
+            throw new IllegalStateException("attempt to connect before init");
+        }
+        if (ntPeekConnection()) {
+            return mProxy;
+        }
+        ntRequestConnection();
+        return ntWaitForConnection(timeout) ? mProxy : null;
     }
 
     public interface IpcConnectionListener {
@@ -73,6 +94,4 @@ public class IpcNativeHandler {
 
         void onDisconnect(IpcNativeHandler h);
     }
-
-
 }

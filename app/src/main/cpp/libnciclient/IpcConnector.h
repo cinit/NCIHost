@@ -55,6 +55,10 @@ public:
      */
     [[nodiscard]] int init(const char *dirPath, const char *uuidStr);
 
+    [[nodiscard]] inline bool isInitialized() const noexcept {
+        return mInitialized;
+    }
+
     [[nodiscard]] static IpcConnector &getInstance();
 
 private:
