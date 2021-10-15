@@ -17,6 +17,5 @@ set_target_properties(ncihostd PROPERTIES
         )
 
 target_compile_definitions(ncihostd PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
-target_compile_definitions(ncihostd PRIVATE NCI_HOST_BUILD_UUID=\"${NCI_HOST_BUILD_UUID}\")
 
 target_link_libraries(ncihostd c dl rpcprotocol ${ANDROID_LIBS})

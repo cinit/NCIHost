@@ -17,7 +17,7 @@ TypedLpcResult<int> NciHostDaemonImpl::getVersionCode() {
 }
 
 TypedLpcResult<std::string> NciHostDaemonImpl::getBuildUuid() {
-    return {NCI_HOST_BUILD_UUID};
+    return {"NOT_AVAILABLE"};
 }
 
 TypedLpcResult<void> NciHostDaemonImpl::exitProcess() {

@@ -24,7 +24,8 @@ android {
         }
         externalNativeBuild {
             cmake {
-                arguments "-DNCI_HOST_VERSION=" + versionName, "-DNCI_HOST_BUILD_UUID=" + BUILD_UUID, "-DANDROID_PLATFORM=android-21"
+                arguments "-DNCI_HOST_VERSION=" + versionName, "-DANDROID_PLATFORM=android-21"
+                // "-DNCI_HOST_BUILD_UUID=" + BUILD_UUID,
             }
         }
 
