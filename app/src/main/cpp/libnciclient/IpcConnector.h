@@ -9,6 +9,7 @@
 #include <atomic>
 
 #include "../rpcprotocol/IpcProxy.h"
+#include "NciHostDaemonProxy.h"
 
 class IpcConnector {
 public:
@@ -34,7 +35,11 @@ public:
     /**
      * return null if not connected
      */
+    [[nodiscard]]
     IpcProxy *getIpcProxy();
+
+    [[nodiscard]]
+    INciHostDaemon *getNciDaemon();
 
     int sendConnectRequest();
 
@@ -64,6 +69,7 @@ private:
     std::string mIpcPidFilePath;
     std::condition_variable mConnCondVar;
     std::shared_ptr<IpcProxy> mIpcProxy;
+    std::shared_ptr<NciHostDaemonProxy> mNciProxy;
     std::vector<IpcStatusListener> mStatusListeners;
 
     explicit IpcConnector();

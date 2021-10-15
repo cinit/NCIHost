@@ -18,7 +18,6 @@
 #include <chrono>
 
 #include "../rpcprotocol/Log.h"
-#include "../rpcprotocol/rpcprotocol.h"
 #include "../rpcprotocol/io_utils.h"
 
 #include "IpcConnector.h"
@@ -52,6 +51,10 @@ void IpcConnector::handleLinkStart(int fd) {
         if (mIpcProxy == nullptr) {
             mIpcProxy = std::make_shared<IpcProxy>();
             mIpcProxy->setName("ncihostd");
+        }
+        if (mNciProxy == nullptr) {
+            mNciProxy = std::make_shared<NciHostDaemonProxy>();
+            mNciProxy->setIpcProxy(mIpcProxy.get());
         }
         if (int err = mIpcProxy->attach(fd); err != 0) {
             LOGE("mIpcProxy.attach(%d) error: %d, %s", fd, err, strerror(err));
@@ -263,6 +266,10 @@ IpcProxy *IpcConnector::getIpcProxy() {
     return mIpcConnFd == -1 ? nullptr : (mIpcProxy.get());
 }
 
+INciHostDaemon *IpcConnector::getNciDaemon() {
+    return mIpcProxy ? (mIpcProxy->isConnected() ? mNciProxy.get() : nullptr) : nullptr;
+}
+
 /**
  * trigger an IN_CLOSE_WRITE inotify event
  */
@@ -284,7 +291,7 @@ int IpcConnector::sendConnectRequest() {
 }
 
 bool IpcConnector::isConnected() {
-    return getIpcProxy() != nullptr;
+    return getIpcProxy() != nullptr && mIpcProxy->isConnected();
 }
 
 void IpcConnector::registerIpcStatusListener(IpcConnector::IpcStatusListener listener) {

@@ -14,14 +14,18 @@ public:
 
     virtual ~INciHostDaemon() = default;
 
+    [[nodiscard]]
     virtual TypedLpcResult<std::string> getVersionName() = 0;
 
+    [[nodiscard]]
     virtual TypedLpcResult<int> getVersionCode() = 0;
 
+    [[nodiscard]]
     virtual TypedLpcResult<std::string> getBuildUuid() = 0;
 
     virtual TypedLpcResult<void> exitProcess() = 0;
 
+    [[nodiscard]]
     virtual TypedLpcResult<int> testFunction(int value) = 0;
 
     class TransactionIds {

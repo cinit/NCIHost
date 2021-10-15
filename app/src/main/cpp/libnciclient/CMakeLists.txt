@@ -5,7 +5,7 @@ project(nciclient)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(nciclient SHARED
-        version.c ipc_handle_jni.cpp IpcConnector.cpp)
+        version.c ipc_handle_jni.cpp IpcConnector.cpp NciHostDaemonProxy.cpp NciHostDaemonProxy.h)
 
 set_target_properties(nciclient PROPERTIES
         CXX_EXTENSIONS OFF
