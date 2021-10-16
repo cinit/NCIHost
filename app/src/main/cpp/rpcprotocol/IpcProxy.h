@@ -27,6 +27,8 @@ public:
     using LpcFuncHandler = bool (*)(const LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
     using EventHandler = void (*)(const LpcEnv &env, uint32_t funcId, const ArgList &args);
 private:
+    static constexpr bool sVerboseDebugLog = false;
+
     class LpcReturnStatus {
     public:
         std::condition_variable *cond;

@@ -11,9 +11,6 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <linux/limits.h>
-#include <linux/netlink.h>
-#include <linux/connector.h>
-#include <linux/cn_proc.h>
 
 #include <cstdio>
 #include <cerrno>
@@ -83,7 +80,6 @@ bool waitForInotifyWriteEvent(const char *path) {
 void handleLinkStart(int fd) {
     LOGI("link start, fd=%d", fd);
     IpcStateController::getInstance().attachIpcSeqPacketSocket(fd);
-    LOGI("link disconnected");
 }
 
 bool doConnect(const IpcSocketMeta &target, int uid) {
@@ -250,7 +246,7 @@ static void *rss_watchdog_procedure(void *) {
         if (rss_kb == 0) {
             LOGE("error read VmRSS");
         } else {
-            if (lastRss != rss_kb) {
+            if (std::abs(lastRss - rss_kb) > 1024) {
                 LOGD("rss = %dK", rss_kb);
                 lastRss = rss_kb;
             }
@@ -259,7 +255,7 @@ static void *rss_watchdog_procedure(void *) {
                 _exit(12);
             }
         }
-        usleep(3000000);
+        usleep(10000000);
     }
 }
 

@@ -51,14 +51,18 @@ int IpcProxy::attach(int fd) {
 }
 
 void IpcProxy::join() {
-    LOGD("---> join() start");
+    if (sVerboseDebugLog) {
+        LOGV("---> join() start");
+    }
     {
         std::unique_lock lk(mStatusLock);
         if (mIsRunning) {
             mJoinWaitCondVar.wait(lk);
         }
     }
-    LOGD("---> join() end");
+    if (sVerboseDebugLog) {
+        LOGV("---> join() end");
+    }
 }
 
 void IpcProxy::start() {
@@ -191,7 +195,9 @@ void IpcProxy::runIpcLooper() {
         // set all status before unlock!
         mRunningEntryStartCondVar.notify_all();
     }
-    LOGI("pid=%d, mSocketFd=%d, mInterruptEventFd=%d %s", getpid(), mSocketFd, mInterruptEventFd, mName.c_str());
+    if (sVerboseDebugLog) {
+        LOGD("pid=%d, mSocketFd=%d, mInterruptEventFd=%d %s", getpid(), mSocketFd, mInterruptEventFd, mName.c_str());
+    }
     while (epollFd != -1 && mSocketFd != -1 && mInterruptEventFd != -1) {
         epoll_event event = {};
         if (epoll_wait(epollFd, &event, 1, -1) < 0) {
@@ -202,7 +208,9 @@ void IpcProxy::runIpcLooper() {
                 break;
             }
         } else {
-            LOGE("epoll_wait return ev=%d fd=%d %s", event.events, event.data.fd, mName.c_str());
+            if (sVerboseDebugLog) {
+                LOGD("epoll_wait return ev=%d fd=%d %s", event.events, event.data.fd, mName.c_str());
+            }
             if ((event.events & (EPOLLERR | EPOLLHUP)) != 0) {
                 LOGI("pipe close, exit... %s", mName.c_str());
                 close(mSocketFd);
@@ -216,7 +224,9 @@ void IpcProxy::runIpcLooper() {
                 LOGI("interrupt event received, exit... %s", mName.c_str());
                 break;
             } else if (event.data.fd == mSocketFd) {
-                LOGI("epoll: socket fd, %d %s", event.events, mName.c_str());
+                if (sVerboseDebugLog) {
+                    LOGV("epoll: socket fd, %d %s", event.events, mName.c_str());
+                }
                 int size = (int) recv(mSocketFd, buffer, 65536, 0);
                 if (size < 0) {
                     int err = errno;
@@ -248,7 +258,6 @@ void IpcProxy::runIpcLooper() {
                 continue;
             } else {
                 LOGE("unexpected event");
-                *(volatile int *) 0 = 0;
                 abort();
             }
         }
@@ -262,7 +271,9 @@ void IpcProxy::runIpcLooper() {
 
 int IpcProxy::sendRawPacket(const void *buffer, size_t size) {
     std::scoped_lock<std::mutex> lk(mTxLock);
-    LOGI("send size %zu %s", size, mName.c_str());
+    if (sVerboseDebugLog) {
+        LOGD("send size %zu %s", size, mName.c_str());
+    }
     ssize_t result = send(mSocketFd, buffer, size, 0);
     if (result != size) {
         if (result < 0) {
