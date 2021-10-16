@@ -9,6 +9,8 @@
 #include "../rpcprotocol/LpcArgListExtractor.h"
 #include "NciHostDaemonImpl.h"
 
+namespace ipcprotocol {
+
 class IpcStateController {
 public:
     void attachIpcSeqPacketSocket(int fd);
@@ -30,5 +32,6 @@ private:
 
 };
 
+}
 
 #endif //NCIHOSTD_IPCSTATECONTROLLER_H

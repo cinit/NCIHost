@@ -14,6 +14,8 @@
 #include "rpc_struct.h"
 #include "ConcurrentHashMap.h"
 
+namespace ipcprotocol {
+
 class IpcProxy {
 public:
     class LpcEnv {
@@ -171,5 +173,6 @@ private:
     }
 };
 
+}
 
 #endif //RPCPROTOCOL_IPCPROXY_H

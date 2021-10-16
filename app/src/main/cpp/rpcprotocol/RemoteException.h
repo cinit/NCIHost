@@ -8,6 +8,8 @@
 #include <string>
 #include <cstdint>
 
+namespace ipcprotocol {
+
 /* do not throw it */
 class RemoteException : public std::exception {
 public:
@@ -27,5 +29,7 @@ public:
 private:
     std::string showMessage;
 };
+
+}
 
 #endif //RPCPROTOCOL_REMOTEEXCEPTION_H

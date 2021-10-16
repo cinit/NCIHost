@@ -12,6 +12,8 @@
 #include "rpc_struct.h"
 #include "RemoteException.h"
 
+namespace ipcprotocol {
+
 template<class T>
 class TypedLpcResult;
 
@@ -257,5 +259,7 @@ public:
         mResult.reset();
     }
 };
+
+}
 
 #endif //RPCPROTOCOL_LPCRESULT_H

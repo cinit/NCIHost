@@ -16,6 +16,8 @@
 
 #define LOG_TAG "IpcProxy"
 
+using namespace ipcprotocol;
+
 IpcProxy::IpcProxy() = default;
 
 IpcProxy::~IpcProxy() {

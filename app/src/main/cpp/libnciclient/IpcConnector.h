@@ -11,6 +11,8 @@
 #include "../rpcprotocol/IpcProxy.h"
 #include "NciHostDaemonProxy.h"
 
+namespace ipcprotocol {
+
 class IpcConnector {
 public:
     enum class IpcStatusEvent {
@@ -89,5 +91,6 @@ private:
     }
 };
 
+}
 
 #endif //NCICLIENT_IPCCONNECTOR_H

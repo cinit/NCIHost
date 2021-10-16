@@ -8,6 +8,8 @@
 #include "../rpcprotocol/INciHostDaemon.h"
 #include "../rpcprotocol/IpcProxy.h"
 
+namespace ipcprotocol {
+
 class NciHostDaemonImpl : public INciHostDaemon {
 public:
     ~NciHostDaemonImpl() override = default;
@@ -27,5 +29,6 @@ public:
 private:
 };
 
+}
 
 #endif //NCIHOSTD_NCIHOSTDAEMONIMPL_H

@@ -8,6 +8,8 @@
 #include "ArgList.h"
 #include "LpcResult.h"
 
+namespace ipcprotocol {
+
 class INciHostDaemon {
 public:
     INciHostDaemon() = default;
@@ -37,5 +39,7 @@ public:
         static constexpr uint32_t testFunction = 5;
     };
 };
+
+}
 
 #endif //NCI_HOST_INCIHOSTDAEMON_H

@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+namespace ipcprotocol {
+
 typedef struct TrxnPacketHeader {
     uint32_t length; // size of entire packet
     uint32_t type;
@@ -46,5 +48,7 @@ typedef struct EventTransactionHeader {
 static_assert(sizeof(TrxnPacketHeader) == 8, "TrxnPacketHeader size error");
 static_assert(sizeof(LpcTransactionHeader) == 24, "RpcTransactionHeader size error");
 static_assert(sizeof(EventTransactionHeader) == 24, "EventTransactionHeader size error");
+
+}
 
 #endif //RPC_STRUCT_H

@@ -5,6 +5,8 @@
 #include "RemoteException.h"
 #include <sstream>
 
+using namespace ipcprotocol;
+
 RemoteException::RemoteException() = default;
 
 RemoteException::~RemoteException() noexcept = default;

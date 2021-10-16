@@ -10,9 +10,12 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <type_traits>
 
 #include "HashMap.h"
 #include "SharedBuffer.h"
+
+namespace ipcprotocol {
 
 class ArgList {
 public:
@@ -228,7 +231,9 @@ public:
         return mLength;
     }
 
-    template<class T>
+    template<class T, typename Condition=std::enable_if_t<
+            (std::is_same<T, bool>() || std::is_same<T, float>() || std::is_same<T, double>() ||
+             (std::is_integral<T>() && !std::is_array<T>())) && sizeof(T) <= 8, T>>
     [[nodiscard]] inline bool get(T *out, int index) const {
         uint64_t reg = 0;
         if (!readRawInlineValue(&reg, index)) {
@@ -241,6 +246,7 @@ public:
         return true;
     }
 
+    template<class T=std::string>
     [[nodiscard]] inline bool get(std::string *out, int index) const {
         uint64_t reg = 0;
         if (!readRawInlineValue(&reg, index)) {
@@ -249,12 +255,18 @@ public:
         if (Types::getTypeId<std::string>() != *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index)) {
             return false;
         }
-        auto offset = (uint32_t) reg;
-        auto len = (uint32_t) (reg >> 32u);
+        struct BufferEntry {
+            uint32_t offset;
+            uint32_t length;// in bytes
+        };
+        static_assert(sizeof(BufferEntry) == 8);
+        const BufferEntry *entry = reinterpret_cast<BufferEntry *>(&reg);// ub
+        auto offset = entry->offset;
+        auto len = entry->length;
         if (offset + len > mLength) {
             return false;
         }
-        *out = std::string(reinterpret_cast<const char *>(mBuffer ) + offset, len);
+        *out = std::string(reinterpret_cast<const char *>(mBuffer) + offset, len);
         return true;
     }
 
@@ -266,5 +278,6 @@ public:
     }
 };
 
+}
 
 #endif //NCI_HOST_ARGLIST_H

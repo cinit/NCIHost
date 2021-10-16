@@ -36,6 +36,7 @@
 #define LOG_TAG "ncihostd"
 
 using namespace std;
+using namespace ipcprotocol;
 
 typedef struct {
     uint32_t pid;

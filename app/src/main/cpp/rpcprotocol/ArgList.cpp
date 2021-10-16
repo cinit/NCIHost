@@ -8,6 +8,7 @@
 #include "Rva.h"
 
 using namespace std;
+using namespace ipcprotocol;
 
 using uchar = ArgList::uchar;
 

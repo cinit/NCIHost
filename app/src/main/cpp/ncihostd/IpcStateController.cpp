@@ -8,6 +8,8 @@
 
 #define LOG_TAG "ncihostd"
 
+using namespace ipcprotocol;
+
 void IpcStateController::attachIpcSeqPacketSocket(int fd) {
     if (int err = mIpcProxy.attach(fd); err != 0) {
         LOGE("IpcProxy attach fd %d error %s", fd, strerror(err));

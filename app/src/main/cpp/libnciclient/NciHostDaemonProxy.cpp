@@ -4,6 +4,8 @@
 
 #include "NciHostDaemonProxy.h"
 
+using namespace ipcprotocol;
+
 NciHostDaemonProxy::NciHostDaemonProxy() = default;
 
 using Ids = INciHostDaemon::TransactionIds;

@@ -8,6 +8,8 @@
 
 #define LOG_TAG "ncihostd"
 
+using namespace ipcprotocol;
+
 TypedLpcResult<std::string> NciHostDaemonImpl::getVersionName() {
     return {NCI_HOST_VERSION};
 }

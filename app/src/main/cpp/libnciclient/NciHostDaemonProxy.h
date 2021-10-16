@@ -10,6 +10,8 @@
 #include "../rpcprotocol/IpcProxy.h"
 #include "../rpcprotocol/INciHostDaemon.h"
 
+namespace ipcprotocol {
+
 class NciHostDaemonProxy : public INciHostDaemon {
 public:
     NciHostDaemonProxy();
@@ -53,5 +55,6 @@ private:
     }
 };
 
+}
 
 #endif //NCICLIENT_NCIHOSTDAEMONPROXY_H

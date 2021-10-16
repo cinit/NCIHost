@@ -24,6 +24,8 @@
 #define LOG_TAG "ipc_handle_jni"
 
 using namespace std;
+using namespace ipcprotocol;
+
 extern "C" void __android_log_print(int level, const char *tag, const char *fmt, ...);
 
 static void android_log_handler(Log::Level level, const char *tag, const char *msg) {

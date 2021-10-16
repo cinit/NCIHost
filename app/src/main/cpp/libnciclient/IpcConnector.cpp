@@ -28,6 +28,8 @@
 
 #define IPC_SHM_SIZE (1*1024*1024)
 
+using namespace ipcprotocol;
+
 using IpcSocketMeta = struct {
     uint32_t pid;
     char name[108];

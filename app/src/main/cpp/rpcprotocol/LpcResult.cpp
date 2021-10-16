@@ -5,6 +5,8 @@
 #include "LpcResult.h"
 #include "rpc_struct.h"
 
+using namespace ipcprotocol;
+
 LpcResult::LpcResult(const LpcResult &result) = default;
 
 LpcResult::LpcResult() = default;
