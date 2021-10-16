@@ -340,7 +340,7 @@ int IpcProxy::sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer 
     return sendRawPacket(result.get(), result.size());
 }
 
-LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, const SharedBuffer &args) {
+LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args) {
     LpcResult result;
     uint32_t seq = mCurrentSequence.fetch_add(1);
     SharedBuffer buffer;
@@ -366,7 +366,14 @@ LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, const SharedBuffer &a
             result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
             return result;
         }
-        condvar.wait(retlk);
+        if ((ipcFlags & IpcFlags::IPC_FLAG_CRITICAL_CONTEXT) != 0) {
+            if (condvar.wait_for(retlk, std::chrono::milliseconds(1000)) == std::cv_status::timeout) {
+                mWaitingMap.remove(seq);
+                result.setError(LpcErrorCode::ERR_TIMEOUT_IN_CRITICAL_CONTEXT);
+            }
+        } else {
+            condvar.wait(retlk);
+        }
     }
     mWaitingMap.remove(seq);
     if (buffer.get() != nullptr) {

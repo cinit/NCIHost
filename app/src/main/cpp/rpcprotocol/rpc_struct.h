@@ -24,6 +24,7 @@ enum class LpcErrorCode : uint32_t {
     ERR_NO_LPC_HANDLER = 0x14,
     ERR_BAD_ARGUMENT = 0x15,
     ERR_REMOTE_INTERNAL_ERROR = 0x21,
+    ERR_TIMEOUT_IN_CRITICAL_CONTEXT = 0x40,
 };
 
 typedef struct LpcTransactionHeader {

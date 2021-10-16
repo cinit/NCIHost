@@ -55,6 +55,9 @@ bool jniThrowLpcResultErrorOrException(JNIEnv *env, const TypedLpcResult<T> &res
             case LpcErrorCode::ERR_REMOTE_INTERNAL_ERROR:
                 msg = "ERR_REMOTE_INTERNAL_ERROR";
                 break;
+            case LpcErrorCode::ERR_TIMEOUT_IN_CRITICAL_CONTEXT:
+                msg = "ERR_TIMEOUT_IN_CRITICAL_CONTEXT";
+                break;
             default:
                 msg = std::string("unknown error: ") + std::to_string(err);
         }

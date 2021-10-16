@@ -24,6 +24,11 @@ public:
         const SharedBuffer *buffer;
     };
 
+    class IpcFlags {
+    public:
+        static constexpr uint32_t IPC_FLAG_CRITICAL_CONTEXT = 0x10;
+    };
+
     using LpcFuncHandler = bool (*)(const LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
     using EventHandler = void (*)(const LpcEnv &env, uint32_t funcId, const ArgList &args);
 private:
@@ -114,11 +119,11 @@ public:
 
     int sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
 
-    [[nodiscard]] LpcResult executeLpcTransaction(uint32_t funcId, const SharedBuffer &args);
+    [[nodiscard]] LpcResult executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args);
 
     template<class ... Args>
     [[nodiscard]] inline LpcResult executeRemoteProcedure(uint32_t funcId, const Args &...args) {
-        return executeLpcTransaction(funcId, ArgList::Builder().pushArgs(args...).build());
+        return executeLpcTransaction(funcId, 0, ArgList::Builder().pushArgs(args...).build());
     }
 
     [[nodiscard]] inline EventHandler getEventHandler() const noexcept {
