@@ -12,3 +12,4 @@ find_library( # Defines the name of the path variable that stores the
 add_subdirectory(rpcprotocol)
 add_subdirectory(libnciclient)
 add_subdirectory(ncihostd)
+add_subdirectory(libnxphalpatch)
