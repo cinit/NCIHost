@@ -2,13 +2,13 @@
 
 ### TODO List
 
-- [ ] Unix Domain Socket IPC
-- [ ] Shm file IO Channels
-- [ ] /dev/* open+ioctl+rw
-- [ ] Communication Capture
-- [ ] Card Emulation
-- [ ] Auto dev Detection
+- [x] Reversed Unix Domain Socket IPC
+- [x] Inject into HW service
+- [ ] NCI communication capture
+- [ ] /dev/* ioctl/rw operation analysis
+- [ ] Mifare card emulation(eSE-based)
+- [ ] Auto device detection
 
 ### Compatible Devices
 
-- [ ] `/dev/nq-nci`
+- [x] /dev/nq-nci
