@@ -14,21 +14,21 @@
 #include <cstddef>
 
 #include "inject_io_init.h"
-#include "tracer_call.h"
+#include "daemon_ipc.h"
 
 static InjectInitInfo sInitInfo;
-static InjectConnectInfo sConnectionInfo;
+//static InjectConnectInfo sConnectionInfo;
 static volatile bool sInitialized = false;
 static volatile int gConnFd = -1;
 
 extern "C" void NxpHalPatchInit() {
     if (!sInitialized) {
         memset((void *) &sInitialized, 0, sizeof(sInitialized));
-        memset((void *) &sConnectionInfo, 0, sizeof(sConnectionInfo));
+//        memset((void *) &sConnectionInfo, 0, sizeof(sConnectionInfo));
         sInitialized = true;
     }
     // step 1, get daemon info
-    if (asm_tracer_call(TRACER_CALL_INIT, &sInitInfo) != nullptr) {
+    if (tracer_call(TracerCallId::TRACER_CALL_INIT, &sInitInfo) != nullptr) {
         return;
     }
     if (strlen(sInitInfo.daemonVersion) == 0 || strlen(sInitInfo.socketName) == 0) {
@@ -41,7 +41,7 @@ extern "C" void NxpHalPatchInit() {
     struct sockaddr_un listenAddr = {0};
     listenAddr.sun_family = AF_UNIX;
     size_t len = strlen(sInitInfo.socketName);
-    memcpy(listenAddr.sun_path + 1, sConnectionInfo.socketName, len);
+    memcpy(listenAddr.sun_path + 1, sInitInfo.socketName, len);
     if (size_t size = offsetof(struct sockaddr_un, sun_path) + len + 1;
             ::bind(listenFd, (struct sockaddr *) &listenAddr, (int) size) < 0) {
         tracer_printf("bind socket error %d", errno);
@@ -58,7 +58,7 @@ extern "C" void NxpHalPatchInit() {
         close(listenFd);
         return;
     }
-    if (asm_tracer_call(TRACER_CALL_CONNECT, nullptr) != nullptr) {
+    if (tracer_call(TracerCallId::TRACER_CALL_CONNECT, nullptr) != nullptr) {
         close(listenFd);
         return;
     }
