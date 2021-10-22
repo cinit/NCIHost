@@ -51,4 +51,16 @@ void *tracer_call(TracerCallId cmd, void *args);
 extern "C" void tracer_printf(const char *fmt, ...)
 __attribute__ ((__format__ (__printf__, 1, 2)));
 
+void invokeReadResultCallback(ssize_t result, int fd, void *buffer, ssize_t size);
+
+void invokeWriteResultCallback(ssize_t result, int fd, void *buffer, ssize_t size);
+
+void invokeOpenResultCallback(int result, const char *name, int flags, uint32_t mode);
+
+void invokeCloseResultCallback(int result, int fd);
+
+void invokeIoctlResultCallback(int result, int fd, unsigned long int request, uint64_t arg);
+
+void invokeSelectResultCallback(int result);
+
 #endif //NCI_HOST_NATIVES_DAEMON_IPC_H

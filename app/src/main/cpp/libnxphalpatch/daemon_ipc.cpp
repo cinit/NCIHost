@@ -39,3 +39,28 @@ void tracer_printf(const char *fmt, ...) {
     tracer_call(TracerCallId::TRACER_CALL_LOG, &info);
     free(buffer);
 }
+
+
+void invokeReadResultCallback(ssize_t result, int fd, void *buffer, ssize_t size) {
+
+}
+
+void invokeWriteResultCallback(ssize_t result, int fd, void *buffer, ssize_t size) {
+
+}
+
+void invokeOpenResultCallback(int result, const char *name, int flags, uint32_t mode) {
+
+}
+
+void invokeCloseResultCallback(int result, int fd) {
+
+}
+
+void invokeIoctlResultCallback(int result, int fd, unsigned long int request, uint64_t arg) {
+
+}
+
+void invokeSelectResultCallback(int result) {
+
+}

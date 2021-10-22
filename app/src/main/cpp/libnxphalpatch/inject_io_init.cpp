@@ -5,7 +5,6 @@
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 #include <sys/un.h>
-#include <sys/un.h>
 
 #include <cerrno>
 #include <cstdint>
