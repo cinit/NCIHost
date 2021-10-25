@@ -29,4 +29,4 @@ set_target_properties(nxphalpatch PROPERTIES
 
 target_compile_definitions(nxphalpatch PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
 
-target_link_libraries(nxphalpatch ${ANDROID_LIBS})
+target_link_libraries(nxphalpatch)
