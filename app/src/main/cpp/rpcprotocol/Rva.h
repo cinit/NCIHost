@@ -17,7 +17,16 @@ public:
     inline Rva(const void *addr, size_t len) : address(addr), length(len) {}
 
     template<class T>
-    inline const T *at(size_t offset) noexcept {
+    inline T *at(size_t offset) noexcept {
+        if (offset + sizeof(T) > length) {
+            return nullptr;
+        } else {
+            return (T *) (((char *) address) + offset);
+        }
+    }
+
+    template<class T>
+    inline const T *at(size_t offset) const noexcept {
         if (offset + sizeof(T) > length) {
             return nullptr;
         } else {
