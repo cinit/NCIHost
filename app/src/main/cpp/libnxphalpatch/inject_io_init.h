@@ -11,4 +11,10 @@ extern "C" void NxpHalPatchInit();
 void NxpHalPatchInit();
 #endif
 
+#ifdef __cplusplus
+
+int getDaemonIpcSocket();
+
+#endif
+
 #endif //NCI_HOST_NATIVES_INJECT_IO_INIT_H

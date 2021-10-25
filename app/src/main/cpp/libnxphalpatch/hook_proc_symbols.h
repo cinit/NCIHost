@@ -8,30 +8,13 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-struct OriginHookProcedure {
-    uint32_t struct_size;
-    uint32_t entry_count;
-    uint64_t libc_base;
-    uint32_t off_plt_open_2;
-    uint32_t off_plt_open;
-    uint32_t off_plt_read_chk;
-    uint32_t off_plt_read;
-    uint32_t off_plt_write_chk;
-    uint32_t off_plt_write;
-    uint32_t off_plt_close;
-    uint32_t off_plt_ioctl;
-    uint32_t off_plt_select;
-    uint32_t unused32_0;
-};
-#ifdef __cplusplus
-static_assert(sizeof(OriginHookProcedure) == 56);
-#endif
+#include "daemon_ipc_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int hook_sym_init(const OriginHookProcedure *originProc);
+int hook_sym_init(const struct OriginHookProcedure *op);
 
 int hook_proc_open_2(const char *pathname, int flags);
 

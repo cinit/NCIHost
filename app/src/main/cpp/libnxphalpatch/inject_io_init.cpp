@@ -8,12 +8,11 @@
 
 #include <cerrno>
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <cstddef>
 
 #include "inject_io_init.h"
 #include "daemon_ipc.h"
+#include "hook_proc_symbols.h"
 
 static InjectInitInfo sInitInfo;
 //static InjectConnectInfo sConnectionInfo;
@@ -94,7 +93,18 @@ extern "C" void NxpHalPatchInit() {
         close(connfd);
         return;
     }
+    fcntl(connfd, F_SETFL, fcntl(gConnFd, F_GETFL, 0) | O_NONBLOCK);
+    OriginHookProcedure info = {sizeof(OriginHookProcedure)};
+    if (tracer_call(TracerCallId::TRACER_CALL_HOOK_SYM, &info) != nullptr) {
+        close(listenFd);
+        close(connfd);
+        return;
+    }
+    hook_sym_init(&info);
     gConnFd = connfd;
-    // detach
-    // hook and (start thread??).
+    tracer_call(TracerCallId::TRACER_CALL_DONE, nullptr);
+}
+
+int getDaemonIpcSocket() {
+    return gConnFd;
 }

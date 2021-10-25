@@ -56,7 +56,3 @@ void so_init() {
         inject_init();
     }
 }
-
-int main() {
-    return 0;
-}
