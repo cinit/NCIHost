@@ -6,32 +6,65 @@
 #define NCI_HOST_NATIVES_ELFVIEW_H
 
 #include <cstdint>
+#include <vector>
 
 #include "../../rpcprotocol/Rva.h"
 
 namespace elfsym {
 
 class ElfView {
+public:
+    using ElfInfo = struct {
+        const uint8_t *handle;
+        const void *ehdr;
+        const void *phdr;
+        const void *shdr;
+        const void *dyn;
+        uint32_t dyn_size;
+        const void *symtab;
+        uint32_t sym_size;
+        const void *relplt;
+        uint32_t relplt_size;
+        const void *reldyn;
+        bool use_rela;
+        uint32_t reldyn_size;
+        const void *gnu_hash;
+        uint32_t nbucket;
+        uint32_t nchain;
+        const uint32_t *bucket;
+        const uint32_t *chain;
+        const char *shstr;
+        const char *symstr;
+    };
+
 private:
-    Rva mRva;
+    Rva mRva = {nullptr, 0};
+    int mPointerSize = 0;
 
 public:
-    inline void attach(const Rva &rva) {
-        mRva = rva;
-    }
+    void attachFileMemMapping(const Rva &rva);
 
     [[nodiscard]] bool isValid() const noexcept {
-        return mRva.address != nullptr && mRva.length > 64 && *mRva.at<char>(0) == 0x7F
-               && *mRva.at<char>(1) == 'E' && *mRva.at<char>(1) == 'L' && *mRva.at<char>(1) == 'F';
+        return mPointerSize != 0;
     }
 
     inline void detach() {
         mRva = {nullptr, 0};
+        mPointerSize = 0;
     }
 
-    [[nodiscard]] int getPointerSize() const noexcept;
+    [[nodiscard]] inline int getPointerSize() const noexcept {
+        return mPointerSize;
+    }
 
-    [[nodiscard]] uint64_t getExtSymGotRva(const char *symbol) const;
+    [[nodiscard]] int getElfInfo(ElfInfo &info) const;
+
+    /**
+     * @return -1 if not found
+     */
+    [[nodiscard]] int getSymbolIndex(const char *symbol) const;
+
+    [[nodiscard]] std::vector<uint64_t> getExtSymGotRelVirtAddr(const char *symbol) const;
 };
 
 }
