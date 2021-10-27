@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "../rpcprotocol/IpcProxy.h"
+#include "../rpcprotocol/protocol/IpcProxy.h"
 #include "../rpcprotocol/INciHostDaemon.h"
 
 namespace ipcprotocol {

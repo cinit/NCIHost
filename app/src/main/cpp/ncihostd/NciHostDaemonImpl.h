@@ -6,7 +6,7 @@
 #define NCIHOSTD_NCIHOSTDAEMONIMPL_H
 
 #include "../rpcprotocol/INciHostDaemon.h"
-#include "../rpcprotocol/IpcProxy.h"
+#include "../rpcprotocol/protocol/IpcProxy.h"
 
 namespace ipcprotocol {
 

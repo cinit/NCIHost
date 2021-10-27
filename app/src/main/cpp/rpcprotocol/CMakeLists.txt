@@ -5,9 +5,9 @@ project(rpcprotocol)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(rpcprotocol STATIC
-        ArgList.cpp rpc_proc.cpp FixedThreadPool.cpp shared_memory.cpp
-        RemoteException.cpp SharedBuffer.cpp IpcProxy.cpp LpcResult.cpp
-        Log.cpp io_utils.cpp Uuid.cpp SignalHandler.cpp)
+        protocol/ArgList.cpp utils/FixedThreadPool.cpp utils/shared_memory.cpp
+        protocol/RemoteException.cpp utils/SharedBuffer.cpp protocol/IpcProxy.cpp protocol/LpcResult.cpp
+        log/Log.cpp utils/io_utils.cpp utils/Uuid.cpp utils/SignalHandler.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")

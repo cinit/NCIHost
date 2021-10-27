@@ -26,9 +26,9 @@
 #include "common.h"
 #include "daemon.h"
 #include "IpcStateController.h"
-#include "../rpcprotocol/Log.h"
-#include "../rpcprotocol/rpc_struct.h"
-#include "../rpcprotocol/IpcProxy.h"
+#include "../rpcprotocol/log/Log.h"
+#include "../rpcprotocol/protocol/rpc_struct.h"
+#include "../rpcprotocol/protocol/IpcProxy.h"
 
 #define LOG_TAG "ncihostd"
 

@@ -17,8 +17,8 @@
 #include <algorithm>
 #include <chrono>
 
-#include "../rpcprotocol/Log.h"
-#include "../rpcprotocol/io_utils.h"
+#include "../rpcprotocol/log/Log.h"
+#include "../rpcprotocol/utils/io_utils.h"
 
 #include "IpcConnector.h"
 

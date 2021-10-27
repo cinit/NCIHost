@@ -18,8 +18,8 @@
 
 #include "ipc_handle_jni.h"
 #include "IpcConnector.h"
-#include "../rpcprotocol/Log.h"
-#include "../rpcprotocol/io_utils.h"
+#include "../rpcprotocol/log/Log.h"
+#include "../rpcprotocol/utils/io_utils.h"
 
 #define LOG_TAG "ipc_handle_jni"
 

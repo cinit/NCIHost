@@ -9,10 +9,10 @@
 #include <atomic>
 #include <unistd.h>
 
-#include "FixedThreadPool.h"
+#include "../utils/FixedThreadPool.h"
+#include "../utils/ConcurrentHashMap.h"
 #include "LpcResult.h"
 #include "rpc_struct.h"
-#include "ConcurrentHashMap.h"
 
 namespace ipcprotocol {
 

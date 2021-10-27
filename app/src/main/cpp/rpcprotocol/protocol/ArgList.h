@@ -12,8 +12,8 @@
 #include <vector>
 #include <type_traits>
 
-#include "HashMap.h"
-#include "SharedBuffer.h"
+#include "../utils/HashMap.h"
+#include "../utils/SharedBuffer.h"
 
 namespace ipcprotocol {
 

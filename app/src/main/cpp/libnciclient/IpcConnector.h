@@ -8,7 +8,7 @@
 #include <mutex>
 #include <atomic>
 
-#include "../rpcprotocol/IpcProxy.h"
+#include "../rpcprotocol/protocol/IpcProxy.h"
 #include "NciHostDaemonProxy.h"
 
 namespace ipcprotocol {

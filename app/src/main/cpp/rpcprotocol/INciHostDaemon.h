@@ -5,8 +5,8 @@
 #ifndef NCI_HOST_INCIHOSTDAEMON_H
 #define NCI_HOST_INCIHOSTDAEMON_H
 
-#include "ArgList.h"
-#include "LpcResult.h"
+#include "protocol/ArgList.h"
+#include "protocol/LpcResult.h"
 
 namespace ipcprotocol {
 

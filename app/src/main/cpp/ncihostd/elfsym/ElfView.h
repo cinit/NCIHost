@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "../../rpcprotocol/Rva.h"
+#include "../../rpcprotocol/utils/Rva.h"
 
 namespace elfsym {
 

@@ -12,7 +12,7 @@
 
 #include "rpc_struct.h"
 #include "IpcProxy.h"
-#include "Log.h"
+#include "../log/Log.h"
 
 #define LOG_TAG "IpcProxy"
 
