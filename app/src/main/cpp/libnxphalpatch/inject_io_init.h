@@ -15,6 +15,8 @@ void NxpHalPatchInit();
 
 int getDaemonIpcSocket();
 
+void closeDaemonIpcSocket();
+
 #endif
 
 #endif //NCI_HOST_NATIVES_INJECT_IO_INIT_H

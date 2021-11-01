@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //
 // Created by kinit on 2021-10-25.
 //
@@ -24,12 +25,15 @@ public:
 
     [[nodiscard]] int getPointerSize() const noexcept;
 
+    [[nodiscard]] int getArchitecture() const noexcept;
+
     [[nodiscard]] bool isValid() const noexcept;
 
     [[nodiscard]] std::vector<Module> getModules() const;
 
 private:
     int mPointerSize = 0;
+    int mArchitecture = 0;
     std::vector<Module> mProcessModules;
 };
 

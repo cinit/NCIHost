@@ -108,3 +108,10 @@ extern "C" void NxpHalPatchInit() {
 int getDaemonIpcSocket() {
     return gConnFd;
 }
+
+void closeDaemonIpcSocket() {
+    if (gConnFd >= 0) {
+        close(gConnFd);
+        gConnFd = -1;
+    }
+}

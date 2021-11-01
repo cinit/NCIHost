@@ -4,8 +4,9 @@ project(ncihostd)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ncihostd startup.c daemon.cpp IpcStateController.cpp IpcStateController.h NciHostDaemonImpl.cpp NciHostDaemonImpl.h
-        elfsym/ElfView.cpp elfsym/ProcessView.cpp)
+add_executable(ncihostd startup.c daemon.cpp IpcStateController.cpp NciHostDaemonImpl.cpp
+        elfsym/ElfView.cpp elfsym/ProcessView.cpp
+        injection/so_injection.cpp injection/arch/ptrace_inject_common.cpp injection/arch/ptrace_inject_aarch64.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")

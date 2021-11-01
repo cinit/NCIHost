@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //
 // Created by kinit on 2021-10-05.
 //
@@ -25,21 +26,36 @@ private:
 public:
     static void format(Level level, const char *tag, const char *fmt, ...)
     __attribute__ ((__format__ (__printf__, 3, 4))) {
-        va_list valist;
+        va_list varg1;
+        va_list varg2;
         LogHandler h = mHandler;
-        if (h == nullptr) {
+        if (h == nullptr || fmt == nullptr) {
             return;
         }
-        size_t size = strlen(fmt) * 3 / 2 + 16;
+        va_start(varg1, fmt);
+        va_copy(varg2, varg1);
+        int size = vsnprintf(nullptr, 0, fmt, varg1);
+        va_end(varg1);
+        if (size <= 0) {
+            return;
+        }
         void *buffer = malloc(size);
         if (buffer == nullptr) {
             return;
         }
-        va_start(valist, fmt);
-        vsnprintf(reinterpret_cast<char *> (buffer), size, fmt, valist);
-        va_end(valist);
+        va_start(varg2, fmt);
+        vsnprintf((char *) buffer, size, fmt, varg2);
+        va_end(varg2);
         h(level, tag, static_cast<const char *>(buffer));
         free(buffer);
+    }
+
+    static void logBuffer(Level level, const char *tag, const char *msg) {
+        LogHandler h = mHandler;
+        if (h == nullptr) {
+            return;
+        }
+        h(level, tag, msg);
     }
 
     static inline LogHandler getLogHandler() noexcept {

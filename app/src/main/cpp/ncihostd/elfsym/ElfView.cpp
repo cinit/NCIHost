@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //
 // Created by kinit on 2021-10-25.
 //
@@ -15,14 +16,18 @@ void ElfView::attachFileMemMapping(const Rva &rva) {
     if (mRva.address != nullptr && mRva.length > 64 && *mRva.at<char>(0) == 0x7F
         && *mRva.at<char>(1) == 'E' && *mRva.at<char>(1) == 'L' && *mRva.at<char>(1) == 'F') {
         mPointerSize = 0;
+        mArchitecture = 0;
     } else {
         char type = *mRva.at<char>(4);
         if (type == 1) {
             mPointerSize = 4;
+            mArchitecture = static_cast<const Elf32_Ehdr *>(mRva.address)->e_machine;
         } else if (type == 2) {
             mPointerSize = 8;
+            mArchitecture = static_cast<const Elf64_Ehdr *>(mRva.address)->e_machine;
         } else {
             mPointerSize = 0;
+            mArchitecture = 0;
         }
     }
 }
@@ -566,3 +571,24 @@ int ElfView::getSymbolIndex(const char *symbol) const {
         return -1;
     }
 }
+
+int ElfView::getSymbolAddress(const char *symbol) const {
+    ElfInfo elfInfo = {};
+    if (getElfInfo(elfInfo) < 0) {
+        return 0;
+    }
+    int index = getSymbolIndex(symbol);
+    if (index < 0) {
+        return 0;
+    }
+    if (getPointerSize() == 8) {
+        const auto *sym = static_cast<const Elf64_Sym *>(elfInfo.symtab);
+        return int(sym[index].st_value);
+    } else if (getPointerSize() == 4) {
+        const auto *sym = static_cast<const Elf32_Sym *>(elfInfo.symtab);
+        return int(sym[index].st_value);
+    } else {
+        return 0;
+    }
+}
+

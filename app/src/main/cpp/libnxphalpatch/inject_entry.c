@@ -12,7 +12,7 @@
 __attribute__((used, section("NCI_HOST_VERSION"), visibility("default")))
 const char g_nci_host_version[] = NCI_HOST_VERSION;
 
-// called by daemon with ptrace, or __attribute__((constructor))
+// called by daemon with ptrace
 __attribute__((noinline, visibility("default")))
 void inject_init() {
     (void) g_nci_host_version;
@@ -48,11 +48,4 @@ static int get_tracer_pid() {
     free(line);
     fclose(fp);
     return tracer;
-}
-
-__attribute__((constructor))
-void so_init() {
-    if (get_tracer_pid() > 0) {
-        inject_init();
-    }
 }

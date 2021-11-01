@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 //
 // Created by kinit on 2021-10-21.
 //
@@ -6,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 #include <unistd.h>
 
 #include "daemon_ipc.h"
@@ -52,12 +54,16 @@ static void postIoEvent(IoOperationInfo *opInfo, const void *ioBuffer, size_t bu
                 memcpy(((char *) buf) + sizeof(IoOperationInfo), ioBuffer, bufLen);
                 auto *p = static_cast<IoOperationInfo *>(buf);
                 p->bufferLength = int64_t(bufLen);
-                write(fd, buf, sizeof(IoOperationInfo) + bufLen);
+                if (write(fd, buf, sizeof(IoOperationInfo) + bufLen) < 0 && errno == EPIPE) {
+                    closeDaemonIpcSocket();
+                }
                 free(buf);
             }
         } else {
             opInfo->bufferLength = 0;
-            write(fd, opInfo, sizeof(IoOperationInfo));
+            if (write(fd, opInfo, sizeof(IoOperationInfo)) < 0 && errno == EPIPE) {
+                closeDaemonIpcSocket();
+            }
         }
     }
 }

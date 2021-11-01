@@ -1,8 +1,10 @@
-
+// SPDX-License-Identifier: MIT
+//
 // Created by kinit on 2021-10-25.
 //
 
 #include <unistd.h>
+#include <elf.h>
 #include <cinttypes>
 #include <fcntl.h>
 #include <cerrno>
@@ -47,14 +49,18 @@ int ProcessView::readProcess(int pid) {
         char type = buffer[4];
         if (type == 1) {
             mPointerSize = 4;
+            mArchitecture = reinterpret_cast<const Elf32_Ehdr *>(buffer)->e_machine;
         } else if (type == 2) {
             mPointerSize = 8;
+            mArchitecture = reinterpret_cast<const Elf64_Ehdr *>(buffer)->e_machine;
         } else {
             mPointerSize = 0;
+            mArchitecture = 0;
             return EINVAL;
         }
     } else {
         mPointerSize = 0;
+        mArchitecture = 0;
         return EINVAL;
     }
     snprintf(buffer, 64, "/proc/%d/maps", pid);
@@ -122,4 +128,8 @@ bool ProcessView::isValid() const noexcept {
 
 std::vector<ProcessView::Module> ProcessView::getModules() const {
     return mProcessModules;
+}
+
+int ProcessView::getArchitecture() const noexcept {
+    return mArchitecture;
 }
