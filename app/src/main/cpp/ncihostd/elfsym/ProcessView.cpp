@@ -40,7 +40,7 @@ int ProcessView::readProcess(int pid) {
     if (fd < 0) {
         return errno;
     }
-    if (read(fd, buffer, 6) != 6) {
+    if (read(fd, buffer, 256) != 256) {
         close(fd);
         return errno;
     }

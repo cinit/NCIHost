@@ -16,10 +16,14 @@ class Injection {
 private:
     SessionLog *mLog = nullptr;
     int mTargetPid = 0;
+    int mArchitecture = 0;
     elfsym::ProcessView mProcView;
+    uintptr_t mErrnoTlsAddress = 0;
     HashMap<std::string, uintptr_t> mRemoteLibcProc;
 
 public:
+    Injection() = default;
+
     Injection(const Injection &) = delete;
 
     Injection &operator=(const Injection &o) = delete;
@@ -37,6 +41,9 @@ public:
 
     [[nodiscard]]
     elfsym::ProcessView getProcessView() const;
+
+    [[nodiscard]]
+    int getErrnoTls(int *result);
 
     [[nodiscard]]
     int getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol);
