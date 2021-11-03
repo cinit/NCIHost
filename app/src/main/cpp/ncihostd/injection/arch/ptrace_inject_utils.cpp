@@ -45,6 +45,7 @@ int ptrace_read_data(int pid, uintptr_t addr, void *buffer, int size) {
     int offset = 0;
     if ((addr / sizeof(void *) * sizeof(void *)) != addr) {
         uintptr_t tmp = 0;
+        errno = 0;
         if ((tmp = ::ptrace(PTRACE_PEEKDATA, pid, addr / sizeof(void *) * sizeof(void *), 0)) == -1
             && errno != 0) {
             return -errno;
@@ -57,6 +58,7 @@ int ptrace_read_data(int pid, uintptr_t addr, void *buffer, int size) {
     auto alignedWordCount = (size - offset) / sizeof(void *);
     for (int i = 0; i < alignedWordCount; i++) {
         uintptr_t tmp;
+        errno = 0;
         if ((tmp = ::ptrace(PTRACE_POKEDATA, pid, alignedStart + i * sizeof(void *),
                             *(const uintptr_t *) (((const char *) buffer) + offset))) == -1 && errno != 0) {
             return -errno;
@@ -67,6 +69,7 @@ int ptrace_read_data(int pid, uintptr_t addr, void *buffer, int size) {
     if (int tailSize = size - offset; tailSize > 0) {
         uintptr_t rptr = alignedStart + alignedWordCount * sizeof(void *);
         uintptr_t tmp = 0;
+        errno = 0;
         if ((tmp = ::ptrace(PTRACE_PEEKDATA, pid, rptr, 0)) == -1 && errno != 0) {
             return -errno;
         }
@@ -79,6 +82,7 @@ int ptrace_write_data(int pid, uintptr_t addr, const void *buffer, int size) {
     int offset = 0;
     if ((addr / sizeof(void *) * sizeof(void *)) != addr) {
         uintptr_t tmp = 0;
+        errno = 0;
         if ((tmp = ::ptrace(PTRACE_PEEKDATA, pid, addr / sizeof(void *) * sizeof(void *), 0)) == -1
             && errno != 0) {
             return -errno;
@@ -102,6 +106,7 @@ int ptrace_write_data(int pid, uintptr_t addr, const void *buffer, int size) {
     if (int tailSize = size - offset; tailSize > 0) {
         uintptr_t rptr = alignedStart + alignedWordCount * sizeof(void *);
         uintptr_t tmp = 0;
+        errno = 0;
         if ((tmp = ::ptrace(PTRACE_PEEKDATA, pid, rptr, 0)) == -1 && errno != 0) {
             return -errno;
         }

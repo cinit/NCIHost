@@ -66,7 +66,7 @@ int hook_sym_init(const struct OriginHookProcedure *op) {
     if (op->struct_size != sizeof(struct OriginHookProcedure)) {
         return EINVAL;
     }
-    void *libc = dlopen("libc.so", RTLD_NOLOAD);
+    void *libc = dlopen("libc.so", RTLD_NOW | RTLD_NOLOAD);
     if (libc == NULL) {
         // should not happen, we have DT_NEEDED
         return -1;

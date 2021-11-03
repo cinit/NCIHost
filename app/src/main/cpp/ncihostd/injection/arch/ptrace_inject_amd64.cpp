@@ -55,10 +55,10 @@ int arch_ptrace_call_procedure_and_wait_amd64(int pid, uintptr_t proc,
     tmp.rdx = args[2];
     tmp.rcx = args[3];
     // align rsp to 16
-    // TODO: fix bad stack
-    while (((tmp.rsp - 16) & 0xf) != 0) {
+    while ((tmp.rsp & 0xf) != 0) {
         tmp.rsp--;
     }
+    // TODO: handle Intel shadow stack CET
     // push 0 as return address, trigger a SIGSEGV when procedure returns
     const uintptr_t tmp_null = 0;
     tmp.rsp -= 8;
