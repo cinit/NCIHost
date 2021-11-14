@@ -109,7 +109,7 @@ int ptrace_write_data(int pid, uintptr_t addr, const void *buffer, int size) {
             return -errno;
         }
         memcpy(&tmp, ((const char *) buffer) + offset, tailSize);
-        if (::ptrace(PTRACE_POKEDATA, pid, addr / sizeof(void *) * sizeof(void *), tmp) == -1) {
+        if (::ptrace(PTRACE_POKEDATA, pid, rptr, tmp) == -1) {
             return -errno;
         }
     }

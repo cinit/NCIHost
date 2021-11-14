@@ -53,8 +53,22 @@ public:
     [[nodiscard]]
     int getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const;
 
+    /**
+     * dup a fd to target process
+     * @param fd fd to send
+     * @return remote fd on success, -errno on failure
+     */
     [[nodiscard]]
-    int sendFileDescriptor();
+    int sendFileDescriptor(int bridge, int fd);
+
+    /**
+     * create a pair of Unix Domain Socket
+     * @param self (out) fd in current process
+     * @param that (out) fd in target process
+     * @return 0 on success, -errno on failure
+     */
+    [[nodiscard]]
+    int establishUnixDomainSocket(int *self, int *that);
 
     [[nodiscard]]
     int allocateRemoteMemory(uintptr_t *remoteAddr, size_t size);
@@ -65,8 +79,9 @@ public:
     [[nodiscard]]
     int readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size);
 
-    [[nodiscard]] int callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
-                                          const std::array<uintptr_t, 4> &args, int timeout = 1000);
+    [[nodiscard]]
+    int callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
+                            const std::array<uintptr_t, 4> &args, int timeout = 1000);
 
     [[nodiscard]]
     int remoteLoadLibraryFormFd(int remoteFd);

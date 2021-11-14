@@ -5,6 +5,9 @@
 
 #include <unistd.h>
 #include <sys/ptrace.h>
+#include <sys/socket.h>
+#include <sys/fcntl.h>
+#include <sys/un.h>
 #include <string>
 #include <cerrno>
 #include <regex>
@@ -12,10 +15,29 @@
 #include "../../rpcprotocol/utils/FileMemMap.h"
 #include "../elfsym/ElfView.h"
 #include "arch/ptrace_inject_utils.h"
+#include "../../rpcprotocol/utils/Uuid.h"
 
 #include "so_injection.h"
 
 using namespace inject;
+
+static inline void logi(SessionLog *log, std::string_view msg) {
+    if (log) {
+        log->info(msg);
+    }
+}
+
+static inline void logw(SessionLog *log, std::string_view msg) {
+    if (log) {
+        log->warn(msg);
+    }
+}
+
+static inline void loge(SessionLog *log, std::string_view msg) {
+    if (log) {
+        log->error(msg);
+    }
+}
 
 void Injection::setSessionLog(SessionLog *log) {
     mLog = log;
@@ -137,7 +159,7 @@ int Injection::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, cons
     uintptr_t soBase = 0;
     std::string soPath;
     if (soname == nullptr) {
-        // exec
+        // main executable
         soBase = uintptr_t(mProcView.getModules()[0].baseAddress);
         soPath = mProcView.getModules()[0].path;
     } else {
@@ -153,16 +175,16 @@ int Injection::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, cons
             return -ESRCH;
         }
     }
-    FileMemMap libcMap;
-    if (int err;(err = libcMap.mapFilePath(soPath.c_str())) != 0) {
+    FileMemMap soMap;
+    if (int err;(err = soMap.mapFilePath(soPath.c_str())) != 0) {
         if (mLog) {
             mLog->error("map " + std::string(soname) + " failed " + std::to_string(err) + ", path=" + soPath);
         }
         return err;
     }
-    elfsym::ElfView libcView;
-    libcView.attachFileMemMapping({libcMap.getAddress(), libcMap.getLength()});
-    int relaAddr = libcView.getSymbolAddress(symbol);
+    elfsym::ElfView soView;
+    soView.attachFileMemMapping({soMap.getAddress(), soMap.getLength()});
+    int relaAddr = soView.getSymbolAddress(symbol);
     if (relaAddr != 0) {
         uintptr_t addr = soBase + relaAddr;
         *pAddr = addr;
@@ -250,19 +272,181 @@ int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
     return 0;
 }
 
+int Injection::sendFileDescriptor(int bridge, int fd) {
+    if (fd < 0 || access(("/proc/self/fd/" + std::to_string(fd)).c_str(), F_OK) != 0) {
+        return -EBADFD;
+    }
+    // use reversed Unix domain socket
+    logi(mLog, "try send fd " + std::to_string(fd) + " to pid " + std::to_string(mTargetPid));
+    return -ENOSYS;
+}
+
+int Injection::establishUnixDomainSocket(int *self, int *that) {
+    // init remote proc address
+    constexpr int pf_close = 0;
+    constexpr int pf_socket = 1;
+    constexpr int pf_bind = 2;
+    constexpr int pf_listen = 3;
+    constexpr int pf_fcntl = 4;
+    constexpr int pf_accept = 5;
+    struct RemoteFunc {
+        const char *name;
+        uintptr_t addr;
+    };
+    std::array<RemoteFunc, 6> remoteFuncs = {
+            RemoteFunc{"close", 0},
+            RemoteFunc{"socket", 0},
+            RemoteFunc{"bind", 0},
+            RemoteFunc{"listen", 0},
+            RemoteFunc{"fcntl", 0},
+            RemoteFunc{"accept", 0},
+    };
+    for (auto &[name, addr]: remoteFuncs) {
+        if (int err; (err = getRemoteLibcSymAddress(&addr, name)) != 0) {
+            loge(mLog, "unable to dlsym libc.so!" + std::string(name) + ", err=" + std::to_string(err));
+            return err;
+        }
+    }
+    int rerr = 0;
+    if (int err; (err = getErrnoTls(&rerr)) != 0) {
+        loge(mLog, "unable to read remote errno, err=" + std::to_string(err));
+        return err;
+    }
+    uintptr_t rbuf = 0;
+    if (int err; (err = allocateRemoteMemory(&rbuf, 4096)) != 0) {
+        loge(mLog, "unable to allocate remote memory, err=" + std::to_string(err));
+        return err;
+    }
+    uintptr_t tmpretval = -1;
+    int rsock;
+    size_t addrLen;
+    struct sockaddr_un listenAddr = {0};
+    { // 1. socket(AF_UNIX, SOCK_SEQPACKET, 0)
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_socket].addr, &tmpretval,
+                                                {AF_UNIX, SOCK_SEQPACKET, 0})) != 0) {
+            loge(mLog, "unable to call remote socket, err=" + std::to_string(err));
+            return err;
+        }
+        rsock = int(tmpretval);
+        if (rsock < 0) {
+            (void) getErrnoTls(&rerr);
+            loge(mLog, "remote socket failed, remote errno=" + std::to_string(rerr));
+            return -rerr;
+        }
+        // init sockaddr
+        listenAddr.sun_family = AF_UNIX;
+        std::string uuid = Uuid::randomUuid();
+        size_t nameLen = uuid.size();
+        memcpy(listenAddr.sun_path + 1, uuid.c_str(), nameLen);
+        addrLen = offsetof(struct sockaddr_un, sun_path) + nameLen + 1;
+        if (int err; (err = writeRemoteMemory(rbuf, &listenAddr, addrLen)) != 0) {
+            loge(mLog, "unable to write remote mem " + std::to_string(rbuf) + ", len=" + std::to_string(addrLen)
+                       + ", err=" + std::to_string(err));
+            return err;
+        }
+    }
+    { // 2. bind(listenFd, &listenAddr, size)
+        tmpretval = -1;
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_bind].addr, &tmpretval,
+                                                {uint32_t(rsock), rbuf, addrLen})) != 0) {
+            loge(mLog, "unable to call remote bind, err=" + std::to_string(err));
+            return err;
+        }
+        if (int(tmpretval) < 0) {
+            (void) getErrnoTls(&rerr);
+            loge(mLog, "remote bind failed, remote errno=" + std::to_string(rerr));
+            return -rerr;
+        }
+    }
+    { // 3. listen(listenFd, 1)
+        tmpretval = -1;
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_listen].addr, &tmpretval,
+                                                {uint32_t(rsock), 1})) != 0) {
+            loge(mLog, "unable to call remote listen, err=" + std::to_string(err));
+            return err;
+        }
+        if (int(tmpretval) < 0) {
+            (void) getErrnoTls(&rerr);
+            loge(mLog, "remote listen failed, remote errno=" + std::to_string(rerr));
+            return -rerr;
+        }
+    }
+    { // 4. fcntl(listenFd, F_SETFL, fcntl(listenFd, F_GETFL, 0) | O_NONBLOCK)
+        tmpretval = -1;
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_fcntl].addr, &tmpretval,
+                                                {uint32_t(rsock), F_GETFL, 0})) != 0) {
+            loge(mLog, "unable to call remote fcntl, err=" + std::to_string(err));
+            return err;
+        }
+        int rfattr = int(tmpretval);
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_fcntl].addr, &tmpretval,
+                                                {uint32_t(rsock), F_SETFL, uintptr_t(rfattr | O_NONBLOCK)})) != 0) {
+            loge(mLog, "unable to call remote fcntl, err=" + std::to_string(err));
+            return err;
+        }
+        if (int(tmpretval) < 0) {
+            (void) getErrnoTls(&rerr);
+            loge(mLog, "remote fcntl failed, remote errno=" + std::to_string(rerr));
+            return -rerr;
+        }
+    }
+    int lConnSock = -1;
+    { // active side
+        lConnSock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+        fcntl(lConnSock, F_SETFL, fcntl(lConnSock, F_GETFL, 0) | O_NONBLOCK);
+        int err = connect(lConnSock, reinterpret_cast<const sockaddr *>(&listenAddr), int(addrLen));
+        if (err < 0 && err != EINPROGRESS) {
+            loge(mLog, "local connect async failed, errno=" + std::to_string(rerr));
+            close(lConnSock);
+            return -err;
+        }
+    }
+    int rConnSock = -1;
+    { // 6. int connfd = accept(listenFd, &addr, &adrlen)
+        tmpretval = -1;
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_accept].addr, &tmpretval,
+                                                {uint32_t(rsock), rbuf + 256, rbuf + 256 + 16})) != 0) {
+            loge(mLog, "unable to call remote accept, err=" + std::to_string(err));
+            return err;
+        }
+        rConnSock = int(tmpretval);
+        if (rConnSock < 0) {
+            (void) getErrnoTls(&rerr);
+            loge(mLog, "remote accept failed, remote errno=" + std::to_string(rerr));
+            close(lConnSock);
+            return -rerr;
+        }
+    }
+    { // close unused fd
+        tmpretval = -1;
+        if (int err; (err = callRemoteProcedure(remoteFuncs[pf_close].addr, &tmpretval,
+                                                {uint32_t(rsock)})) != 0) {
+            logw(mLog, "unable to call remote close, err=" + std::to_string(err));
+        }
+        // free remote memory
+        (void) freeRemoteMemory(rbuf);
+    }
+    if (fcntl(lConnSock, F_SETFL, fcntl(lConnSock, F_GETFL, 0) & ~O_NONBLOCK)) {
+        logw(mLog, "unable to unset O_NONBLOCK, err=" + std::to_string(errno));
+    }
+    *self = lConnSock;
+    *that = rConnSock;
+    return 0;
+}
+
 /**
  * I. inject & connect
  *    1. trap
  *    2. __errno_location()L
  *    3. socket(III)I
- *    4. malloc(L)L
  *    5. bind(ILI)I
  *    6. listen(II)I
  *    7. fcntl(III)I
  *    8. accept(ILL)I
  *    9. recvmsg(ILI)L
- *    10. android_dlopen_ext(LIL)L, check mmap syscall here
- *    11. <daemon: invoke inject_init with fd>
+ *    10. close(I)V
+ *    11. android_dlopen_ext(LIL)L, check mmap syscall here
+ *    12. <daemon: invoke inject_init with fd>
  * II. reconnect
  *    1. write memory at inject_conn_buffer
  *    2. signal SIGUSR1
