@@ -61,7 +61,7 @@ int Injection::attachTargetProcess() {
         }
         return -err;
     }
-    if (int err; (err = wait_for_signal(mTargetPid, 3000)) < 0) {
+    if (int err; (err = wait_for_signal(mTargetPid, 1000)) < 0) {
         if (mLog) { mLog->error("waitpid err=" + std::to_string(err)); }
         return err;
     }
@@ -78,6 +78,7 @@ elfsym::ProcessView Injection::getProcessView() const {
 int Injection::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
     if (const uintptr_t *cached = mRemoteLibcProc.get(symbol); cached != nullptr) {
         *pAddr = *cached;
+        return 0;
     }
     uintptr_t libcBase = 0;
     std::string libcPath;
@@ -169,9 +170,11 @@ int Injection::freeRemoteMemory(uintptr_t addr) {
 int Injection::getErrnoTls(int *result) {
     if (mErrnoTlsAddress == 0) {
         uintptr_t fp_errno_loc = 0;
-        if (int err; (err = getRemoteLibcSymAddress(&fp_errno_loc, "__errno_location")) != 0) {
-            if (mLog) { mLog->error("unable to find libc.so!__errno_location: err=" + std::to_string(err)); }
-            return err;
+        if (getRemoteLibcSymAddress(&fp_errno_loc, "__errno_location") != 0) {
+            if (int err; (err = getRemoteLibcSymAddress(&fp_errno_loc, "__errno")) != 0) {
+                if (mLog) { mLog->error("unable to find libc.so!__errno(_location)?: err=" + std::to_string(err)); }
+                return err;
+            }
         }
         uintptr_t errnoAddr = 0;
         if (int err; (err = ptrace_call_procedure(mArchitecture, mTargetPid, fp_errno_loc, &errnoAddr, {})) != 0) {
