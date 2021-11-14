@@ -133,6 +133,45 @@ int Injection::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
     }
 }
 
+int Injection::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const {
+    uintptr_t soBase = 0;
+    std::string soPath;
+    if (soname == nullptr) {
+        // exec
+        soBase = uintptr_t(mProcView.getModules()[0].baseAddress);
+        soPath = mProcView.getModules()[0].path;
+    } else {
+        for (const auto &m: mProcView.getModules()) {
+            if (m.name == soname) {
+                soBase = uintptr_t(m.baseAddress);
+                soPath = m.path;
+                break;
+            }
+        }
+        if (soBase == 0) {
+            if (mLog != nullptr) { mLog->error("unable to get base address of " + std::string(soname)); }
+            return -ESRCH;
+        }
+    }
+    FileMemMap libcMap;
+    if (int err;(err = libcMap.mapFilePath(soPath.c_str())) != 0) {
+        if (mLog) {
+            mLog->error("map " + std::string(soname) + " failed " + std::to_string(err) + ", path=" + soPath);
+        }
+        return err;
+    }
+    elfsym::ElfView libcView;
+    libcView.attachFileMemMapping({libcMap.getAddress(), libcMap.getLength()});
+    int relaAddr = libcView.getSymbolAddress(symbol);
+    if (relaAddr != 0) {
+        uintptr_t addr = soBase + relaAddr;
+        *pAddr = addr;
+        return 0;
+    } else {
+        return -ESRCH;
+    }
+}
+
 int Injection::allocateRemoteMemory(uintptr_t *remoteAddr, size_t size) {
     uintptr_t remoteMalloc = 0;
     if (int err; (err = getRemoteLibcSymAddress(&remoteMalloc, "malloc")) != 0) {
@@ -197,6 +236,18 @@ void Injection::detach() {
     mRemoteLibcProc.clear();
     mProcView = {};
     mErrnoTlsAddress = 0;
+}
+
+int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
+                                   const std::array<uintptr_t, 4> &args, int timeout) {
+    uintptr_t retval = -1;
+    if (int err = ptrace_call_procedure(mArchitecture, mTargetPid, proc, &retval, args, timeout) != 0) {
+        return err;
+    }
+    if (pRetval != nullptr) {
+        *pRetval = retval;
+    }
+    return 0;
 }
 
 /**

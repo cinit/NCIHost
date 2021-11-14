@@ -49,6 +49,9 @@ public:
     int getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol);
 
     [[nodiscard]]
+    int getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const;
+
+    [[nodiscard]]
     int sendFileDescriptor();
 
     [[nodiscard]]
@@ -59,6 +62,9 @@ public:
 
     [[nodiscard]]
     int readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size);
+
+    [[nodiscard]] int callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
+                                          const std::array<uintptr_t, 4> &args, int timeout = 1000);
 
     [[nodiscard]]
     int remoteLoadLibraryFormFd(int remoteFd);

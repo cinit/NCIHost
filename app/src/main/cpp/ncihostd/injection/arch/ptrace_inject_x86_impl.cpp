@@ -122,10 +122,9 @@ int arch_ptrace_call_procedure_and_wait_x86(int pid, uintptr_t proc, uintptr_t *
     while (((tmp.esp - 8) & 0x7) != 0) {
         tmp.esp--;
     }
-    // push args to stack
     // TODO: handle Intel shadow stack CET
-    // push 0 as return address, trigger a SIGSEGV when procedure returns
     tmp.esp -= 4;
+    // push args to stack, 0 as return address, trigger a SIGSEGV when procedure returns
     if (int err; (err = ptrace_write_data(pid, tmp.esp, &argStack, 20)) != 0) {
         return err;
     }
