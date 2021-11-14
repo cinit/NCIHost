@@ -60,7 +60,7 @@ static_assert(sizeof(user_regs_struct_amd64) == 27 * 8, "user_regs_struct_amd64 
 int arch_ptrace_call_procedure_and_wait_amd64_compat64(int pid, uintptr_t proc, uintptr_t *retval,
                                                        const std::array<uintptr_t, 4> &args, int timeout) {
     user_regs_struct_amd64 regs = {};
-    if (::ptrace(PTRACE_GETREGS, pid, 0, &regs) < 0) {
+    if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_struct_amd64)) < 0) {
         return -errno;
     }
     user_regs_struct_amd64 tmp = regs;
@@ -82,13 +82,8 @@ int arch_ptrace_call_procedure_and_wait_amd64_compat64(int pid, uintptr_t proc, 
     if (int err; (err = ptrace_write_data(pid, tmp.rsp, &tmp_null, 8)) != 0) {
         return err;
     }
-    if (::ptrace(PTRACE_SETREGS, pid, 0, &tmp) < 0) {
+    if (ptrace_set_gp_regs_compat(pid, &tmp, sizeof(user_regs_struct_amd64)) < 0) {
         return -errno;
-    }
-    {
-        user_regs_struct_amd64 t2 = {};
-        ::ptrace(PTRACE_GETREGS, pid, 0, &t2);
-        uintptr_t r = ::ptrace(PTRACE_PEEKDATA, pid, t2.rsp, 0);
     }
     if (::ptrace(PTRACE_CONT, pid, 0, 0) < 0) {
         return -errno;
@@ -97,10 +92,10 @@ int arch_ptrace_call_procedure_and_wait_amd64_compat64(int pid, uintptr_t proc, 
     if ((stopSignal = wait_for_signal(pid, timeout)) < 0) {
         return stopSignal;
     }
-    if (::ptrace(PTRACE_GETREGS, pid, 0, &tmp) < 0) {
+    if (ptrace_get_gp_regs_compat(pid, &tmp, sizeof(user_regs_struct_amd64)) < 0) {
         return -errno;
     }
-    if (::ptrace(PTRACE_SETREGS, pid, 0, &regs) < 0) {
+    if (ptrace_set_gp_regs_compat(pid, &regs, sizeof(user_regs_struct_amd64)) < 0) {
         return -errno;
     }
     if (tmp.rip == 0) {

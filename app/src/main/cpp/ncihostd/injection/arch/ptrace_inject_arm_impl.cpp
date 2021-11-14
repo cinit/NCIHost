@@ -48,7 +48,7 @@ static_assert(sizeof(user_regs_aarch32) == 18 * 4, "user_regs_aarch32 size error
 int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc, uintptr_t *retval,
                                                          const std::array<uintptr_t, 4> &args, int timeout) {
     user_regs_aarch64 regs = {};
-    if (::ptrace(PTRACE_GETREGS, pid, 0, &regs) < 0) {
+    if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
     }
     user_regs_aarch64 tmp = regs;
@@ -58,7 +58,7 @@ int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc
     tmp.regs[2] = args[2];
     tmp.regs[3] = args[3];
     tmp.regs[30] = 0;// set LR = 0, trigger a SIGSEGV when procedure returns
-    if (::ptrace(PTRACE_SETREGS, pid, 0, &tmp) < 0) {
+    if (ptrace_set_gp_regs_compat(pid, &tmp, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
     }
     if (::ptrace(PTRACE_CONT, pid, 0, 0) < 0) {
@@ -67,11 +67,11 @@ int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc
     if (int status; (status = wait_for_signal(pid, timeout)) < 0) {
         return status;
     }
-    if (::ptrace(PTRACE_GETREGS, pid, 0, &tmp) < 0) {
+    if (ptrace_get_gp_regs_compat(pid, &tmp, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
     }
     *retval = tmp.regs[0];
-    if (::ptrace(PTRACE_SETREGS, pid, 0, &regs) < 0) {
+    if (ptrace_set_gp_regs_compat(pid, &regs, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
     }
     return 0;

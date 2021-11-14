@@ -7,6 +7,7 @@
 #define NCI_HOST_NATIVES_PTRACE_INJECT_UTILS_H
 
 #include <cstdint>
+#include <cstddef>
 #include <array>
 
 namespace inject {
@@ -23,6 +24,12 @@ int ptrace_write_data(int pid, uintptr_t addr, const void *buffer, int size);
 
 [[nodiscard]]
 int wait_for_signal(int tid, int timeout);
+
+[[nodiscard]]
+int ptrace_get_gp_regs_compat(int pid, void *user_regs, size_t size);
+
+[[nodiscard]]
+int ptrace_set_gp_regs_compat(int pid, const void *user_regs, size_t size);
 
 }
 

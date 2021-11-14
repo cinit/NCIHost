@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <sys/uio.h>
 #include "ptrace_inject_arch.h"
 
 #include "ptrace_inject_utils.h"
@@ -19,6 +20,8 @@ constexpr int ARCH_X86 = 3;
 constexpr int ARCH_X86_64 = 62;
 constexpr int ARCH_ARM = 40;
 constexpr int ARCH_AARCH64 = 183;
+
+constexpr int NT_PRSTATUS = 1;
 
 int ptrace_call_procedure(int arch, int pid, uintptr_t proc,
                           uintptr_t *retval, const std::array<uintptr_t, 4> &args, int timeout) {
@@ -135,6 +138,22 @@ int wait_for_signal(pid_t tid, int timeout) {
         usleep(1000);
         timeleft--;
     }
+}
+
+int ptrace_get_gp_regs_compat(int pid, void *user_regs, size_t size) {
+    if (iovec iov = {user_regs, size};
+            ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, &iov) < 0) {
+        return -errno;
+    }
+    return 0;
+}
+
+int ptrace_set_gp_regs_compat(int pid, const void *user_regs, size_t size) {
+    if (iovec iov = {const_cast<void *>(user_regs), size};
+            ptrace(PTRACE_SETREGSET, pid, NT_PRSTATUS, &iov) < 0) {
+        return -errno;
+    }
+    return 0;
 }
 
 }
