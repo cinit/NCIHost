@@ -57,8 +57,8 @@ struct user_regs_struct_amd64 {
 };
 static_assert(sizeof(user_regs_struct_amd64) == 27 * 8, "user_regs_struct_amd64 size error");
 
-int arch_ptrace_call_procedure_and_wait_amd64_compat64(int pid, uintptr_t proc, uintptr_t *retval,
-                                                       const std::array<uintptr_t, 4> &args, int timeout) {
+int arch_ptrace_call_procedure_and_wait_amd64(int pid, uintptr_t proc, uintptr_t *retval,
+                                              const std::array<uintptr_t, 4> &args, int timeout) {
     user_regs_struct_amd64 regs = {};
     if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_struct_amd64)) < 0) {
         return -errno;
@@ -106,24 +106,49 @@ int arch_ptrace_call_procedure_and_wait_amd64_compat64(int pid, uintptr_t proc, 
     }
 }
 
-int arch_ptrace_call_procedure_and_wait_amd64(int pid, uintptr_t proc,
-                                              uintptr_t *retval, const std::array<uintptr_t, 4> &args, int timeout) {
-    if constexpr(sizeof(void *) == 8) {
-        // compat 64
-        return arch_ptrace_call_procedure_and_wait_amd64_compat64(pid, proc, retval, args, timeout);
-    } else {
-        // compat 32
-        return -ENOSYS;
-    }
-}
-
 int arch_ptrace_call_procedure_and_wait_x86(int pid, uintptr_t proc, uintptr_t *retval,
                                             const std::array<uintptr_t, 4> &args, int timeout) {
-    if constexpr(sizeof(void *) == 8) {
-        // compat 64
-        return arch_ptrace_call_procedure_and_wait_amd64_compat64(pid, proc, retval, args, timeout);
+    user_regs_struct_i386 regs = {};
+    if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_struct_i386)) < 0) {
+        return -errno;
+    }
+    user_regs_struct_i386 tmp = regs;
+    tmp.eip = uint32_t(proc);
+    const uint32_t argStack[5] = {0, uint32_t(args[0]), uint32_t(args[1]), uint32_t(args[2]), uint32_t(args[3])};
+    static_assert(sizeof(argStack) == 20);
+    tmp.eax = 0; // put syscall restart aside
+    tmp.esp -= 64;
+    // align rsp to 8
+    while (((tmp.esp - 8) & 0x7) != 0) {
+        tmp.esp--;
+    }
+    // push args to stack
+    // TODO: handle Intel shadow stack CET
+    // push 0 as return address, trigger a SIGSEGV when procedure returns
+    tmp.esp -= 4;
+    if (int err; (err = ptrace_write_data(pid, tmp.esp, &argStack, 20)) != 0) {
+        return err;
+    }
+    if (ptrace_set_gp_regs_compat(pid, &tmp, sizeof(user_regs_struct_i386)) < 0) {
+        return -errno;
+    }
+    if (::ptrace(PTRACE_CONT, pid, 0, 0) < 0) {
+        return -errno;
+    }
+    int stopSignal;
+    if ((stopSignal = wait_for_signal(pid, timeout)) < 0) {
+        return stopSignal;
+    }
+    if (ptrace_get_gp_regs_compat(pid, &tmp, sizeof(user_regs_struct_i386)) < 0) {
+        return -errno;
+    }
+    if (ptrace_set_gp_regs_compat(pid, &regs, sizeof(user_regs_struct_i386)) < 0) {
+        return -errno;
+    }
+    if (tmp.eip == 0) {
+        *retval = tmp.eax;
+        return 0;
     } else {
-        // compat 32
-        return -ENOSYS;
+        return -EFAULT;
     }
 }
