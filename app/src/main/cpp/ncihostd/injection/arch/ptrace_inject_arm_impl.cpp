@@ -10,6 +10,7 @@
 #include "ptrace_inject_utils.h"
 
 using namespace inject;
+
 using u64 = uint64_t;
 using u32 = uint32_t;
 
@@ -45,8 +46,8 @@ static_assert(sizeof(user_regs_aarch32) == 18 * 4, "user_regs_aarch32 size error
 #define ARM_r0        uregs[0]
 #define ARM_ORIG_r0   uregs[17]
 
-int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc, uintptr_t *retval,
-                                                         const std::array<uintptr_t, 4> &args, int timeout) {
+int arch_ptrace_call_procedure_and_wait_aarch64(int pid, uintptr_t proc, uintptr_t *retval,
+                                                const std::array<uintptr_t, 4> &args, int timeout) {
     user_regs_aarch64 regs = {};
     if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
@@ -58,6 +59,7 @@ int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc
     tmp.regs[2] = args[2];
     tmp.regs[3] = args[3];
     tmp.regs[30] = 0;// set LR = 0, trigger a SIGSEGV when procedure returns
+    // TODO: handle ARMv8.3 pointer authentication
     if (ptrace_set_gp_regs_compat(pid, &tmp, sizeof(user_regs_aarch64)) < 0) {
         return -errno;
     }
@@ -77,24 +79,34 @@ int arch_ptrace_call_procedure_and_wait_aarch64_compat64(int pid, uintptr_t proc
     return 0;
 }
 
-int arch_ptrace_call_procedure_and_wait_aarch64(int pid, uintptr_t proc, uintptr_t *retval,
-                                                const std::array<uintptr_t, 4> &args, int timeout) {
-    if constexpr(sizeof(void *) == 8) {
-        // compat 64
-        return arch_ptrace_call_procedure_and_wait_aarch64_compat64(pid, proc, retval, args, timeout);
-    } else {
-        // compat 32
-        return -ENOSYS;
-    }
-}
-
 int arch_ptrace_call_procedure_and_wait_arm(int pid, uintptr_t proc,
                                             uintptr_t *retval, const std::array<uintptr_t, 4> &args, int timeout) {
-    if constexpr(sizeof(void *) == 8) {
-        // compat 64
-        return -ENOSYS;
-    } else {
-        // compat 32
-        return -ENOSYS;
+    user_regs_aarch32 regs = {};
+    if (ptrace_get_gp_regs_compat(pid, &regs, sizeof(user_regs_aarch32)) < 0) {
+        return -errno;
     }
+    user_regs_aarch32 tmp = regs;
+    tmp.ARM_pc = uint32_t(proc);
+    tmp.uregs[0] = uint32_t(args[0]);
+    tmp.uregs[1] = uint32_t(args[1]);
+    tmp.uregs[2] = uint32_t(args[2]);
+    tmp.uregs[3] = uint32_t(args[3]);
+    tmp.ARM_lr = 0;// set LR = 0, trigger a SIGSEGV when procedure returns
+    if (ptrace_set_gp_regs_compat(pid, &tmp, sizeof(user_regs_aarch32)) < 0) {
+        return -errno;
+    }
+    if (::ptrace(PTRACE_CONT, pid, 0, 0) < 0) {
+        return -errno;
+    }
+    if (int status; (status = wait_for_signal(pid, timeout)) < 0) {
+        return status;
+    }
+    if (ptrace_get_gp_regs_compat(pid, &tmp, sizeof(user_regs_aarch32)) < 0) {
+        return -errno;
+    }
+    *retval = tmp.uregs[0];
+    if (ptrace_set_gp_regs_compat(pid, &regs, sizeof(user_regs_aarch32)) < 0) {
+        return -errno;
+    }
+    return 0;
 }
