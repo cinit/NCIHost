@@ -23,21 +23,16 @@ constexpr int ARCH_AARCH64 = 183;
 int ptrace_call_procedure(int arch, int pid, uintptr_t proc,
                           uintptr_t *retval, const std::array<uintptr_t, 4> &args, int timeout) {
     switch (arch) {
-        case ARCH_X86: {
-            return -ENOSYS;
-        }
-        case ARCH_X86_64: {
+        case ARCH_X86:
+            return arch_ptrace_call_procedure_and_wait_x86(pid, proc, retval, args, timeout);
+        case ARCH_X86_64:
             return arch_ptrace_call_procedure_and_wait_amd64(pid, proc, retval, args, timeout);
-        }
-        case ARCH_ARM: {
-            return -ENOSYS;
-        }
-        case ARCH_AARCH64: {
+        case ARCH_ARM:
+            return arch_ptrace_call_procedure_and_wait_arm(pid, proc, retval, args, timeout);
+        case ARCH_AARCH64:
             return arch_ptrace_call_procedure_and_wait_aarch64(pid, proc, retval, args, timeout);
-        }
-        default: {
+        default:
             return -ENOSYS;
-        }
     }
 }
 
