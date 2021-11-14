@@ -8,6 +8,8 @@
 #include "daemon_ipc_struct.h"
 #include "intercept_callbacks.h"
 
+constexpr uint32_t TRACER_CALL_MAGIC = 0xA5757300;
+
 void *tracer_call(TracerCallId cmd, void *args);
 
 extern "C" void tracer_printf(const char *fmt, ...)

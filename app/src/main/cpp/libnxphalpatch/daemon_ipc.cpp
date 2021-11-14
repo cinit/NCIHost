@@ -15,7 +15,7 @@
 #include "inject_io_init.h"
 
 void *tracer_call(TracerCallId cmd, void *args) {
-    return asm_tracer_call(static_cast<int>(cmd), args);
+    return asm_tracer_call(int(uint32_t(cmd) | TRACER_CALL_MAGIC), args);
 }
 
 extern "C"
