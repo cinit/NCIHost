@@ -6,6 +6,8 @@
 #ifndef NCI_HOST_NATIVES_SO_INJECTION_H
 #define NCI_HOST_NATIVES_SO_INJECTION_H
 
+#include <array>
+
 #include "../../rpcprotocol/utils/HashMap.h"
 #include "../../rpcprotocol/log/SessionLog.h"
 #include "../elfsym/ProcessView.h"
