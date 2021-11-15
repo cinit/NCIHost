@@ -84,6 +84,9 @@ public:
     int writeRemoteMemory(uintptr_t remoteAddr, const void *buffer, size_t size);
 
     [[nodiscard]]
+    int allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buffer, size_t size);
+
+    [[nodiscard]]
     int readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size);
 
     [[nodiscard]]
@@ -91,7 +94,16 @@ public:
                             const std::array<uintptr_t, 4> &args, int timeout = 1000);
 
     [[nodiscard]]
-    int remoteLoadLibraryFormFd(int remoteFd);
+    int remoteLoadLibraryFormFd(const char *soname, int remoteFd);
+
+    /**
+     * read C-style string (char*) from target process
+     * @param result (out) string container
+     * @param address remote address of char[]
+     * @return string length if success, -errno if fail
+     */
+    [[nodiscard]]
+    int readRemoteString(std::string *str, uintptr_t address);
 
     int freeRemoteMemory(uintptr_t addr);
 

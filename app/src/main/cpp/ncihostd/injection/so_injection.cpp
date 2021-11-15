@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <sys/fcntl.h>
 #include <sys/un.h>
+#include <dlfcn.h>
 #include <string>
 #include <cerrno>
 #include <regex>
@@ -20,6 +21,7 @@
 #include "so_injection.h"
 
 using namespace inject;
+using elfsym::ElfView;
 
 static inline void logv(SessionLog *log, std::string_view msg) {
     if (log) {
@@ -224,6 +226,21 @@ int Injection::readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size)
     return ptrace_read_data(mTargetPid, remoteAddr, buffer, int(size));
 }
 
+int Injection::allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buffer, size_t size) {
+    uintptr_t rbuf = 0;
+    if (int err = allocateRemoteMemory(&rbuf, size); err != 0) {
+        loge(mLog, "unable to allocate remote memory, err=" + std::to_string(err));
+        return -ENOMEM;
+    }
+    if (int err = writeRemoteMemory(rbuf, buffer, size); err != 0) {
+        loge(mLog, "unable to write remote memory, err=" + std::to_string(err));
+        freeRemoteMemory(rbuf);
+        return -ENOMEM;
+    }
+    *remoteAddr = rbuf;
+    return 0;
+}
+
 int Injection::freeRemoteMemory(uintptr_t addr) {
     uintptr_t remoteFree = 0;
     uintptr_t unused;
@@ -358,11 +375,13 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
     struct msghdr64 {
         uint64_t msg_name;
         socklen_t msg_namelen;
+        int __unused4_0;
         uint64_t msg_iov;
         uint64_t msg_iovlen;
         uint64_t msg_control;
         uint64_t msg_controllen;
         int msg_flags;
+        int __unused4_1;
     };
     static_assert(sizeof(msghdr64) == 56);
     struct cmsghdr_fd_32 {
@@ -378,6 +397,7 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
         int cmsg_level;
         int cmsg_type;
         int fd;
+        int __unused4_0;
     };
     static_assert(sizeof(cmsghdr_fd_64) == 24);
     // remote recv fd
@@ -643,23 +663,192 @@ int Injection::closeRemoteFileDescriptor(int fd) {
     return 0;
 }
 
+int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
+    uintptr_t linkerBase = 0;
+    std::string linkerPath;
+    uintptr_t libcBase = 0;
+    std::string libcPath;
+    for (const auto &m: mProcView.getModules()) {
+        if (m.name == "linker" || m.name == "linker64") {
+            linkerBase = uintptr_t(m.baseAddress);
+            linkerPath = m.path;
+            break;
+        } else if (m.name == "libc.so") {
+            libcBase = uintptr_t(m.baseAddress);
+            libcPath = m.path;
+            break;
+        }
+    }
+    if (linkerBase == 0 && libcBase == 0) {
+        std::regex libcRegex("libc\\.so\\.[0-9]");
+        for (const auto &m: mProcView.getModules()) {
+            if (std::regex_match(m.name, libcRegex)) {
+                libcBase = uintptr_t(m.baseAddress);
+                libcPath = m.path;
+                break;
+            }
+        }
+    }
+    if (libcBase == 0 && linkerBase == 0) {
+        loge(mLog, "unable to find linker or libc.so");
+        return -EFAULT;
+    }
+    if (linkerBase != 0) {
+        logi(mLog, "use linker as remote dynamic loader");
+        FileMemMap linkerMemMap;
+        if (int err;(err = linkerMemMap.mapFilePath(linkerPath.c_str())) != 0) {
+            if (mLog) {
+                mLog->error("map linker failed " + std::to_string(err) + ", path=" + linkerPath);
+            }
+            return err;
+        }
+        elfsym::ElfView linkerView;
+        linkerView.attachFileMemMapping({linkerMemMap.getAddress(), linkerMemMap.getLength()});
+        uintptr_t dlopenRelAddr = linkerView.getSymbolAddress("__loader_android_dlopen_ext");
+        uintptr_t dlerrorRelAddr = linkerView.getSymbolAddress("__loader_dlerror");
+        if (dlopenRelAddr != 0) {
+            char localBuf[96] = {};
+            constexpr int ANDROID_DLEXT_USE_LIBRARY_FD = 0x10;
+            if (getPointerSize() == 8) {
+                struct ExtInfo64 {
+                    uint64_t flags;
+                    uint64_t reserved_addr;
+                    uint64_t reserved_size;
+                    int relro_fd;
+                    int library_fd;
+                    uint64_t library_fd_offset;
+                    uint64_t library_namespace;
+                };
+                auto *pExtInfo = reinterpret_cast<struct ExtInfo64 *>(localBuf);
+                pExtInfo->flags = ANDROID_DLEXT_USE_LIBRARY_FD;
+                pExtInfo->library_fd = remoteFd;
+            } else {
+                struct ExtInfo32 {
+                    uint64_t flags;
+                    uint32_t reserved_addr;
+                    uint32_t reserved_size;
+                    int relro_fd;
+                    int library_fd;
+                    uint64_t library_fd_offset;
+                    uint32_t library_namespace;
+                };
+                auto *pExtInfo = reinterpret_cast<struct ExtInfo32 *>(localBuf);
+                pExtInfo->flags = ANDROID_DLEXT_USE_LIBRARY_FD;
+                pExtInfo->library_fd = remoteFd;
+            }
+            uintptr_t pf_dlopen_ext = linkerBase + dlopenRelAddr;
+            uintptr_t retval = 0;
+            uintptr_t rbuf = 0;
+            if (int err;(err = allocateRemoteMemory(&rbuf, 96)) != 0) {
+                loge(mLog, "remote malloc failed");
+                return err;
+            }
+            if (int err;(err = writeRemoteMemory(rbuf, localBuf, 96)) != 0) {
+                loge(mLog, "write remote memory failed");
+                freeRemoteMemory(rbuf);
+                return err;
+            }
+            if (int err; (err = callRemoteProcedure(pf_dlopen_ext, &retval, {rbuf + 64, RTLD_NOW, rbuf, 0}))) {
+                loge(mLog, "call remote __loader_android_dlopen_ext failed, err=" + std::to_string(err));
+                freeRemoteMemory(rbuf);
+                return err;
+            }
+            freeRemoteMemory(rbuf);
+            if (retval != 0) {
+                return 0;
+            } else {
+                if (dlerrorRelAddr != 0) {
+                    if (int err; (err = callRemoteProcedure(linkerBase + dlerrorRelAddr, &retval, {}))) {
+                        loge(mLog, "call remote __loader_dlopen&dlerror failed, err=" + std::to_string(err));
+                        return err;
+                    }
+                    std::string errMsg;
+                    if (int e2 = readRemoteString(&errMsg, retval); e2 > 0) {
+                        loge(mLog, "remote dlopen failed,  read __loader_dlerror err=" + std::to_string(e2));
+                        return -EFAULT;
+                    }
+                    loge(mLog, "call remote __loader_android_dlopen_ext failed, err=" + errMsg);
+                    return -EFAULT;
+                } else {
+                    loge(mLog, "remote dlopen failed,  no __loader_dlerror available");
+                    return -EFAULT;
+                }
+            }
+        } else {
+            loge(mLog, "found linker but dlsym __loader_android_dlopen_ext failed");
+            return -ENOKEY;
+        }
+    } else {
+        logi(mLog, "use libc.so as remote dynamic loader");
+        uintptr_t pf_libc_dlopen_mode = 0;
+        if (int err = getRemoteLibcSymAddress(&pf_libc_dlopen_mode, "__libc_dlopen_mode"); err != 0) {
+            loge(mLog, "dlsym libc.so!__libc_dlopen_mode failed, err=" + std::to_string(err));
+            return err;
+        }
+        char localBuf[64] = {};
+        snprintf(localBuf, 64, "/proc/self/fd/%d", remoteFd);
+        uintptr_t rbuf = 0;
+        if (int err = allocateCopyToRemoteMemory(&rbuf, localBuf, 64); err != 0) {
+            loge(mLog, "unable to allocate remote memory, err=" + std::to_string(err));
+            return err;
+        }
+        uintptr_t retval = 0;
+        if (int err = callRemoteProcedure(pf_libc_dlopen_mode, &retval, {rbuf, RTLD_NOW}); err != 0) {
+            loge(mLog, "unable to call __libc_dlopen_mode, err=" + std::to_string(err));
+            return err;
+        }
+        freeRemoteMemory(rbuf);
+        if (retval != 0) {
+            return 0;
+        }
+        loge(mLog, "__libc_dlopen_mode return null");
+        return -EFAULT;
+    }
+}
+
+int Injection::readRemoteString(std::string *str, uintptr_t address) {
+    uintptr_t pos = address & ~(sizeof(void *) - 1);
+    uintptr_t startOffset = address - pos;
+    if (pos == 0) {
+        return -EFAULT;
+    }
+    std::vector<uintptr_t> vecResult;
+    static_assert(sizeof(void *) == sizeof(uintptr_t));
+    static_assert(sizeof(void *) == sizeof(long));
+    do {
+        errno = 0;
+        long tmp;
+        if ((tmp = ::ptrace(PTRACE_PEEKDATA, mTargetPid, pos, 0)) == -1 && errno != 0) {
+            return -errno;
+        }
+        pos += sizeof(void *);
+        vecResult.push_back(uintptr_t(tmp));
+        if constexpr(sizeof(void *) == 8) {
+            uint64_t v = uint64_t(tmp);
+            if (((v >> 0) & 0xFFu) == 0 || ((v >> 8) & 0xFFu) == 0 || ((v >> 16) & 0xFFu) == 0
+                || ((v >> 24) & 0xFFu) == 0 || ((v >> 32) & 0xFFu) == 0 || ((v >> 40) & 0xFFu) == 0
+                || ((v >> 48) & 0xFFu) == 0 || ((v >> 56) & 0xFFu) == 0) {
+                break;
+            }
+        } else {
+            uint32_t v = uint32_t(tmp);
+            if (((v >> 0) & 0xFFu) == 0 || ((v >> 8) & 0xFFu) == 0
+                || ((v >> 16) & 0xFFu) == 0 || ((v >> 24) & 0xFFu) == 0) {
+                break;
+            }
+        }
+    } while (true);
+    void *start = &vecResult[0];
+    size_t length = uintptr_t(memchr(start, 0, vecResult.size() * sizeof(void *))) - uintptr_t(start);
+    *str = std::string(reinterpret_cast<const char *>(&vecResult[0]) + startOffset, length - startOffset);
+    return int(length - startOffset);
+}
+
 /**
  * I. inject & connect
- *    1. trap
- *    2. __errno_location()L
- *    3. socket(III)I
- *    5. bind(ILI)I
- *    6. listen(II)I
- *    7. fcntl(III)I
- *    8. accept(ILL)I
- *    9. recvmsg(ILI)L
- *    10. close(I)V
- *    11. android_dlopen_ext(LIL)L, check mmap syscall here
- *    12. <daemon: invoke inject_init with fd>
+ *    1. inject so
+ *    2. fallthrough
  * II. reconnect
- *    1. write memory at inject_conn_buffer
- *    2. signal SIGUSR1
- *    3. <daemon: wait for conn 100ms, SEQ_PACKET connect>
- *    4. <both: check credential>
- *    5. <daemon: send pid:I, hwsvc: recv pid:I>
+ *    3. invoke inject_init with fd
+ *    4. <daemon: send pid:I, hwsvc: recv pid:I>
  */
