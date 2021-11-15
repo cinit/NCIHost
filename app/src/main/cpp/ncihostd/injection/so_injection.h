@@ -45,6 +45,9 @@ public:
     elfsym::ProcessView getProcessView() const;
 
     [[nodiscard]]
+    int getPointerSize() const noexcept;
+
+    [[nodiscard]]
     int getErrnoTls(int *result);
 
     [[nodiscard]]
@@ -54,12 +57,14 @@ public:
     int getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const;
 
     /**
-     * dup a fd to target process
-     * @param fd fd to send
+     * send a fd to target process by SCM_RIGHTS over Unix Domain Socket
+     * @param localSock local socket fd
+     * @param remoteSock remote socket fd
+     * @param sendFd fd to send
      * @return remote fd on success, -errno on failure
      */
     [[nodiscard]]
-    int sendFileDescriptor(int bridge, int fd);
+    int sendFileDescriptor(int localSock, int remoteSock, int sendFd);
 
     /**
      * create a pair of Unix Domain Socket
@@ -69,6 +74,8 @@ public:
      */
     [[nodiscard]]
     int establishUnixDomainSocket(int *self, int *that);
+
+    int closeRemoteFileDescriptor(int fd);
 
     [[nodiscard]]
     int allocateRemoteMemory(uintptr_t *remoteAddr, size_t size);
@@ -86,7 +93,6 @@ public:
     [[nodiscard]]
     int remoteLoadLibraryFormFd(int remoteFd);
 
-    [[nodiscard]]
     int freeRemoteMemory(uintptr_t addr);
 
     void detach();

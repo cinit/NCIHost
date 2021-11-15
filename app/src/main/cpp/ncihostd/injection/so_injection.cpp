@@ -21,6 +21,12 @@
 
 using namespace inject;
 
+static inline void logv(SessionLog *log, std::string_view msg) {
+    if (log) {
+        log->verbose(msg);
+    }
+}
+
 static inline void logi(SessionLog *log, std::string_view msg) {
     if (log) {
         log->info(msg);
@@ -95,6 +101,10 @@ int Injection::attachTargetProcess() {
 
 elfsym::ProcessView Injection::getProcessView() const {
     return mProcView;
+}
+
+int Injection::getPointerSize() const noexcept {
+    return mProcView.getPointerSize();
 }
 
 int Injection::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
@@ -272,13 +282,168 @@ int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
     return 0;
 }
 
-int Injection::sendFileDescriptor(int bridge, int fd) {
-    if (fd < 0 || access(("/proc/self/fd/" + std::to_string(fd)).c_str(), F_OK) != 0) {
+int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
+    if (localSock < 0 || remoteSock < 0 || sendFd < 0) {
         return -EBADFD;
     }
-    // use reversed Unix domain socket
-    logi(mLog, "try send fd " + std::to_string(fd) + " to pid " + std::to_string(mTargetPid));
-    return -ENOSYS;
+    for (int fd: {localSock, sendFd}) {
+        if (access(("/proc/self/fd/" + std::to_string(fd)).c_str(), F_OK) != 0) {
+            return -EBADFD;
+        }
+    }
+    logv(mLog, "try to send fd " + std::to_string(sendFd) + " to pid " + std::to_string(mTargetPid)
+               + " over socket local " + std::to_string(localSock) + " remote " + std::to_string(remoteSock));
+    uintptr_t rbuf = 0;
+    uintptr_t pf_recvmsg = 0;
+    { // init remote
+        if (int err;(err = getRemoteLibcSymAddress(&pf_recvmsg, "recvmsg")) != 0) {
+            loge(mLog, "unable to dlsym libc.so!recvmsg, err=" + std::to_string(err));
+            return err;
+        }
+        if (int err;(err = allocateRemoteMemory(&rbuf, 256)) != 0) {
+            loge(mLog, "unable to allocate remote memory, err=" + std::to_string(err));
+            return err;
+        }
+    }
+    { // send fd
+        struct msghdr msg = {};
+        struct iovec iov = {};
+        union {
+            struct cmsghdr cmsg;
+            char cmsgSpace[CMSG_LEN(sizeof(int))];
+        };
+        memset(&msg, 0, sizeof(msg));
+        memset(&iov, 0, sizeof(iov));
+        memset(cmsgSpace, 0, sizeof(cmsgSpace));
+        int c = 0;
+        iov.iov_base = &c;
+        iov.iov_len = 1;
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_control = &cmsg;
+        msg.msg_controllen = sizeof(cmsgSpace);
+        cmsg.cmsg_len = sizeof(cmsgSpace);
+        cmsg.cmsg_level = SOL_SOCKET;
+        cmsg.cmsg_type = SCM_RIGHTS;
+        *reinterpret_cast<int *>(CMSG_DATA(&cmsg)) = sendFd;
+        if (sendmsg(localSock, &msg, 0) < 0) {
+            int err = errno;
+            loge(mLog, "unable to sendmsg/fd, err=" + std::string(strerror(err)));
+            freeRemoteMemory(rbuf);
+            return -err;
+        }
+    }
+    // 64+32+16+16
+    // init SCM_RIGHTS
+    struct iovec32 {
+        uint32_t iov_base;
+        uint32_t iov_len;
+    };
+    static_assert(sizeof(iovec32) == 8);
+    struct iovec64 {
+        uint64_t iov_base;
+        uint64_t iov_len;
+    };
+    static_assert(sizeof(iovec64) == 16);
+    struct msghdr32 {
+        uint32_t msg_name;
+        socklen_t msg_namelen;
+        uint32_t msg_iov;
+        uint32_t msg_iovlen;
+        uint32_t msg_control;
+        uint32_t msg_controllen;
+        int msg_flags;
+    };
+    static_assert(sizeof(msghdr32) == 28);
+    struct msghdr64 {
+        uint64_t msg_name;
+        socklen_t msg_namelen;
+        uint64_t msg_iov;
+        uint64_t msg_iovlen;
+        uint64_t msg_control;
+        uint64_t msg_controllen;
+        int msg_flags;
+    };
+    static_assert(sizeof(msghdr64) == 56);
+    struct cmsghdr_fd_32 {
+        uint32_t cmsg_len;
+        int cmsg_level;
+        int cmsg_type;
+        int fd;
+    };
+    static_assert(sizeof(cmsghdr_fd_32) == 16);
+    // we only use 20 here
+    struct cmsghdr_fd_64 {
+        uint64_t cmsg_len;
+        int cmsg_level;
+        int cmsg_type;
+        int fd;
+    };
+    static_assert(sizeof(cmsghdr_fd_64) == 24);
+    // remote recv fd
+    uintptr_t remoteTargetFdAddr = 0;
+    char localBuffer[128] = {};
+    if (getPointerSize() == 8) {
+        using iovec_compat = iovec64;
+        using cmsghdr_fd_compat = cmsghdr_fd_64;
+        using msghdr_compat = msghdr64;
+        using uintptr_compat = uint64_t;
+        Rva buf(localBuffer, 128);
+        auto *mhdr = buf.at<msghdr_compat>(0);
+        auto *iov = buf.at<iovec_compat>(64 + 32);
+        mhdr->msg_iov = uintptr_compat(rbuf + 64 + 32);
+        mhdr->msg_iovlen = 1;
+        mhdr->msg_control = uintptr_compat(rbuf + 64);
+        mhdr->msg_controllen = 20;
+        iov->iov_base = uintptr_compat(rbuf + 64 + 32 + 16);
+        iov->iov_len = 1;
+        remoteTargetFdAddr = rbuf + 64 + offsetof(cmsghdr_fd_compat, fd);
+    } else {
+        using iovec_compat = iovec32;
+        using cmsghdr_fd_compat = cmsghdr_fd_32;
+        using msghdr_compat = msghdr32;
+        using uintptr_compat = uint32_t;
+        Rva buf(localBuffer, 128);
+        auto *mhdr = buf.at<msghdr_compat>(0);
+        auto *iov = buf.at<iovec_compat>(64 + 32);
+        mhdr->msg_iov = uintptr_compat(rbuf + 64 + 32);
+        mhdr->msg_iovlen = 1;
+        mhdr->msg_control = uintptr_compat(rbuf + 64);
+        mhdr->msg_controllen = sizeof(cmsghdr_fd_compat);
+        iov->iov_base = uintptr_compat(rbuf + 64 + 32 + 16);
+        iov->iov_len = 1;
+        remoteTargetFdAddr = rbuf + 64 + offsetof(cmsghdr_fd_compat, fd);
+    }
+    if (int err; (err = writeRemoteMemory(rbuf, localBuffer, 128)) != 0) {
+        loge(mLog, "write remote mem err=" + std::to_string(err));
+        freeRemoteMemory(rbuf);
+        return err;
+    }
+    uintptr_t retval = -1;
+    if (int err; (err = callRemoteProcedure(pf_recvmsg, &retval, {uintptr_t(remoteSock), rbuf, 0})) != 0) {
+        loge(mLog, "call remote recvmsg err=" + std::to_string(err));
+        freeRemoteMemory(rbuf);
+        return err;
+    }
+    if (int(retval) < 0) {
+        int rerr = 0;
+        if (int e2;(e2 = getErrnoTls(&rerr)) != 0) {
+            loge(mLog, "get remote errno fail, err=" + std::to_string(e2));
+            freeRemoteMemory(rbuf);
+            return e2;
+        } else {
+            loge(mLog, "remote recvmsg error, remote errno=" + std::to_string(rerr));
+            freeRemoteMemory(rbuf);
+            return -rerr;
+        }
+    }
+    int resultFd = -1;
+    if (int err; (err = readRemoteMemory(remoteTargetFdAddr, &resultFd, 4)) != 0) {
+        loge(mLog, "read remote memory err=" + std::to_string(err));
+        return err;
+    }
+    freeRemoteMemory(rbuf);
+    return resultFd;
 }
 
 int Injection::establishUnixDomainSocket(int *self, int *that) {
@@ -454,6 +619,27 @@ int Injection::establishUnixDomainSocket(int *self, int *that) {
     }
     *self = lConnSock;
     *that = rConnSock;
+    return 0;
+}
+
+int Injection::closeRemoteFileDescriptor(int fd) {
+    uintptr_t proc = 0;
+    if (int err;(err = getRemoteLibcSymAddress(&proc, "close")) != 0) {
+        loge(mLog, "unable to dlsym libc.so!close, err=" + std::to_string(err));
+        return err;
+    }
+    uintptr_t retval = -1;
+    if (int err2; (err2 = callRemoteProcedure(proc, &retval, {uint32_t(fd)})) != 0) {
+        loge(mLog, "unable to call remote close, err=" + std::to_string(err2));
+    }
+    if (retval != 0) {
+        int rerr = 0;
+        if (int err; (err = getErrnoTls(&rerr)) != 0) {
+            loge(mLog, "get remote errno error, err=" + std::to_string(err));
+        }
+        loge(mLog, "remote close, remote errno=" + std::to_string(rerr));
+        return -rerr;
+    }
     return 0;
 }
 
