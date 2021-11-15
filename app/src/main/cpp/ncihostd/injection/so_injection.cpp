@@ -429,6 +429,29 @@ int Injection::establishUnixDomainSocket(int *self, int *that) {
     if (fcntl(lConnSock, F_SETFL, fcntl(lConnSock, F_GETFL, 0) & ~O_NONBLOCK)) {
         logw(mLog, "unable to unset O_NONBLOCK, err=" + std::to_string(errno));
     }
+    ucred credentials = {};
+    if (socklen_t ucred_length = sizeof(ucred);
+            ::getsockopt(lConnSock, SOL_SOCKET, SO_PEERCRED, &credentials, &ucred_length) < 0) {
+        int err = errno;
+        loge(mLog, "getsockopt SO_PEERCRED error: %s\n" + std::string(strerror(err)));
+        close(lConnSock);
+        if (int err2; (err2 = callRemoteProcedure(remoteFuncs[pf_close].addr, &tmpretval,
+                                                  {uint32_t(rConnSock)})) != 0) {
+            logw(mLog, "unable to call remote close, err=" + std::to_string(err2));
+        }
+        return err;
+    }
+    if (credentials.pid != mTargetPid && access(("/proc/" + std::to_string(credentials.pid)
+                                                 + "/task/" + std::to_string(mTargetPid)).c_str(), F_OK) != 0) {
+        loge(mLog, "invalid socket connection, expected pid/tid " + std::to_string(mTargetPid)
+                   + ", got " + std::to_string(credentials.pid));
+        close(lConnSock);
+        if (int err2; (err2 = callRemoteProcedure(remoteFuncs[pf_close].addr, &tmpretval,
+                                                  {uint32_t(rConnSock)})) != 0) {
+            logw(mLog, "unable to call remote close, err=" + std::to_string(err2));
+        }
+        return -EBUSY;
+    }
     *self = lConnSock;
     *that = rConnSock;
     return 0;
