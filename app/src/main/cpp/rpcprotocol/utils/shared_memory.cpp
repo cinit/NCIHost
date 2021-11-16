@@ -4,6 +4,7 @@
 
 #include "shared_memory.h"
 #include <unistd.h>
+#include <cstdint>
 #include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -133,4 +134,54 @@ int ashmem_create_region(const char *name, size_t size) {
     close(fd);
     errno = save_errno;
     return ret;
+}
+
+int copy_file_to_memfd(int fd, const char *name) {
+    if (!has_memfd_support()) {
+        return -ENOSYS;
+    }
+    struct stat64 fileInfo = {};
+    if (fstat64(fd, &fileInfo) < 0) {
+        return -errno;
+    }
+    int64_t length = int64_t(fileInfo.st_size);
+    if (length <= 0) {
+        return -EINVAL;
+    }
+    if (length > 64 * 1024 * 1024) {
+        return -ENOMEM;
+    }
+    int64_t originOffset = lseek64(fd, 0, SEEK_CUR);
+    if (originOffset < 0) {
+        return -errno;
+    }
+    int memfd = (int) syscall(__NR_memfd_create, name ? name : "none", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+    if (memfd == -1) {
+        return -errno;
+    }
+    if (ftruncate(memfd, length) == -1) {
+        int orig = errno;
+        close(memfd);
+        errno = orig;
+        return -orig;
+    }
+    if (lseek(fd, 0, SEEK_SET) < 0) {
+        int err = errno;
+        close(memfd);
+        return -err;
+    }
+    char buf[4096];
+    ssize_t i;
+    while ((i = read(fd, buf, 4096)) > 0) {
+        write(memfd, buf, i);
+    }
+    if (i != 0) {
+        int err = errno;
+        lseek64(fd, originOffset, SEEK_SET);
+        close(memfd);
+        return -err;
+    }
+    lseek64(memfd, 0, SEEK_SET);
+    lseek64(fd, originOffset, SEEK_SET);
+    return memfd;
 }

@@ -17,6 +17,7 @@
 #include "../elfsym/ElfView.h"
 #include "arch/ptrace_inject_utils.h"
 #include "../../rpcprotocol/utils/Uuid.h"
+#include "../../rpcprotocol/utils/SELinux.h"
 
 #include "so_injection.h"
 
@@ -51,9 +52,12 @@ void Injection::setSessionLog(SessionLog *log) {
     mLog = log;
 }
 
-int Injection::selectTargetProcess(int pid) {
-    if (mTargetPid != 0) {
+int Injection::selectTargetThread(int pid, int tid) {
+    if (mTargetThreadId != 0) {
         detach();
+    }
+    if (access(("/proc/" + std::to_string(pid) + "/task/" + std::to_string(tid)).c_str(), R_OK) != 0) {
+        return -ESRCH;
     }
     if (access(("/proc/" + std::to_string(pid) + "/maps").c_str(), R_OK) != 0) {
         return -errno;
@@ -61,7 +65,8 @@ int Injection::selectTargetProcess(int pid) {
     if (int retval; (retval = mProcView.readProcess(pid)) != 0) {
         return retval;
     }
-    mTargetPid = pid;
+    mTargetThreadId = tid;
+    mTargetProcessId = pid;
     return 0;
 }
 
@@ -71,32 +76,32 @@ bool Injection::isTargetSupported() const noexcept {
 }
 
 int Injection::attachTargetProcess() {
-    if (mTargetPid == 0) {
+    if (mTargetThreadId == 0) {
         if (mLog) { mLog->error("try to attach but pid is null"); }
         return -EINVAL;
     }
-    if (int err; (err = mProcView.readProcess(mTargetPid)) != 0) {
+    if (int err; (err = mProcView.readProcess(mTargetThreadId)) != 0) {
         if (mLog) {
-            mLog->error("unable to get info for pid " + std::to_string(mTargetPid)
+            mLog->error("unable to get info for pid " + std::to_string(mTargetThreadId)
                         + ", err=" + std::to_string(err));
         }
         return err;
     }
     mArchitecture = mProcView.getArchitecture();
-    if (::ptrace(PTRACE_ATTACH, mTargetPid, nullptr, 0) < 0) {
+    if (::ptrace(PTRACE_ATTACH, mTargetThreadId, nullptr, 0) < 0) {
         int err = errno;
         if (mLog) {
-            mLog->error("unable to attach process " + std::to_string(mTargetPid)
+            mLog->error("unable to attach process " + std::to_string(mTargetThreadId)
                         + ", errno=" + std::to_string(err));
         }
         return -err;
     }
-    if (int err; (err = wait_for_signal(mTargetPid, 1000)) < 0) {
+    if (int err; (err = wait_for_signal(mTargetThreadId, 1000)) < 0) {
         if (mLog) { mLog->error("waitpid err=" + std::to_string(err)); }
         return err;
     }
     if (mLog) {
-        mLog->verbose("attached to pid " + std::to_string(mTargetPid));
+        mLog->verbose("attached to pid " + std::to_string(mTargetThreadId));
     }
     return 0;
 }
@@ -212,18 +217,18 @@ int Injection::allocateRemoteMemory(uintptr_t *remoteAddr, size_t size) {
         if (mLog) { mLog->error("unable to get remote malloc"); }
         return err;
     }
-    if (int result = ptrace_call_procedure(mArchitecture, mTargetPid, remoteMalloc, remoteAddr, {size}) != 0) {
+    if (int result = ptrace_call_procedure(mArchitecture, mTargetThreadId, remoteMalloc, remoteAddr, {size}) != 0) {
         return result;
     }
     return 0;
 }
 
 int Injection::writeRemoteMemory(uintptr_t remoteAddr, const void *buffer, size_t size) {
-    return ptrace_write_data(mTargetPid, remoteAddr, buffer, int(size));
+    return ptrace_write_data(mTargetThreadId, remoteAddr, buffer, int(size));
 }
 
 int Injection::readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size) {
-    return ptrace_read_data(mTargetPid, remoteAddr, buffer, int(size));
+    return ptrace_read_data(mTargetThreadId, remoteAddr, buffer, int(size));
 }
 
 int Injection::allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buffer, size_t size) {
@@ -248,7 +253,7 @@ int Injection::freeRemoteMemory(uintptr_t addr) {
         if (mLog) { mLog->error("unable to get remote free: err=" + std::to_string(err)); }
         return err;
     }
-    if (int result = ptrace_call_procedure(mArchitecture, mTargetPid, remoteFree, &unused,
+    if (int result = ptrace_call_procedure(mArchitecture, mTargetThreadId, remoteFree, &unused,
                                            {addr}) != 0) {
         return result;
     }
@@ -265,7 +270,7 @@ int Injection::getErrnoTls(int *result) {
             }
         }
         uintptr_t errnoAddr = 0;
-        if (int err; (err = ptrace_call_procedure(mArchitecture, mTargetPid, fp_errno_loc, &errnoAddr, {})) != 0) {
+        if (int err; (err = ptrace_call_procedure(mArchitecture, mTargetThreadId, fp_errno_loc, &errnoAddr, {})) != 0) {
             if (mLog) { mLog->error("unable to call __errno_location(): err=" + std::to_string(err)); }
             return err;
         }
@@ -281,7 +286,7 @@ int Injection::getErrnoTls(int *result) {
 }
 
 void Injection::detach() {
-    ptrace(PTRACE_DETACH, mTargetPid, nullptr, 0);
+    ptrace(PTRACE_DETACH, mTargetThreadId, nullptr, 0);
     mRemoteLibcProc.clear();
     mProcView = {};
     mErrnoTlsAddress = 0;
@@ -290,7 +295,7 @@ void Injection::detach() {
 int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
                                    const std::array<uintptr_t, 4> &args, int timeout) {
     uintptr_t retval = -1;
-    if (int err = ptrace_call_procedure(mArchitecture, mTargetPid, proc, &retval, args, timeout) != 0) {
+    if (int err = ptrace_call_procedure(mArchitecture, mTargetThreadId, proc, &retval, args, timeout) != 0) {
         return err;
     }
     if (pRetval != nullptr) {
@@ -308,7 +313,7 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
             return -EBADFD;
         }
     }
-    logv(mLog, "try to send fd " + std::to_string(sendFd) + " to pid " + std::to_string(mTargetPid)
+    logv(mLog, "try to send fd " + std::to_string(sendFd) + " to pid " + std::to_string(mTargetThreadId)
                + " over socket local " + std::to_string(localSock) + " remote " + std::to_string(remoteSock));
     uintptr_t rbuf = 0;
     uintptr_t pf_recvmsg = 0;
@@ -626,9 +631,10 @@ int Injection::establishUnixDomainSocket(int *self, int *that) {
         }
         return err;
     }
-    if (credentials.pid != mTargetPid && access(("/proc/" + std::to_string(credentials.pid)
-                                                 + "/task/" + std::to_string(mTargetPid)).c_str(), F_OK) != 0) {
-        loge(mLog, "invalid socket connection, expected pid/tid " + std::to_string(mTargetPid)
+    if (credentials.pid != mTargetThreadId && access(("/proc/" + std::to_string(credentials.pid)
+                                                      + "/task/" + std::to_string(mTargetThreadId)).c_str(), F_OK) !=
+                                              0) {
+        loge(mLog, "invalid socket connection, expected pid/tid " + std::to_string(mTargetThreadId)
                    + ", got " + std::to_string(credentials.pid));
         close(lConnSock);
         if (int err2; (err2 = callRemoteProcedure(remoteFuncs[pf_close].addr, &tmpretval,
@@ -672,15 +678,25 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
         if (m.name == "linker" || m.name == "linker64") {
             linkerBase = uintptr_t(m.baseAddress);
             linkerPath = m.path;
-            break;
+            continue;
         } else if (m.name == "libc.so") {
             libcBase = uintptr_t(m.baseAddress);
             libcPath = m.path;
-            break;
+            continue;
         }
     }
     if (linkerBase == 0 && libcBase == 0) {
         std::regex libcRegex("libc\\.so\\.[0-9]");
+        for (const auto &m: mProcView.getModules()) {
+            if (std::regex_match(m.name, libcRegex)) {
+                libcBase = uintptr_t(m.baseAddress);
+                libcPath = m.path;
+                break;
+            }
+        }
+    }
+    if (linkerBase == 0 && libcBase == 0) {
+        std::regex libcRegex("libc-[.0-9]+\\.so");
         for (const auto &m: mProcView.getModules()) {
             if (std::regex_match(m.name, libcRegex)) {
                 libcBase = uintptr_t(m.baseAddress);
@@ -702,6 +718,7 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
             }
             return err;
         }
+        uintptr_t estimatedCallerAddress = mProcView.getModules()[0].baseAddress + 4096;
         elfsym::ElfView linkerView;
         linkerView.attachFileMemMapping({linkerMemMap.getAddress(), linkerMemMap.getLength()});
         uintptr_t dlopenRelAddr = linkerView.getSymbolAddress("__loader_android_dlopen_ext");
@@ -736,6 +753,9 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
                 pExtInfo->flags = ANDROID_DLEXT_USE_LIBRARY_FD;
                 pExtInfo->library_fd = remoteFd;
             }
+            if (soname) {
+                strncpy(localBuf + 64, soname, 32);
+            }
             uintptr_t pf_dlopen_ext = linkerBase + dlopenRelAddr;
             uintptr_t retval = 0;
             uintptr_t rbuf = 0;
@@ -748,7 +768,8 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
                 freeRemoteMemory(rbuf);
                 return err;
             }
-            if (int err; (err = callRemoteProcedure(pf_dlopen_ext, &retval, {rbuf + 64, RTLD_NOW, rbuf, 0}))) {
+            if (int err; (err = callRemoteProcedure(pf_dlopen_ext, &retval,
+                                                    {rbuf + 64, RTLD_NOW, rbuf, estimatedCallerAddress}))) {
                 loge(mLog, "call remote __loader_android_dlopen_ext failed, err=" + std::to_string(err));
                 freeRemoteMemory(rbuf);
                 return err;
@@ -763,7 +784,7 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
                         return err;
                     }
                     std::string errMsg;
-                    if (int e2 = readRemoteString(&errMsg, retval); e2 > 0) {
+                    if (int e2 = readRemoteString(&errMsg, retval); e2 < 0) {
                         loge(mLog, "remote dlopen failed,  read __loader_dlerror err=" + std::to_string(e2));
                         return -EFAULT;
                     }
@@ -818,7 +839,7 @@ int Injection::readRemoteString(std::string *str, uintptr_t address) {
     do {
         errno = 0;
         long tmp;
-        if ((tmp = ::ptrace(PTRACE_PEEKDATA, mTargetPid, pos, 0)) == -1 && errno != 0) {
+        if ((tmp = ::ptrace(PTRACE_PEEKDATA, mTargetThreadId, pos, 0)) == -1 && errno != 0) {
             return -errno;
         }
         pos += sizeof(void *);
@@ -842,6 +863,14 @@ int Injection::readRemoteString(std::string *str, uintptr_t address) {
     size_t length = uintptr_t(memchr(start, 0, vecResult.size() * sizeof(void *))) - uintptr_t(start);
     *str = std::string(reinterpret_cast<const char *>(&vecResult[0]) + startOffset, length - startOffset);
     return int(length - startOffset);
+}
+
+int Injection::getMainExecutableSEContext(std::string *context) const {
+    if (SELinux::isEnabled()) {
+        return SELinux::getFileSEContext(("/proc/" + std::to_string(mTargetProcessId) + "/exe").c_str(), context);
+    } else {
+        return -ENOTSUP;
+    }
 }
 
 /**

@@ -7,6 +7,7 @@
 #define NCI_HOST_NATIVES_SO_INJECTION_H
 
 #include <array>
+#include <string>
 
 #include "../../rpcprotocol/utils/HashMap.h"
 #include "../../rpcprotocol/log/SessionLog.h"
@@ -17,7 +18,8 @@ namespace inject {
 class Injection {
 private:
     SessionLog *mLog = nullptr;
-    int mTargetPid = 0;
+    int mTargetThreadId = 0;
+    int mTargetProcessId = 0;
     int mArchitecture = 0;
     elfsym::ProcessView mProcView;
     uintptr_t mErrnoTlsAddress = 0;
@@ -33,7 +35,7 @@ public:
     void setSessionLog(SessionLog *log);
 
     [[nodiscard]]
-    int selectTargetProcess(int pid);
+    int selectTargetThread(int pid, int tid);
 
     [[nodiscard]]
     bool isTargetSupported() const noexcept;
@@ -46,6 +48,9 @@ public:
 
     [[nodiscard]]
     int getPointerSize() const noexcept;
+
+    [[nodiscard]]
+    int getMainExecutableSEContext(std::string *context) const;
 
     [[nodiscard]]
     int getErrnoTls(int *result);

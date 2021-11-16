@@ -5,9 +5,9 @@ project(rpcprotocol)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(rpcprotocol STATIC
-        protocol/ArgList.cpp utils/FixedThreadPool.cpp utils/shared_memory.cpp
+        protocol/ArgList.cpp utils/FixedThreadPool.cpp utils/shared_memory.cpp utils/SELinux.cpp
         protocol/RemoteException.cpp utils/SharedBuffer.cpp protocol/IpcProxy.cpp protocol/LpcResult.cpp
-        log/Log.cpp utils/io_utils.cpp utils/Uuid.cpp utils/SignalHandler.cpp utils/FileMemMap.cpp
+        log/Log.cpp utils/io_utils.cpp utils/Uuid.cpp utils/SignalHandler.cpp utils/FileMemMap.cpp utils/TextUtils.cpp
         log/SessionLog.h log/DefaultSessionLogImpl.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

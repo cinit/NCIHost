@@ -10,26 +10,12 @@
 #include <cerrno>
 #include <cstring>
 
+#include "../../rpcprotocol/utils/TextUtils.h"
+
 #include "ProcessView.h"
 
 using namespace elfsym;
 
-std::vector<std::string> string_split(const std::string &str, const std::string &splits) {
-    std::vector<std::string> res;
-    if (str.empty()) {
-        return res;
-    }
-    std::string strs = str + splits;
-    size_t pos = strs.find(splits);
-    size_t step = splits.size();
-    while (pos != std::string::npos) {
-        std::string temp = strs.substr(0, pos);
-        res.push_back(temp);
-        strs = strs.substr(pos + step, strs.size());
-        pos = strs.find(splits);
-    }
-    return res;
-}
 
 int ProcessView::readProcess(int pid) {
     mPointerSize = 0;
@@ -111,7 +97,7 @@ int ProcessView::readProcess(int pid) {
         if (pathname_len == 0 || path[0] == '[') {
             continue;
         }
-        auto tmp = string_split(path, "/");
+        auto tmp = utils::splitString(path, "/");
         mProcessModules.emplace_back(Module{tmp[tmp.size() - 1], path, address});
     }
     fclose(pf);

@@ -18,4 +18,10 @@ bool has_memfd_support();
  */
 int ashmem_create_region(const char *name, size_t size);
 
+/**
+ * @param fd origin file
+ * @return memfd fd if success, -errno on failure
+ */
+int copy_file_to_memfd(int fd, const char *name);
+
 #endif //RPCPROTOCOL_SHARED_MEMORY_H
