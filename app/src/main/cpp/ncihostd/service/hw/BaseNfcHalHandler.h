@@ -1,0 +1,14 @@
+//
+// Created by kinit on 2021-11-17.
+//
+
+#ifndef NCI_HOST_NATIVES_BASENFCHALHANDLER_H
+#define NCI_HOST_NATIVES_BASENFCHALHANDLER_H
+
+
+class BaseNfcHalHandler {
+
+};
+
+
+#endif //NCI_HOST_NATIVES_BASENFCHALHANDLER_H

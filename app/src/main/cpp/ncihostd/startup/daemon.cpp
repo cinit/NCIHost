@@ -25,10 +25,10 @@
 
 #include "common.h"
 #include "daemon.h"
-#include "IpcStateController.h"
-#include "../rpcprotocol/log/Log.h"
-#include "../rpcprotocol/protocol/rpc_struct.h"
-#include "../rpcprotocol/protocol/IpcProxy.h"
+#include "../ipc/IpcStateController.h"
+#include "rpcprotocol/log/Log.h"
+#include "rpcprotocol/protocol/rpc_struct.h"
+#include "rpcprotocol/protocol/IpcProxy.h"
 
 #define LOG_TAG "ncihostd"
 

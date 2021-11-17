@@ -3,8 +3,8 @@
 //
 
 #include "NciHostDaemonImpl.h"
-#include "../rpcprotocol/log/Log.h"
-#include "../rpcprotocol/protocol/LpcArgListExtractor.h"
+#include "rpcprotocol/log/Log.h"
+#include "rpcprotocol/protocol/LpcArgListExtractor.h"
 
 #define LOG_TAG "ncihostd"
 

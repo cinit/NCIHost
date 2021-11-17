@@ -2,7 +2,7 @@
 // Created by kinit on 2021-10-12.
 //
 
-#include "../rpcprotocol/log/Log.h"
+#include "rpcprotocol/log/Log.h"
 
 #include "IpcStateController.h"
 

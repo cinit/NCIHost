@@ -5,9 +5,9 @@
 #ifndef NCIHOSTD_IPCSTATECONTROLLER_H
 #define NCIHOSTD_IPCSTATECONTROLLER_H
 
-#include "../rpcprotocol/protocol/IpcProxy.h"
-#include "../rpcprotocol/protocol/LpcArgListExtractor.h"
-#include "NciHostDaemonImpl.h"
+#include "rpcprotocol/protocol/IpcProxy.h"
+#include "rpcprotocol/protocol/LpcArgListExtractor.h"
+#include "../service/front/NciHostDaemonImpl.h"
 
 namespace ipcprotocol {
 

@@ -4,10 +4,11 @@ project(ncihostd)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(ncihostd startup.c daemon.cpp IpcStateController.cpp NciHostDaemonImpl.cpp
-        elfsym/ElfView.cpp elfsym/ProcessView.cpp
-        injection/so_injection.cpp injection/arch/ptrace_inject_utils.cpp
-        injection/arch/ptrace_inject_arm_impl.cpp injection/arch/ptrace_inject_x86_impl.cpp)
+add_executable(ncihostd startup/startup.c startup/daemon.cpp ipc/IpcStateController.cpp
+        service/front/NciHostDaemonImpl.cpp
+        elfsym/ElfView.cpp elfsym/ProcessView.cpp injection/so_injection.cpp injection/arch/ptrace_inject_utils.cpp
+        injection/arch/ptrace_inject_arm_impl.cpp injection/arch/ptrace_inject_x86_impl.cpp
+        service/hw/nxpnci/NxpHalHandler.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")
@@ -28,6 +29,8 @@ set_target_properties(ncihostd PROPERTIES
         PREFIX "lib"
         SUFFIX ".so"
         )
+
+include_directories(..)
 
 target_compile_definitions(ncihostd PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
 
