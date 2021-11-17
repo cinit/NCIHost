@@ -6,9 +6,13 @@
 #define NCI_HOST_NATIVES_INJECT_IO_INIT_H
 
 #ifdef __cplusplus
-extern "C" void NxpHalPatchInit();
-#else
-void NxpHalPatchInit();
+extern "C" {
+#endif
+
+int NxpHalPatchInitInternal(int fd, const void *pInfo, int size);
+
+#ifdef __cplusplus
+}
 #endif
 
 #ifdef __cplusplus

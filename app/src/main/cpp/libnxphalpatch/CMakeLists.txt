@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(nxphalpatch SHARED
-        inject_entry.c inject_io_init.cpp tracer_call_asm.c daemon_ipc.cpp daemon_ipc.h hook_proc_symbols.c)
+        inject_entry.c inject_io_init.cpp daemon_ipc.cpp daemon_ipc.h hook_proc_symbols.c)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")

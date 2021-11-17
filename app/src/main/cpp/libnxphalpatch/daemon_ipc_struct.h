@@ -10,12 +10,6 @@
 #include <cstdint>
 #include <cstddef>
 
-using InjectInitInfo = struct {
-    char daemonVersion[32];
-    char socketName[64];
-};
-static_assert(sizeof(InjectInitInfo) == 32 + 64);
-
 /**
  * uint64_t does not align properly on i386
  */
@@ -44,15 +38,6 @@ using IoOperationInfo = struct {
 };
 static_assert(sizeof(IoOperationInfo) == 40);
 
-enum class TracerCallId {
-    TRACER_CALL_LOG = 1,
-    TRACER_CALL_INIT = 2,
-    TRACER_CALL_CONNECT = 3,
-    TRACER_CALL_HOOK_SYM = 4,
-    TRACER_CALL_DONE = 0x20,
-    TRACER_CALL_DETACH = 0xFF,
-};
-
 #else
 #include <stdint.h>
 #endif //__cplusplus
@@ -73,7 +58,14 @@ struct OriginHookProcedure {
     uint32_t unused32_0;
 };
 #ifdef __cplusplus
+
+using InjectInitInfo = struct {
+    char daemonVersion[32];
+    OriginHookProcedure originHookProcedure;
+};
+static_assert(sizeof(InjectInitInfo) == 32 + 56);
 static_assert(sizeof(OriginHookProcedure) == 56);
+
 #endif
 
 #endif //NCI_HOST_NATIVES_DAEMON_IPC_STRUCT_H

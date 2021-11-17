@@ -7,9 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <dlfcn.h>
-#include <unistd.h>
 #include <sys/mman.h>
-#include <sys/fcntl.h>
 
 #include "hook_proc_symbols.h"
 #include "intercept_callbacks.h"
@@ -61,15 +59,15 @@ int hook_sym_init(const struct OriginHookProcedure *op) {
         return 0;
     }
     if (op == NULL) {
-        return EINVAL;
+        return -EINVAL;
     }
     if (op->struct_size != sizeof(struct OriginHookProcedure)) {
-        return EINVAL;
+        return -EINVAL;
     }
     void *libc = dlopen("libc.so", RTLD_NOW | RTLD_NOLOAD);
     if (libc == NULL) {
         // should not happen, we have DT_NEEDED
-        return -1;
+        return -EFAULT;
     }
     void *base = (void *) (op->libnci_base);
     pf_orig_open_2 = hookPlt(base, op->off_plt_open_2, &hook_proc_open_2, libc, "__open_2");
