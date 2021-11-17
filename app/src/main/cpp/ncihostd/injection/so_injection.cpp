@@ -380,13 +380,13 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
     struct msghdr64 {
         uint64_t msg_name;
         socklen_t msg_namelen;
-        int __unused4_0;
+        int _unused4_0;
         uint64_t msg_iov;
         uint64_t msg_iovlen;
         uint64_t msg_control;
         uint64_t msg_controllen;
         int msg_flags;
-        int __unused4_1;
+        int _unused4_1;
     };
     static_assert(sizeof(msghdr64) == 56);
     struct cmsghdr_fd_32 {
@@ -402,7 +402,7 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
         int cmsg_level;
         int cmsg_type;
         int fd;
-        int __unused4_0;
+        int _unused4_0;
     };
     static_assert(sizeof(cmsghdr_fd_64) == 24);
     // remote recv fd
@@ -718,7 +718,11 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
             }
             return err;
         }
-        uintptr_t estimatedCallerAddress = mProcView.getModules()[0].baseAddress + 4096;
+        uintptr_t estimatedCallerAddress = 0;
+        if (getRemoteLibcSymAddress(&estimatedCallerAddress, "malloc") != 0) {
+            logw(mLog, "unable to dlsym malloc, will use main executable as caller address");
+            estimatedCallerAddress = mProcView.getModules()[0].baseAddress + 4096;
+        }
         elfsym::ElfView linkerView;
         linkerView.attachFileMemMapping({linkerMemMap.getAddress(), linkerMemMap.getLength()});
         uintptr_t dlopenRelAddr = linkerView.getSymbolAddress("__loader_android_dlopen_ext");
