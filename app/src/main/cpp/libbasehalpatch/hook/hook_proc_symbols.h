@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "daemon_ipc_struct.h"
+#include "hook_sym_struct.h"
 
 #ifdef __cplusplus
 extern "C" {

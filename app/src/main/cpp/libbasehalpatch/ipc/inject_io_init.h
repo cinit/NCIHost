@@ -9,7 +9,9 @@
 extern "C" {
 #endif
 
-int NxpHalPatchInitInternal(int fd, const void *pInfo, int size);
+int BaseHalPatchInitSocket(int fd);
+
+int get_tracer_pid();
 
 #ifdef __cplusplus
 }

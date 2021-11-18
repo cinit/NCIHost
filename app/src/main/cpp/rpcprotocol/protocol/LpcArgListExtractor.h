@@ -69,7 +69,7 @@ public:
             return LpcResult(invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs));
         } else {
             LpcResult result;
-            result.setError(LpcErrorCode::ERR_BAD_ARGUMENT);
+            result.setError(LpcErrorCode::ERR_INVALID_ARGUMENT);
             return result;
         }
     }

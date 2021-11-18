@@ -2,6 +2,6 @@
 // Created by kinit on 2021-11-17.
 //
 
-#include "NxpHalHandler.h"
+#include "BaseHwHalHandler.h"
 
 using namespace hwhal;

@@ -43,13 +43,13 @@ bool jniThrowLpcResultErrorOrException(JNIEnv *env, const TypedLpcResult<T> &res
             case LpcErrorCode::ERR_BROKEN_CONN:
                 msg = "connection broken";
                 break;
-            case LpcErrorCode::ERR_BAD_ARGUMENT:
+            case LpcErrorCode::ERR_INVALID_ARGUMENT:
                 msg = "argument list mismatch";
                 break;
             case LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR:
                 msg = "ERR_LOCAL_INTERNAL_ERROR";
                 break;
-            case LpcErrorCode::ERR_BAD_BUFFER:
+            case LpcErrorCode::ERR_BAD_REQUEST:
                 msg = "ERR_BAD_BUFFER";
                 break;
             case LpcErrorCode::ERR_REMOTE_INTERNAL_ERROR:

@@ -69,7 +69,7 @@ int hook_sym_init(const struct OriginHookProcedure *op) {
         // should not happen, we have DT_NEEDED
         return -EFAULT;
     }
-    void *base = (void *) (op->libnci_base);
+    void *base = (void *) (op->target_base);
     pf_orig_open_2 = hookPlt(base, op->off_plt_open_2, &hook_proc_open_2, libc, "__open_2");
     pf_orig_open = hookPlt(base, op->off_plt_open, &hook_proc_open, libc, "open");
     pf_orig_read_chk = hookPlt(base, op->off_plt_read_chk, &hook_proc_read_chk, libc, "___read_chk");

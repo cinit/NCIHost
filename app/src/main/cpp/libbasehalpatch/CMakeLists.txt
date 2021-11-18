@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(nxphalpatch)
+project(basehalpatch)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(nxphalpatch SHARED
-        inject_entry.c ipc/ipc_request_handler.cpp)
+add_library(basehalpatch STATIC
+        ipc/inject_io_init.cpp ipc/ipc_io_event.cpp ipc/ipc_looper.cpp
+        hook/hook_proc_symbols.c)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")
@@ -20,13 +21,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_C_EXTRA_OPT} -fPIC -Werror=return-ty
 
 set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
 set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "")
-
-set_target_properties(nxphalpatch PROPERTIES
+set_target_properties(basehalpatch PROPERTIES
         LINKER_LANGUAGE C
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
         )
 
-target_compile_definitions(nxphalpatch PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
-
-target_link_libraries(nxphalpatch basehalpatch ${ANDROID_LIBS})
+target_link_libraries(basehalpatch)

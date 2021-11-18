@@ -315,8 +315,8 @@ int IpcProxy::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
     SharedBuffer buf;
     buf.ensureCapacity(sizeof(LpcTransactionHeader));
     auto *h = buf.at<LpcTransactionHeader>(0);
-    h->header.type = sizeof(LpcTransactionHeader);
-    h->header.type = TRXN_TYPE_RPC;
+    h->header.length = sizeof(LpcTransactionHeader);
+    h->header.type = TrxnType::TRXN_TYPE_RPC;
     h->errorCode = static_cast<uint32_t>(errorId);
     h->sequence = sequence;
     h->rpcFlags = LPC_FLAG_ERROR;
@@ -394,14 +394,14 @@ void IpcProxy::handleReceivedPacket(const void *buffer, size_t size) {
         return;
     }
     const auto *header = reinterpret_cast<const TrxnPacketHeader *>(buffer);
-    uint32_t type = header->type;
-    if (type == TRXN_TYPE_RPC) {
+    auto type = header->type;
+    if (type == TrxnType::TRXN_TYPE_RPC) {
         if (reinterpret_cast<const LpcTransactionHeader *>(buffer)->funcId == 0) {
             handleLpcResponsePacket(buffer, size);
         } else {
             dispatchLpcRequestAsync(buffer, size);
         }
-    } else if (type == TRXN_TYPE_EVENT) {
+    } else if (type == TrxnType::TRXN_TYPE_EVENT) {
         dispatchEventPacketAsync(buffer, size);
     } else {
         LOGE("unknown type (%ud), ignore %s", type, mName.c_str());
@@ -484,13 +484,13 @@ void IpcProxy::invokeLpcHandler(LpcFunctHandleContext context) {
                 }
                 errcode = that->sendLpcResponse(seq, result);
             } else {
-                errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_INVALID_FUNCTION);
+                errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_UNKNOWN_REQUEST);
             }
         } else {
             errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_NO_LPC_HANDLER);
         }
     } else {
-        errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_BAD_BUFFER);
+        errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_BAD_REQUEST);
     }
     if (errcode != 0) {
         LOGE("send resp error=%d when handle seq=%d, funcId=%d", errcode, seq, funcId);

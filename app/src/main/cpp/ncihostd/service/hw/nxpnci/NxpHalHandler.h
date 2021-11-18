@@ -5,9 +5,11 @@
 #ifndef NCI_HOST_NATIVES_NXPHALHANDLER_H
 #define NCI_HOST_NATIVES_NXPHALHANDLER_H
 
-namespace nxpnal {
+#include "../BaseHwHalHandler.h"
 
-class NxpHalHandler {
+namespace hwhal {
+
+class NxpHalHandler : public BaseHwHalHandler {
 
 };
 
