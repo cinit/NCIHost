@@ -5,12 +5,34 @@
 #ifndef NCI_HOST_NATIVES_NXPHALHANDLER_H
 #define NCI_HOST_NATIVES_NXPHALHANDLER_H
 
+#include <string>
+
 #include "../BaseHwHalHandler.h"
 
 namespace hwhal {
 
 class NxpHalHandler : public BaseHwHalHandler {
+public:
+    using StartupInfo = BaseHwHalHandler::StartupInfo;
 
+    NxpHalHandler() = default;
+
+    ~NxpHalHandler() override = default;
+
+    [[nodiscard]] std::string_view getName() const noexcept override;
+
+    [[nodiscard]] std::string_view getDescription() const noexcept override;
+
+    [[nodiscard]] int doOnStart(void *args) override;
+
+    [[nodiscard]] bool doOnStop() override;
+
+    void dispatchHwHalIoEvent(const IoOperationEvent &event, const void *payload) override;
+
+    void dispatchRemoteProcessDeathEvent() override;
+
+private:
+    std::string mDescription;
 };
 
 }

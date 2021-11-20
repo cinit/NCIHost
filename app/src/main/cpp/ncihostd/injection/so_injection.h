@@ -52,6 +52,8 @@ public:
     [[nodiscard]]
     int getMainExecutableSEContext(std::string *context) const;
 
+    int refreshRemoteModules();
+
     [[nodiscard]]
     int getErrnoTls(int *result);
 

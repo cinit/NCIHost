@@ -779,6 +779,8 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
                 return err;
             }
             freeRemoteMemory(rbuf);
+            // refresh process modules
+            refreshRemoteModules();
             if (retval != 0) {
                 return 0;
             } else {
@@ -823,6 +825,8 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
             return err;
         }
         freeRemoteMemory(rbuf);
+        // refresh process modules
+        refreshRemoteModules();
         if (retval != 0) {
             return 0;
         }
@@ -875,6 +879,10 @@ int Injection::getMainExecutableSEContext(std::string *context) const {
     } else {
         return -ENOTSUP;
     }
+}
+
+int Injection::refreshRemoteModules() {
+    return mProcView.readProcess(mTargetProcessId);
 }
 
 /**

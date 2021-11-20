@@ -8,6 +8,7 @@ add_executable(ncihostd startup/startup.c startup/daemon.cpp ipc/IpcStateControl
         service/front/NciHostDaemonImpl.cpp
         elfsym/ElfView.cpp elfsym/ProcessView.cpp injection/so_injection.cpp injection/arch/ptrace_inject_utils.cpp
         injection/arch/ptrace_inject_arm_impl.cpp injection/arch/ptrace_inject_x86_impl.cpp
+        service/ServiceManager.cpp
         service/hw/BaseHwHalHandler.cpp service/hw/nxpnci/NxpHalHandler.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
