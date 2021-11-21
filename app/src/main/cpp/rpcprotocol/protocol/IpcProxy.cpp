@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <cerrno>
+#include <chrono>
 #include <sstream>
 #include <sys/fcntl.h>
 #include <sys/eventfd.h>
@@ -270,7 +271,7 @@ void IpcProxy::runIpcLooper() {
 }
 
 int IpcProxy::sendRawPacket(const void *buffer, size_t size) {
-    std::scoped_lock<std::mutex> lk(mTxLock);
+    std::scoped_lock lk(mTxLock);
     if (sVerboseDebugLog) {
         LOGD("send size %zu %s", size, mName.c_str());
     }
@@ -324,7 +325,7 @@ int IpcProxy::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
     return sendRawPacket(buf.get(), buf.size());
 }
 
-int IpcProxy::sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+int IpcProxy::sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();
@@ -338,6 +339,39 @@ int IpcProxy::sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer 
     h->eventFlags = 0;
     h->reserved = 0;
     return sendRawPacket(result.get(), result.size());
+}
+
+int IpcProxy::sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+    SharedBuffer result;
+    if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
+        throw std::bad_alloc();
+    }
+    memcpy(result.at<char>(sizeof(EventTransactionHeader)), args.get(), args.size());
+    auto *h = result.at<EventTransactionHeader>(0);
+    h->header.length = (uint32_t) result.size();
+    h->header.type = TrxnType::TRXN_TYPE_EVENT;
+    h->eventId = eventId;
+    h->sequence = sequence;
+    h->eventFlags = 0;
+    h->reserved = 0;
+    if (mTxLock.try_lock_for(std::chrono::milliseconds(20))) {
+        // set the O_NONBLOCK flag
+        fcntl(mSocketFd, F_SETFL, O_NONBLOCK);
+        ssize_t rc = send(mSocketFd, result.get(), result.size(), 0);
+        // clear the O_NONBLOCK flag and unlock the mutex
+        fcntl(mSocketFd, F_SETFL, fcntl(mSocketFd, F_GETFL) & ~O_NONBLOCK);
+        mTxLock.unlock();
+        if (rc < 0) {
+            int err = errno;
+            LOGW("send event async error %d %s %s", errno, strerror(errno), mName.c_str());
+            return err;
+        } else {
+            return 0;
+        }
+    } else {
+        LOGW("send event async failed to acquire lock %s", mName.c_str());
+        return EBUSY;
+    }
 }
 
 LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args) {
@@ -435,7 +469,7 @@ void IpcProxy::dispatchLpcRequestAsync(const void *buffer, size_t size) {
             return;
         }
         memcpy(sb.get(), buffer, size);
-        LpcFunctHandleContext context = {h, this, sb};
+        LpcFunctionHandleContext context = {h, this, sb};
         mExecutor.execute([context]() {
             IpcProxy::invokeLpcHandler(context);
         });
@@ -461,7 +495,7 @@ void IpcProxy::handleLpcResponsePacket(const void *buffer, size_t size) {
     }
 }
 
-void IpcProxy::invokeLpcHandler(LpcFunctHandleContext context) {
+void IpcProxy::invokeLpcHandler(LpcFunctionHandleContext context) {
     LpcEnv env = {context.object, &context.buffer};
     SharedBuffer *sb = &context.buffer;
     IpcProxy *that = context.object;

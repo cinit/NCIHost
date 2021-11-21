@@ -12,7 +12,13 @@ namespace ipcprotocol {
 
 class NciHostDaemonImpl : public INciHostDaemon {
 public:
+    NciHostDaemonImpl() = default;
+
     ~NciHostDaemonImpl() override = default;
+
+    NciHostDaemonImpl(const NciHostDaemonImpl &) = delete;
+
+    NciHostDaemonImpl &operator=(const NciHostDaemonImpl &) = delete;
 
     bool dispatchLpcInvocation(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
 

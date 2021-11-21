@@ -48,3 +48,7 @@ bool IpcStateController::dispatchLpcRequest(const IpcProxy::LpcEnv &env, LpcResu
                                             const ArgList &args) {
     return mDaemon.dispatchLpcInvocation(env, result, funcId, args);
 }
+
+NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
+    return mDaemon;
+}

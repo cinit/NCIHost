@@ -46,7 +46,7 @@ private:
     int mInterruptEventFd = -1;
     FixedThreadPool mExecutor = FixedThreadPool(4);
     std::mutex mStatusLock;
-    std::mutex mTxLock;
+    std::timed_mutex mTxLock;
     std::condition_variable mJoinWaitCondVar;
     std::mutex mRunningEntryMutex; // must be released in finite time
     std::condition_variable mRunningEntryStartCondVar;
@@ -99,6 +99,9 @@ public:
         mName = name;
     }
 
+    /**
+     * Wait until the proxy is closed.
+     */
     void join();
 
     void start();
@@ -117,7 +120,40 @@ public:
 
     int sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId);
 
-    int sendEvent(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
+    /**
+     * Send an event to the end point.
+     * Note that this function may block if the event queue is full, this usually happens when the end point is busy
+     * or get stuck in D state (Android refrigerator).
+     * @param sequence the sequence number of the event
+     * @param eventId type of the event
+     * @param args event arguments
+     * @return 0 on success, errno on failure
+     */
+    int sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
+
+    /**
+     * Send an event to the end point asynchronously.
+     * @param eventId type of the event
+     * @param args event arguments
+     * @return 0 on success, errno on failure
+     */
+    int sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
+
+    /**
+     * Send an event to the end point.
+     * @param sync whether to wait for the event to be sent
+     * @param eventId event type
+     * @param args event arguments
+     * @return 0 on success, errno on failure
+     */
+    int sendEvent(bool sync, uint32_t eventId, const SharedBuffer &args) {
+        uint32_t sequence = mCurrentSequence.fetch_add(1, std::memory_order_relaxed);
+        if (sync) {
+            return sendEventSync(sequence, eventId, args);
+        } else {
+            return sendEventAsync(sequence, eventId, args);
+        }
+    }
 
     [[nodiscard]] LpcResult executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args);
 
@@ -155,7 +191,7 @@ private:
 
     void notifyWaitingCalls();
 
-    class LpcFunctHandleContext {
+    class LpcFunctionHandleContext {
     public:
         LpcFuncHandler h;
         IpcProxy *object;
@@ -169,7 +205,7 @@ private:
         SharedBuffer buffer;
     };
 
-    static void invokeLpcHandler(LpcFunctHandleContext context);
+    static void invokeLpcHandler(LpcFunctionHandleContext context);
 
     static void invokeEventHandler(EventHandleContext context);
 

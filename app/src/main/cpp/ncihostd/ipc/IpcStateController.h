@@ -17,6 +17,8 @@ public:
 
     [[nodiscard]] static IpcStateController &getInstance();
 
+    [[nodiscard]] NciHostDaemonImpl &getNciHostDaemon();
+
 private:
     IpcProxy mIpcProxy;
     NciHostDaemonImpl mDaemon;
