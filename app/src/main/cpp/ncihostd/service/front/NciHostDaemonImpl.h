@@ -5,6 +5,7 @@
 #ifndef NCIHOSTD_NCIHOSTDAEMONIMPL_H
 #define NCIHOSTD_NCIHOSTDAEMONIMPL_H
 
+#include "libbasehalpatch/ipc/daemon_ipc_struct.h"
 #include "rpcprotocol/INciHostDaemon.h"
 #include "rpcprotocol/protocol/IpcProxy.h"
 
@@ -31,6 +32,10 @@ public:
     TypedLpcResult<void> exitProcess() override;
 
     TypedLpcResult<int> testFunction(int value) override;
+
+    int sendIoOperationEvent(const IoOperationEvent &event, const void *payload);
+
+    int sendRemoteDeathEvent(int pid);
 
 private:
 };

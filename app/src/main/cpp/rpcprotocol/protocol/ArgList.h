@@ -153,6 +153,8 @@ public:
     public:
         ArgList::Builder &push(const std::string &value);
 
+        ArgList::Builder &push(const std::vector<char> &value);
+
         ArgList::Builder &push(const char *value);
 
         template<class T>
@@ -267,6 +269,31 @@ public:
             return false;
         }
         *out = std::string(reinterpret_cast<const char *>(mBuffer) + offset, len);
+        return true;
+    }
+
+    template<class T=std::vector<char>>
+    [[nodiscard]] inline bool get(std::vector<char> *out, int index) const {
+        uint64_t reg = 0;
+        if (!readRawInlineValue(&reg, index)) {
+            return false;
+        }
+        if (Types::TYPE_RAW != *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index)) {
+            return false;
+        }
+        struct BufferEntry {
+            uint32_t offset;
+            uint32_t length;// in bytes
+        };
+        static_assert(sizeof(BufferEntry) == 8);
+        const BufferEntry *entry = reinterpret_cast<BufferEntry *>(&reg);// ub
+        auto offset = entry->offset;
+        auto len = entry->length;
+        if (offset + len > mLength) {
+            return false;
+        }
+        *out->resize(len);
+        memcpy(out->data(), reinterpret_cast<const char *>(mBuffer) + offset, len);
         return true;
     }
 

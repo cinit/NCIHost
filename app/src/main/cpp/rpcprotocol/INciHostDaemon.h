@@ -38,6 +38,12 @@ public:
         static constexpr uint32_t exitProcess = 4;
         static constexpr uint32_t testFunction = 5;
     };
+
+    class EventIds {
+    public:
+        static constexpr uint32_t IO_EVENT = 0x10001;
+        static constexpr uint32_t REMOTE_DEATH = 0x10002;
+    };
 };
 
 }

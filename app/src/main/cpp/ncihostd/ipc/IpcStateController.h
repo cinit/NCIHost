@@ -19,6 +19,8 @@ public:
 
     [[nodiscard]] NciHostDaemonImpl &getNciHostDaemon();
 
+    [[nodiscard]] IpcProxy &getIpcProxy();
+
 private:
     IpcProxy mIpcProxy;
     NciHostDaemonImpl mDaemon;

@@ -6,10 +6,12 @@
 #include "libnxphalpatch/ipc/ipc_requests.h"
 #include "libbasehalpatch/ipc/daemon_ipc_struct.h"
 #include "rpcprotocol/log/Log.h"
+#include "../../../ipc/IpcStateController.h"
 
 #include "NxpHalHandler.h"
 
 using namespace hwhal;
+using namespace ipcprotocol;
 
 static const char *const LOG_TAG = "NxpHalHandler";
 
@@ -19,10 +21,6 @@ std::string_view NxpHalHandler::getName() const noexcept {
 
 std::string_view NxpHalHandler::getDescription() const noexcept {
     return mDescription;
-}
-
-void NxpHalHandler::dispatchRemoteProcessDeathEvent() {
-    LOGI("Remote process death event received, pid: %d", getRemotePid());
 }
 
 int NxpHalHandler::doOnStart(void *args) {
@@ -35,9 +33,12 @@ bool NxpHalHandler::doOnStop() {
 }
 
 void NxpHalHandler::dispatchHwHalIoEvent(const IoOperationEvent &event, const void *payload) {
-    // TODO: route IO event to the application
-    LOGI("HwHalIoEvent %d received, op=%d, fd=%u, arg1=%ld, len=%ld",
-         event.sequence, event.info.opType, event.info.fd, event.info.directArg1, event.info.bufferLength);
+    IpcStateController::getInstance().getNciHostDaemon().sendIoOperationEvent(event, payload);
+}
+
+void NxpHalHandler::dispatchRemoteProcessDeathEvent() {
+    LOGW("Remote process death event received, pid: %d", getRemotePid());
+    IpcStateController::getInstance().getNciHostDaemon().sendRemoteDeathEvent(getRemotePid());
 }
 
 int NxpHalHandler::getRemotePltHookStatus() {

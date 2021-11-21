@@ -1,7 +1,7 @@
 //
 // Created by kinit on 2021-10-13.
 //
-
+#include "../../ipc/IpcStateController.h"
 #include "NciHostDaemonImpl.h"
 #include "rpcprotocol/log/Log.h"
 #include "rpcprotocol/protocol/LpcArgListExtractor.h"
@@ -60,5 +60,36 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcProxy::L
         }
         default:
             return false;
+    }
+}
+
+int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const void *payload) {
+    IpcProxy &proxy = IpcStateController::getInstance().getIpcProxy();
+    if (proxy.isConnected() && proxy.isRunning()) {
+        ArgList::Builder args;
+        std::vector<char> eventBytes;
+        std::vector<char> payloadBytes;
+        memcpy(&eventBytes[0], &event, sizeof(event));
+        if (payload != nullptr && event.info.bufferLength > 0) {
+            memcpy(&payloadBytes[0], payload, event.info.bufferLength);
+        }
+        args.push(eventBytes);
+        if (!payloadBytes.empty()) {
+            args.push(payloadBytes);
+        }
+        return proxy.sendEvent(false, EventIds::IO_EVENT, args.build());
+    } else {
+        return EPIPE;
+    }
+}
+
+int NciHostDaemonImpl::sendRemoteDeathEvent(int pid) {
+    IpcProxy &proxy = IpcStateController::getInstance().getIpcProxy();
+    if (proxy.isConnected() && proxy.isRunning()) {
+        ArgList::Builder args;
+        args.push(pid);
+        return proxy.sendEvent(false, EventIds::REMOTE_DEATH, args.build());
+    } else {
+        return EPIPE;
     }
 }

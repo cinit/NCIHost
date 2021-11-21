@@ -52,3 +52,7 @@ bool IpcStateController::dispatchLpcRequest(const IpcProxy::LpcEnv &env, LpcResu
 NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
     return mDaemon;
 }
+
+IpcProxy &IpcStateController::getIpcProxy() {
+    return mIpcProxy;
+}

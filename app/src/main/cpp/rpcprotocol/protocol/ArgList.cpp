@@ -46,8 +46,15 @@ ArgList::Builder &ArgList::Builder::push(const string &value) {
     if (buffer == nullptr) {
         pushRawInline(Types::TYPE_STRING, 0);
     } else {
-        pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
+        pushRawBuffer(Types::TYPE_STRING, (const void *) buffer, size + 1);
     }
+    return *this;
+}
+
+ArgList::Builder &ArgList::Builder::push(const vector<char> &value) {
+    const char *buffer = value.data();
+    size_t size = value.size();
+    pushRawBuffer(Types::TYPE_RAW, buffer, size);
     return *this;
 }
 
