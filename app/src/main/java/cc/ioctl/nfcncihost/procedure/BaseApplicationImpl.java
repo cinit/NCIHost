@@ -38,7 +38,7 @@ public abstract class BaseApplicationImpl extends Application {
     }
 
     public static boolean isServiceProcess() {
-        return getProcessName().endsWith(PROC_SUFFIX_DAEMON);
+        return BaseApplicationImpl.sApplication instanceof WorkerApplicationImpl;
     }
 
     public static boolean isMainProcess() {

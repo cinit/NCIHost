@@ -5,7 +5,7 @@ import android.app.Application;
 import android.content.Intent;
 import android.util.Log;
 
-public class MainApplicationImpl extends BaseApplicationImpl {
+public class MainApplicationImpl extends WorkerApplicationImpl {
 
     public static StartupDirector sDirector;
     private static final String TAG = "MainApplicationImpl";

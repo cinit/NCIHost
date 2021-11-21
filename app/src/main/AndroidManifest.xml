@@ -90,8 +90,7 @@
             android:name=".service.CardEmuCtrlSvc"
             android:exported="true"
             android:label="@string/name_emu_pwm_ctrl_svc"
-            android:permission="android.permission.BIND_CONTROLS"
-            android:process=":service">
+            android:permission="android.permission.BIND_CONTROLS">
             <intent-filter>
                 <action android:name="android.service.controls.ControlsProviderService" />
             </intent-filter>
@@ -99,24 +98,20 @@
 
         <service
             android:name=".service.NfcControllerManagerService"
-            android:exported="false"
-            android:process=":service" />
+            android:exported="false" />
 
         <service
             android:name=".service.NfcCoreService"
-            android:exported="false"
-            android:process=":service" />
+            android:exported="false" />
 
         <service
             android:name=".service.NfcCardEmuFgSvc"
             android:exported="false"
-            android:label="@string/name_nfc_emu_svc"
-            android:process=":service" />
+            android:label="@string/name_nfc_emu_svc" />
 
         <receiver
             android:name=".service.BootCompleteReceiver"
-            android:exported="true"
-            android:process=":service">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
