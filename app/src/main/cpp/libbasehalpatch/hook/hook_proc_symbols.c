@@ -46,7 +46,7 @@ static void *hookPlt(void *base, uint32_t off, void *hookProc, void *libc, const
         // already hooked?
         return dlsym(libc, sym_name);
     }
-    void *aligned_ptr = (void *) (((size_t) p) & 0x1000U);
+    void *aligned_ptr = (void *) (((size_t) p) & ~(size_t) (0x1000 - 1));
     mprotect(aligned_ptr, 0x1000, PROT_WRITE | PROT_READ);
     *p = hookProc;
     mprotect(aligned_ptr, 0x1000, PROT_READ);
@@ -70,15 +70,63 @@ int hook_sym_init(const struct OriginHookProcedure *op) {
         return -EFAULT;
     }
     void *base = (void *) (op->target_base);
-    pf_orig_open_2 = hookPlt(base, op->off_plt_open_2, &hook_proc_open_2, libc, "__open_2");
-    pf_orig_open = hookPlt(base, op->off_plt_open, &hook_proc_open, libc, "open");
-    pf_orig_read_chk = hookPlt(base, op->off_plt_read_chk, &hook_proc_read_chk, libc, "___read_chk");
-    pf_orig_read = hookPlt(base, op->off_plt_read, &hook_proc_read, libc, "read");
-    pf_orig_write_chk = hookPlt(base, op->off_plt_write_chk, &hook_proc_write_chk, libc, "___write_chk");
-    pf_orig_write = hookPlt(base, op->off_plt_write, &hook_proc_write, libc, "write");
-    pf_orig_ioctl = hookPlt(base, op->off_plt_ioctl, &hook_proc_ioctl, libc, "ioctl");
-    pf_orig_close = hookPlt(base, op->off_plt_close, &hook_proc_close, libc, "close");
-    pf_orig_select = hookPlt(base, op->off_plt_select, &hook_proc_select, libc, "select");
+    if (base == NULL) {
+        return -EINVAL;
+    }
+    if (op->off_plt_open_2 != 0) {
+        pf_orig_open_2 = hookPlt(base, op->off_plt_open_2, &hook_proc_open_2, libc, "__open_2");
+        if (pf_orig_open_2 == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_open != 0) {
+        pf_orig_open = hookPlt(base, op->off_plt_open, &hook_proc_open, libc, "open");
+        if (pf_orig_open == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_read_chk != 0) {
+        pf_orig_read_chk = hookPlt(base, op->off_plt_read_chk, &hook_proc_read_chk, libc, "__read_chk");
+        if (pf_orig_read_chk == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_read != 0) {
+        pf_orig_read = hookPlt(base, op->off_plt_read, &hook_proc_read, libc, "read");
+        if (pf_orig_read == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_write_chk != 0) {
+        pf_orig_write_chk = hookPlt(base, op->off_plt_write_chk, &hook_proc_write_chk, libc, "__write_chk");
+        if (pf_orig_write_chk == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_write != 0) {
+        pf_orig_write = hookPlt(base, op->off_plt_write, &hook_proc_write, libc, "write");
+        if (pf_orig_write == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_close != 0) {
+        pf_orig_close = hookPlt(base, op->off_plt_close, &hook_proc_close, libc, "close");
+        if (pf_orig_close == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_ioctl != 0) {
+        pf_orig_ioctl = hookPlt(base, op->off_plt_ioctl, &hook_proc_ioctl, libc, "ioctl");
+        if (pf_orig_ioctl == NULL) {
+            return -EFAULT;
+        }
+    }
+    if (op->off_plt_select != 0) {
+        pf_orig_select = hookPlt(base, op->off_plt_select, &hook_proc_select, libc, "select");
+        if (pf_orig_select == NULL) {
+            return -EFAULT;
+        }
+    }
     gsIsInitialized = 1;
     return 0;
 }

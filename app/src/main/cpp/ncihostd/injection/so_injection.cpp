@@ -875,7 +875,12 @@ int Injection::readRemoteString(std::string *str, uintptr_t address) {
 
 int Injection::getMainExecutableSEContext(std::string *context) const {
     if (SELinux::isEnabled()) {
-        return SELinux::getFileSEContext(("/proc/" + std::to_string(mTargetProcessId) + "/exe").c_str(), context);
+        int ret = SELinux::getFileSEContext(("/proc/" + std::to_string(mTargetProcessId) + "/exe").c_str(), context);
+        if (ret < 0) {
+            return ret;
+        } else {
+            return 0;
+        }
     } else {
         return -ENOTSUP;
     }
@@ -885,11 +890,20 @@ int Injection::refreshRemoteModules() {
     return mProcView.readProcess(mTargetProcessId);
 }
 
-/**
- * I. inject & connect
- *    1. inject so
- *    2. fallthrough
- * II. reconnect
- *    3. invoke inject_init with fd
- *    4. <daemon: send pid:I, hwsvc: recv pid:I>
- */
+uintptr_t Injection::getModuleBaseAddress(std::string_view moduleName) const {
+    for (const auto &m: mProcView.getModules()) {
+        if (m.name == moduleName) {
+            return m.baseAddress;
+        }
+    }
+    return 0;
+}
+
+std::string Injection::getModulePath(std::string_view moduleName) const {
+    for (const auto &m: mProcView.getModules()) {
+        if (m.name == moduleName) {
+            return m.path;
+        }
+    }
+    return "";
+}

@@ -40,7 +40,7 @@ static void postIoEvent(const IoSyscallInfo &opInfo, const void *ioBuffer, size_
         pEvent->timestamp = getCurrentTimeMillis();
         pEvent->info = opInfo;
         pEvent->info.bufferLength = int64_t(ioBufSize);
-        if (write(fd, buf, sizeof(IoSyscallInfo) + ioBufSize) < 0 && errno == EPIPE) {
+        if (write(fd, buf, pkLen) < 0 && errno == EPIPE) {
             closeDaemonIpcSocket();
         }
         free(buf);

@@ -8,6 +8,7 @@
 
 #include <array>
 #include <string>
+#include <string_view>
 
 #include "../../rpcprotocol/utils/HashMap.h"
 #include "../../rpcprotocol/log/SessionLog.h"
@@ -49,13 +50,39 @@ public:
     [[nodiscard]]
     int getPointerSize() const noexcept;
 
+    /**
+     * Get the SEContext of the main executable of the target process.
+     * @param context the result SEContext
+     * @return 0 on success, -errno on error
+     */
     [[nodiscard]]
     int getMainExecutableSEContext(std::string *context) const;
 
     int refreshRemoteModules();
 
+    /**
+     * Get the errno for the current thread.
+     * @param result the result errno
+     * @return 0 on success, -errno on error
+     */
     [[nodiscard]]
     int getErrnoTls(int *result);
+
+    /**
+     * Get the address of the specified module in the remote process.
+     * @param moduleName the name of the module, eg. "libc.so"
+     * @return the address of the module in the remote process, or 0 if not found
+     */
+    [[nodiscard]]
+    uintptr_t getModuleBaseAddress(std::string_view moduleName) const;
+
+    /**
+     * Get the path of the specified module in the remote process.
+     * @param moduleName the name of the module, eg. "libc.so"
+     * @return the absolute path of the module, or "" if not found
+     */
+    [[nodiscard]]
+    std::string getModulePath(std::string_view moduleName) const;
 
     [[nodiscard]]
     int getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol);
@@ -82,6 +109,11 @@ public:
     [[nodiscard]]
     int establishUnixDomainSocket(int *self, int *that);
 
+    /**
+     * Close a fd in the target process
+     * @param fd the fd to close of the target process
+     * @return 0 on success, -errno on failure
+     */
     int closeRemoteFileDescriptor(int fd);
 
     [[nodiscard]]

@@ -27,6 +27,10 @@ public:
 
     [[nodiscard]] bool doOnStop() override;
 
+    [[nodiscard]] int getRemotePltHookStatus();
+
+    [[nodiscard]] int initRemotePltHook(const OriginHookProcedure &hookProc);
+
     void dispatchHwHalIoEvent(const IoOperationEvent &event, const void *payload) override;
 
     void dispatchRemoteProcessDeathEvent() override;

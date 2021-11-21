@@ -34,7 +34,7 @@ public:
         }
         va_start(varg1, fmt);
         va_copy(varg2, varg1);
-        int size = vsnprintf(nullptr, 0, fmt, varg1);
+        int size = vsnprintf(nullptr, 0, fmt, varg1) + 4;
         va_end(varg1);
         if (size <= 0) {
             return;
