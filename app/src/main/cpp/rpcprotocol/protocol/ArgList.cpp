@@ -51,8 +51,8 @@ ArgList::Builder &ArgList::Builder::push(const string &value) {
     return *this;
 }
 
-ArgList::Builder &ArgList::Builder::push(const vector<char> &value) {
-    const char *buffer = value.data();
+ArgList::Builder &ArgList::Builder::push(const vector<uint8_t> &value) {
+    const uint8_t *buffer = value.data();
     size_t size = value.size();
     pushRawBuffer(Types::TYPE_RAW, buffer, size);
     return *this;

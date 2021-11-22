@@ -46,8 +46,8 @@ public:
      * @return tuple of error code, response, payload. If error code is 0, response and payload are valid.
      */
     [[nodiscard]]
-    std::tuple<int, halpatch::HalResponse, std::vector<char>> sendHalRequest(const halpatch::HalRequest &request,
-                                                                             const void *payload, int timeout_ms);
+    std::tuple<int, halpatch::HalResponse, std::vector<uint8_t>> sendHalRequest(const halpatch::HalRequest &request,
+                                                                                const void *payload, int timeout_ms);
 
     void stopSelf();
 
@@ -55,7 +55,7 @@ private:
     class LpcReturnStatus {
     public:
         std::condition_variable *cond;
-        std::vector<char> *buffer;
+        std::vector<uint8_t> *buffer;
         uint32_t error;
     };
 

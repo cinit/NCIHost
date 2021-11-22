@@ -68,8 +68,8 @@ int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const
     IpcProxy &proxy = IpcStateController::getInstance().getIpcProxy();
     if (proxy.isConnected() && proxy.isRunning()) {
         ArgList::Builder args;
-        std::vector<char> eventBytes;
-        std::vector<char> payloadBytes;
+        std::vector<uint8_t> eventBytes;
+        std::vector<uint8_t> payloadBytes;
         memcpy(&eventBytes[0], &event, sizeof(event));
         if (payload != nullptr && event.info.bufferLength > 0) {
             memcpy(&payloadBytes[0], payload, event.info.bufferLength);

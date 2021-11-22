@@ -153,7 +153,7 @@ public:
     public:
         ArgList::Builder &push(const std::string &value);
 
-        ArgList::Builder &push(const std::vector<char> &value);
+        ArgList::Builder &push(const std::vector<uint8_t> &value);
 
         ArgList::Builder &push(const char *value);
 
@@ -272,8 +272,8 @@ public:
         return true;
     }
 
-    template<class T=std::vector<char>>
-    [[nodiscard]] inline bool get(std::vector<char> *out, int index) const {
+    template<class T=std::vector<uint8_t>>
+    [[nodiscard]] inline bool get(std::vector<uint8_t> *out, int index) const {
         uint64_t reg = 0;
         if (!readRawInlineValue(&reg, index)) {
             return false;

@@ -139,11 +139,11 @@ void BaseHwHalHandler::dispatchHwHalPatchIpcPacket(const void *packetBuffer, siz
     }
 }
 
-tuple<int, HalResponse, vector<char>> BaseHwHalHandler::sendHalRequest(const HalRequest &request,
-                                                                       const void *payload, int timeout_ms) {
+tuple<int, HalResponse, vector<uint8_t>> BaseHwHalHandler::sendHalRequest(const HalRequest &request,
+                                                                          const void *payload, int timeout_ms) {
     uint32_t seq = mSequenceId++;
     auto packetLength = uint32_t(sizeof(HalTrxnPacketHeader) + sizeof(HalRequest) + request.payloadSize);
-    std::vector<char> packetBuffer;
+    std::vector<uint8_t> packetBuffer;
     packetBuffer.resize(packetLength);
     auto *header = reinterpret_cast<HalTrxnPacketHeader *>(&packetBuffer[0]);
     *header = {.length=packetLength, .type=TrxnType::GENERIC_REQUEST};
@@ -154,7 +154,7 @@ tuple<int, HalResponse, vector<char>> BaseHwHalHandler::sendHalRequest(const Hal
         memcpy(&packetBuffer[sizeof(HalTrxnPacketHeader) + sizeof(HalRequest)], payload, request.payloadSize);
     }
     std::condition_variable condvar;
-    std::vector<char> responseBuffer;
+    std::vector<uint8_t> responseBuffer;
     LpcReturnStatus returnStatus = {&condvar, &responseBuffer, 0};
     {
         std::unique_lock lk(mIpcMutex);
@@ -165,16 +165,16 @@ tuple<int, HalResponse, vector<char>> BaseHwHalHandler::sendHalRequest(const Hal
             if (waitResult == std::cv_status::timeout) {
                 LOGE("sendHalRequest timeout");
                 mWaitingRequests.remove(seq);
-                return std::make_tuple(-ETIMEDOUT, HalResponse{}, vector<char>());
+                return std::make_tuple(-ETIMEDOUT, HalResponse{}, vector<uint8_t>());
             } else {
                 mWaitingRequests.remove(seq);
                 // handle response
                 const auto *pResponse = reinterpret_cast<HalResponse *>(&responseBuffer[sizeof(HalTrxnPacketHeader)]);
                 if (pResponse->id != seq) {
                     LOGE("sendHalRequest: invalid response id %d, expected %d", pResponse->id, seq);
-                    return std::make_tuple(-EINVAL, HalResponse{}, vector<char>());
+                    return std::make_tuple(-EINVAL, HalResponse{}, vector<uint8_t>());
                 } else {
-                    return std::make_tuple(0, *pResponse, vector<char>(
+                    return std::make_tuple(0, *pResponse, vector<uint8_t>(
                             &responseBuffer[sizeof(HalTrxnPacketHeader) + sizeof(HalResponse)],
                             &responseBuffer[sizeof(HalTrxnPacketHeader) + sizeof(HalResponse) +
                                             pResponse->payloadSize]));
@@ -184,7 +184,7 @@ tuple<int, HalResponse, vector<char>> BaseHwHalHandler::sendHalRequest(const Hal
             int err = errno;
             LOGE("write() failed with %d", err);
             mWaitingRequests.remove(seq);
-            return std::make_tuple(err, HalResponse(), vector<char>());
+            return std::make_tuple(err, HalResponse(), vector<uint8_t>());
         }
     }
 }
