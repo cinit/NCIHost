@@ -7,7 +7,7 @@
 
 #include "libbasehalpatch/ipc/daemon_ipc_struct.h"
 #include "rpcprotocol/INciHostDaemon.h"
-#include "rpcprotocol/protocol/IpcProxy.h"
+#include "rpcprotocol/protocol/IpcTransactor.h"
 
 namespace ipcprotocol {
 
@@ -21,7 +21,7 @@ public:
 
     NciHostDaemonImpl &operator=(const NciHostDaemonImpl &) = delete;
 
-    bool dispatchLpcInvocation(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
+    bool dispatchLpcInvocation(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
 
     TypedLpcResult<std::string> getVersionName() override;
 

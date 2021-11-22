@@ -16,11 +16,11 @@
 
 namespace ipcprotocol {
 
-class IpcProxy {
+class IpcTransactor {
 public:
     class LpcEnv {
     public:
-        const IpcProxy *object;
+        const IpcTransactor *object;
         const SharedBuffer *buffer;
     };
 
@@ -58,13 +58,13 @@ private:
     LpcFuncHandler mFuncHandler = nullptr;
     EventHandler mEventHandler = nullptr;
 public:
-    IpcProxy();
+    IpcTransactor();
 
-    ~IpcProxy();
+    ~IpcTransactor();
 
-    IpcProxy(const IpcProxy &) = delete;
+    IpcTransactor(const IpcTransactor &) = delete;
 
-    IpcProxy &operator=(const IpcProxy &other) = delete;
+    IpcTransactor &operator=(const IpcTransactor &other) = delete;
 
     /**
      * reset->attach(connected)->join(running)->interrupt(connected)->runIpcLooper->r:close(disconnected)
@@ -194,14 +194,14 @@ private:
     class LpcFunctionHandleContext {
     public:
         LpcFuncHandler h;
-        IpcProxy *object;
+        IpcTransactor *object;
         SharedBuffer buffer;
     };
 
     class EventHandleContext {
     public:
         EventHandler h;
-        IpcProxy *object;
+        IpcTransactor *object;
         SharedBuffer buffer;
     };
 
@@ -211,7 +211,7 @@ private:
 
     void runIpcLooper();
 
-    static inline void runIpcLooperProc(IpcProxy *that) {
+    static inline void runIpcLooperProc(IpcTransactor *that) {
         that->runIpcLooper();
     }
 };

@@ -8,7 +8,7 @@
 #include <mutex>
 #include <atomic>
 
-#include "../rpcprotocol/protocol/IpcProxy.h"
+#include "../rpcprotocol/protocol/IpcTransactor.h"
 #include "NciHostDaemonProxy.h"
 
 namespace ipcprotocol {
@@ -20,7 +20,7 @@ public:
         IPC_DISCONNECTED = 2,
     };
 
-    using IpcStatusListener = void (*)(IpcStatusEvent event, IpcProxy *obj);
+    using IpcStatusListener = void (*)(IpcStatusEvent event, IpcTransactor *obj);
 
     ~IpcConnector();
 
@@ -38,7 +38,7 @@ public:
      * return null if not connected
      */
     [[nodiscard]]
-    IpcProxy *getIpcProxy();
+    IpcTransactor *getIpcProxy();
 
     [[nodiscard]]
     INciHostDaemon *getNciDaemon();
@@ -74,7 +74,7 @@ private:
     std::string mIpcAbsSocketName;
     std::string mIpcPidFilePath;
     std::condition_variable mConnCondVar;
-    std::shared_ptr<IpcProxy> mIpcProxy;
+    std::shared_ptr<IpcTransactor> mIpcProxy;
     std::shared_ptr<NciHostDaemonProxy> mNciProxy;
     std::vector<IpcStatusListener> mStatusListeners;
 

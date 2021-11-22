@@ -47,11 +47,11 @@ IpcConnector::~IpcConnector() = default;
 
 void IpcConnector::handleLinkStart(int fd) {
     std::vector<IpcStatusListener> listeners;
-    IpcProxy *obj;
+    IpcTransactor *obj;
     {
         std::scoped_lock<std::mutex> lk(mLock);
         if (mIpcProxy == nullptr) {
-            mIpcProxy = std::make_shared<IpcProxy>();
+            mIpcProxy = std::make_shared<IpcTransactor>();
             mIpcProxy->setName("ncihostd");
         }
         if (mNciProxy == nullptr) {
@@ -264,7 +264,7 @@ IpcConnector &IpcConnector::getInstance() {
     return *sInstance;
 }
 
-IpcProxy *IpcConnector::getIpcProxy() {
+IpcTransactor *IpcConnector::getIpcProxy() {
     return mIpcConnFd == -1 ? nullptr : (mIpcProxy.get());
 }
 

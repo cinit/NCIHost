@@ -33,7 +33,7 @@ TypedLpcResult<int> NciHostDaemonImpl::testFunction(int value) {
     return {value / 2};
 }
 
-bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcProxy::LpcEnv &env,
+bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransactor::LpcEnv &env,
                                               LpcResult &result, uint32_t funcId, const ArgList &args) {
     using T = NciHostDaemonImpl;
     using R = LpcArgListExtractor<T>;
@@ -65,7 +65,7 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcProxy::L
 }
 
 int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const void *payload) {
-    IpcProxy &proxy = IpcStateController::getInstance().getIpcProxy();
+    IpcTransactor &proxy = IpcStateController::getInstance().getIpcProxy();
     if (proxy.isConnected() && proxy.isRunning()) {
         ArgList::Builder args;
         std::vector<uint8_t> eventBytes;
@@ -85,7 +85,7 @@ int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const
 }
 
 int NciHostDaemonImpl::sendRemoteDeathEvent(int pid) {
-    IpcProxy &proxy = IpcStateController::getInstance().getIpcProxy();
+    IpcTransactor &proxy = IpcStateController::getInstance().getIpcProxy();
     if (proxy.isConnected() && proxy.isRunning()) {
         ArgList::Builder args;
         args.push(pid);

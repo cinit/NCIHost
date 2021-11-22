@@ -5,9 +5,7 @@
 #ifndef NCICLIENT_NCIHOSTDAEMONPROXY_H
 #define NCICLIENT_NCIHOSTDAEMONPROXY_H
 
-#include <memory>
-
-#include "../rpcprotocol/protocol/IpcProxy.h"
+#include "../rpcprotocol/protocol/IpcTransactor.h"
 #include "../rpcprotocol/INciHostDaemon.h"
 
 namespace ipcprotocol {
@@ -16,14 +14,14 @@ class NciHostDaemonProxy : public INciHostDaemon {
 public:
     NciHostDaemonProxy();
 
-    explicit NciHostDaemonProxy(IpcProxy *ipcProxy);
+    explicit NciHostDaemonProxy(IpcTransactor *ipcProxy);
 
     ~NciHostDaemonProxy() override;
 
     [[nodiscard]]
-    IpcProxy *getIpcProxy() const noexcept;
+    IpcTransactor *getIpcProxy() const noexcept;
 
-    void setIpcProxy(IpcProxy *ipcProxy);
+    void setIpcProxy(IpcTransactor *ipcProxy);
 
     [[nodiscard]]
     bool isConnected() const noexcept;
@@ -39,7 +37,7 @@ public:
     TypedLpcResult<int> testFunction(int value) override;
 
 private:
-    IpcProxy *mProxy = nullptr;
+    IpcTransactor *mProxy = nullptr;
 
     template<class R>
     static inline TypedLpcResult<R> throwBrokenConnectionErrorInternal() {

@@ -12,30 +12,30 @@
 #include <sys/epoll.h>
 
 #include "rpc_struct.h"
-#include "IpcProxy.h"
+#include "IpcTransactor.h"
 #include "../log/Log.h"
 
 #define LOG_TAG "IpcProxy"
 
 using namespace ipcprotocol;
 
-IpcProxy::IpcProxy() = default;
+IpcTransactor::IpcTransactor() = default;
 
-IpcProxy::~IpcProxy() {
+IpcTransactor::~IpcTransactor() {
     shutdown();
 }
 
-void IpcProxy::setEventHandler(IpcProxy::EventHandler h) {
+void IpcTransactor::setEventHandler(IpcTransactor::EventHandler h) {
     std::scoped_lock<std::mutex> _(mStatusLock);
     mEventHandler = h;
 }
 
-void IpcProxy::setFunctionHandler(IpcProxy::LpcFuncHandler h) {
+void IpcTransactor::setFunctionHandler(IpcTransactor::LpcFuncHandler h) {
     std::scoped_lock<std::mutex> _(mStatusLock);
     mFuncHandler = h;
 }
 
-int IpcProxy::attach(int fd) {
+int IpcTransactor::attach(int fd) {
     std::scoped_lock<std::mutex> lock(mStatusLock);
     if (fd < 0) {
         return EBADFD;
@@ -62,7 +62,7 @@ int IpcProxy::attach(int fd) {
     return 0;
 }
 
-void IpcProxy::join() {
+void IpcTransactor::join() {
     if (sVerboseDebugLog) {
         LOGV("---> join() start");
     }
@@ -77,7 +77,7 @@ void IpcProxy::join() {
     }
 }
 
-void IpcProxy::start() {
+void IpcTransactor::start() {
     {
         std::scoped_lock<std::mutex> lk(mStatusLock);
         std::unique_lock startLock(mRunningEntryMutex);
@@ -98,7 +98,7 @@ void IpcProxy::start() {
         }
         pthread_t tid = 0;
         int result = pthread_create(&tid, nullptr,
-                                    reinterpret_cast<void *(*)(void *)>(&IpcProxy::runIpcLooperProc), this);
+                                    reinterpret_cast<void *(*)(void *)>(&IpcTransactor::runIpcLooperProc), this);
         if (result != 0) {
             char buf[64];
             snprintf(buf, 64, "create thread failed errno=%d", result);
@@ -109,22 +109,22 @@ void IpcProxy::start() {
     }
 }
 
-int IpcProxy::detach() {
+int IpcTransactor::detach() {
     std::scoped_lock<std::mutex> lk(mStatusLock);
     return detachLocked();
 }
 
-bool IpcProxy::interrupt() {
+bool IpcTransactor::interrupt() {
     std::scoped_lock<std::mutex> lk(mStatusLock);
     return interruptLocked();
 }
 
-void IpcProxy::shutdown() {
+void IpcTransactor::shutdown() {
     std::scoped_lock<std::mutex> lk(mStatusLock);
     shutdownLocked();
 }
 
-int IpcProxy::detachLocked() {
+int IpcTransactor::detachLocked() {
     if (mSocketFd == -1) {
         return -1;
     }
@@ -137,7 +137,7 @@ int IpcProxy::detachLocked() {
     return fd;
 }
 
-bool IpcProxy::interruptLocked() {
+bool IpcTransactor::interruptLocked() {
     if (mIsRunning) {
         uint64_t u64 = 1;
         write(mInterruptEventFd, &u64, 8);
@@ -149,7 +149,7 @@ bool IpcProxy::interruptLocked() {
     }
 }
 
-void IpcProxy::shutdownLocked() {
+void IpcTransactor::shutdownLocked() {
     mExecutor.shutdown();
     if (mSocketFd >= 0) {
         int fd = detachLocked();
@@ -162,7 +162,7 @@ void IpcProxy::shutdownLocked() {
     mReady = false;
 }
 
-void IpcProxy::notifyWaitingCalls() {
+void IpcTransactor::notifyWaitingCalls() {
     for (auto &it: mWaitingMap.entrySet()) {
         if (LpcReturnStatus **pStatus = it->getValue();
                 pStatus != nullptr) {
@@ -175,7 +175,7 @@ void IpcProxy::notifyWaitingCalls() {
     }
 }
 
-void IpcProxy::runIpcLooper() {
+void IpcTransactor::runIpcLooper() {
     // do NOT touch mStatusMutex here
     SharedBuffer sharedBuffer;
     sharedBuffer.ensureCapacity(65536);
@@ -281,7 +281,7 @@ void IpcProxy::runIpcLooper() {
     }
 }
 
-int IpcProxy::sendRawPacket(const void *buffer, size_t size) {
+int IpcTransactor::sendRawPacket(const void *buffer, size_t size) {
     std::scoped_lock lk(mTxLock);
     if (sVerboseDebugLog) {
         LOGD("send size %zu %s", size, mName.c_str());
@@ -300,7 +300,7 @@ int IpcProxy::sendRawPacket(const void *buffer, size_t size) {
     }
 }
 
-int IpcProxy::sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuffer &args) {
+int IpcTransactor::sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuffer &args) {
     SharedBuffer result;
     result.ensureCapacity(sizeof(LpcTransactionHeader) + args.size());
     memcpy(result.at<char>(sizeof(LpcTransactionHeader)), args.get(), args.size());
@@ -314,7 +314,7 @@ int IpcProxy::sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuff
     return sendRawPacket(result.get(), result.size());
 }
 
-int IpcProxy::sendLpcResponse(uint32_t sequence, const LpcResult &result) {
+int IpcTransactor::sendLpcResponse(uint32_t sequence, const LpcResult &result) {
     SharedBuffer buf = result.buildLpcResponsePacket(sequence);
     if (buf.get() != nullptr) {
         return sendRawPacket(buf.get(), buf.size());
@@ -323,7 +323,7 @@ int IpcProxy::sendLpcResponse(uint32_t sequence, const LpcResult &result) {
     }
 }
 
-int IpcProxy::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
+int IpcTransactor::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
     SharedBuffer buf;
     buf.ensureCapacity(sizeof(LpcTransactionHeader));
     auto *h = buf.at<LpcTransactionHeader>(0);
@@ -336,7 +336,7 @@ int IpcProxy::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
     return sendRawPacket(buf.get(), buf.size());
 }
 
-int IpcProxy::sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();
@@ -352,7 +352,7 @@ int IpcProxy::sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuf
     return sendRawPacket(result.get(), result.size());
 }
 
-int IpcProxy::sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();
@@ -385,7 +385,7 @@ int IpcProxy::sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBu
     }
 }
 
-LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args) {
+LpcResult IpcTransactor::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args) {
     LpcResult result;
     uint32_t seq = mCurrentSequence.fetch_add(1);
     SharedBuffer buffer;
@@ -429,7 +429,7 @@ LpcResult IpcProxy::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, co
     return result;
 }
 
-void IpcProxy::handleReceivedPacket(const void *buffer, size_t size) {
+void IpcTransactor::handleReceivedPacket(const void *buffer, size_t size) {
     if (size < 24) {
         LOGE("packet too small(%zu), ignore  %s", size, mName.c_str());
         return;
@@ -453,7 +453,7 @@ void IpcProxy::handleReceivedPacket(const void *buffer, size_t size) {
     }
 }
 
-void IpcProxy::dispatchEventPacketAsync(const void *buffer, size_t size) {
+void IpcTransactor::dispatchEventPacketAsync(const void *buffer, size_t size) {
     EventHandler h = mEventHandler;
     if (h != nullptr) {
         SharedBuffer sb;
@@ -464,12 +464,12 @@ void IpcProxy::dispatchEventPacketAsync(const void *buffer, size_t size) {
         memcpy(sb.get(), buffer, size);
         EventHandleContext context = {h, this, sb};
         mExecutor.execute([context]() {
-            IpcProxy::invokeEventHandler(context);
+            IpcTransactor::invokeEventHandler(context);
         });
     }
 }
 
-void IpcProxy::dispatchLpcRequestAsync(const void *buffer, size_t size) {
+void IpcTransactor::dispatchLpcRequestAsync(const void *buffer, size_t size) {
     LpcFuncHandler h = mFuncHandler;
     uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
     if (h != nullptr) {
@@ -482,14 +482,14 @@ void IpcProxy::dispatchLpcRequestAsync(const void *buffer, size_t size) {
         memcpy(sb.get(), buffer, size);
         LpcFunctionHandleContext context = {h, this, sb};
         mExecutor.execute([context]() {
-            IpcProxy::invokeLpcHandler(context);
+            IpcTransactor::invokeLpcHandler(context);
         });
     } else {
         sendLpcResponseError(seq, LpcErrorCode::ERR_NO_LPC_HANDLER);
     }
 }
 
-void IpcProxy::handleLpcResponsePacket(const void *buffer, size_t size) {
+void IpcTransactor::handleLpcResponsePacket(const void *buffer, size_t size) {
     uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
     LpcReturnStatus **pStatus = mWaitingMap.get(seq);
     if (pStatus != nullptr) {
@@ -506,10 +506,10 @@ void IpcProxy::handleLpcResponsePacket(const void *buffer, size_t size) {
     }
 }
 
-void IpcProxy::invokeLpcHandler(LpcFunctionHandleContext context) {
+void IpcTransactor::invokeLpcHandler(LpcFunctionHandleContext context) {
     LpcEnv env = {context.object, &context.buffer};
     SharedBuffer *sb = &context.buffer;
-    IpcProxy *that = context.object;
+    IpcTransactor *that = context.object;
     LpcFuncHandler h = context.h;
     uint32_t funcId = sb->at<LpcTransactionHeader>(0)->funcId;
     uint32_t seq = sb->at<LpcTransactionHeader>(0)->sequence;
@@ -542,7 +542,7 @@ void IpcProxy::invokeLpcHandler(LpcFunctionHandleContext context) {
     }
 }
 
-void IpcProxy::invokeEventHandler(EventHandleContext context) {
+void IpcTransactor::invokeEventHandler(EventHandleContext context) {
     LpcEnv env = {context.object, &context.buffer};
     SharedBuffer *sb = &context.buffer;
     EventHandler h = context.h;

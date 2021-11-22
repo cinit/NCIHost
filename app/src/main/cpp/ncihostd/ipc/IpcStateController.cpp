@@ -35,16 +35,16 @@ void IpcStateController::init() {
     mIpcProxy.setEventHandler(&IpcStateController::cbEventHandler);
 }
 
-bool IpcStateController::cbLpcHandler(const IpcProxy::LpcEnv &env, LpcResult &result,
+bool IpcStateController::cbLpcHandler(const IpcTransactor::LpcEnv &env, LpcResult &result,
                                       uint32_t funcId, const ArgList &args) {
     return IpcStateController::getInstance().dispatchLpcRequest(env, result, funcId, args);
 }
 
-void IpcStateController::cbEventHandler(const IpcProxy::LpcEnv &env, uint32_t funcId, const ArgList &args) {
+void IpcStateController::cbEventHandler(const IpcTransactor::LpcEnv &env, uint32_t funcId, const ArgList &args) {
     LOGI("ignore event %x", funcId);
 }
 
-bool IpcStateController::dispatchLpcRequest(const IpcProxy::LpcEnv &env, LpcResult &result, uint32_t funcId,
+bool IpcStateController::dispatchLpcRequest(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId,
                                             const ArgList &args) {
     return mDaemon.dispatchLpcInvocation(env, result, funcId, args);
 }
@@ -53,6 +53,6 @@ NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
     return mDaemon;
 }
 
-IpcProxy &IpcStateController::getIpcProxy() {
+IpcTransactor &IpcStateController::getIpcProxy() {
     return mIpcProxy;
 }

@@ -10,17 +10,17 @@ NciHostDaemonProxy::NciHostDaemonProxy() = default;
 
 using Ids = INciHostDaemon::TransactionIds;
 
-NciHostDaemonProxy::NciHostDaemonProxy(IpcProxy *ipcProxy)
+NciHostDaemonProxy::NciHostDaemonProxy(IpcTransactor *ipcProxy)
         : mProxy(ipcProxy) {
 }
 
 NciHostDaemonProxy::~NciHostDaemonProxy() = default;
 
-IpcProxy *NciHostDaemonProxy::getIpcProxy() const noexcept {
+IpcTransactor *NciHostDaemonProxy::getIpcProxy() const noexcept {
     return mProxy;
 }
 
-void NciHostDaemonProxy::setIpcProxy(IpcProxy *ipcProxy) {
+void NciHostDaemonProxy::setIpcProxy(IpcTransactor *ipcProxy) {
     mProxy = ipcProxy;
 }
 
