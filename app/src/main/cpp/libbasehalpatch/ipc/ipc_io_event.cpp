@@ -13,6 +13,8 @@
 #include "ipc_io_event.h"
 #include "inject_io_init.h"
 
+using namespace halpatch;
+
 static uint32_t g_IoEventSequence = 0;
 
 static uint64_t getCurrentTimeMillis() {

@@ -33,7 +33,7 @@ public:
 
     TypedLpcResult<int> testFunction(int value) override;
 
-    int sendIoOperationEvent(const IoOperationEvent &event, const void *payload);
+    int sendIoOperationEvent(const halpatch::IoOperationEvent &event, const void *payload);
 
     int sendRemoteDeathEvent(int pid);
 

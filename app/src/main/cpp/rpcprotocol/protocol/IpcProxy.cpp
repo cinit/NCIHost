@@ -40,6 +40,17 @@ int IpcProxy::attach(int fd) {
     if (fd < 0) {
         return EBADFD;
     }
+    // check socket type
+    int sock_type;
+    if (socklen_t optlen = 4; getsockopt(fd, SOL_SOCKET, SO_TYPE, (void *) &sock_type, &optlen) < 0) {
+        int err = errno;
+        LOGE("get socket type failed: %s", strerror(err));
+        return err;
+    }
+    if (sock_type != SOCK_SEQPACKET) {
+        LOGE("socket type error, expect SOCK_SEQPACKET, got %d", sock_type);
+        return EINVAL;
+    }
     int flags = fcntl(fd, F_GETFL);
     if (flags == -1) {
         return errno;

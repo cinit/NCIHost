@@ -9,6 +9,7 @@
 #define LOG_TAG "ncihostd"
 
 using namespace ipcprotocol;
+using namespace halpatch;
 
 TypedLpcResult<std::string> NciHostDaemonImpl::getVersionName() {
     return {NCI_HOST_VERSION};

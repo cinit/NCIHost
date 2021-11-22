@@ -13,6 +13,7 @@
 #include "BaseHwHalHandler.h"
 
 using namespace hwhal;
+using namespace halpatch;
 using std::vector, std::tuple;
 
 static const char *const LOG_TAG = "BaseHwHalHandler";

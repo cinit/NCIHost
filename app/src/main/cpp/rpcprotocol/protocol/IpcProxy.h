@@ -68,7 +68,7 @@ public:
 
     /**
      * reset->attach(connected)->join(running)->interrupt(connected)->runIpcLooper->r:close(disconnected)
-     * @param fd AF_UNIX DGRAM
+     * @param fd AF_UNIX SEQPACKET socket
      * @return 0 success, errno on failure
      */
     [[nodiscard]] int attach(int fd);

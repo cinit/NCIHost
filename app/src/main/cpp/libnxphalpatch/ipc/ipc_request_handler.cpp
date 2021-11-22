@@ -7,6 +7,8 @@
 #include "../../libbasehalpatch/ipc/request_handler.h"
 #include "../../libbasehalpatch/hook/hook_proc_symbols.h"
 
+using namespace halpatch;
+
 static volatile bool sInitialized = false;
 
 void handleGetVersionRequest(uint32_t requestId, const void *, uint32_t) {

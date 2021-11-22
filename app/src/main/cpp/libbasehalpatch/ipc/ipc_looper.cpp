@@ -14,6 +14,8 @@
 #include "ipc_looper.h"
 #include "request_handler.h"
 
+using namespace halpatch;
+
 void handleIpcPacketInternal(const void *packet, int length) {
     const auto *packetHeader = static_cast<const HalTrxnPacketHeader *>(packet);
     if (packetHeader->type == TrxnType::GENERIC_REQUEST) {

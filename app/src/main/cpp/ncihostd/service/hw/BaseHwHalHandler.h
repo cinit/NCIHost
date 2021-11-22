@@ -46,8 +46,8 @@ public:
      * @return tuple of error code, response, payload. If error code is 0, response and payload are valid.
      */
     [[nodiscard]]
-    std::tuple<int, HalResponse, std::vector<char>> sendHalRequest(const HalRequest &request,
-                                                                   const void *payload, int timeout_ms);
+    std::tuple<int, halpatch::HalResponse, std::vector<char>> sendHalRequest(const halpatch::HalRequest &request,
+                                                                             const void *payload, int timeout_ms);
 
     void stopSelf();
 
@@ -72,7 +72,7 @@ private:
     void dispatchHwHalPatchIpcPacket(const void *packet, size_t length);
 
 protected:
-    virtual void dispatchHwHalIoEvent(const IoOperationEvent &event, const void *payload) = 0;
+    virtual void dispatchHwHalIoEvent(const halpatch::IoOperationEvent &event, const void *payload) = 0;
 
     virtual void dispatchRemoteProcessDeathEvent() = 0;
 

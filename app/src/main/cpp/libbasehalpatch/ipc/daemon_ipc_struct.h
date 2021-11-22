@@ -10,6 +10,8 @@
 
 #include "../hook/hook_sym_struct.h"
 
+namespace halpatch {
+
 constexpr int HAL_PACKET_MAX_LENGTH = 16384;
 
 enum class HalRequestErrorCode : uint32_t {
@@ -77,5 +79,7 @@ struct IoOperationEvent {
 static_assert(sizeof(IoSyscallInfo) == 40);
 static_assert(sizeof(IoOperationEvent) == sizeof(IoSyscallInfo) + 16);
 static_assert(sizeof(OriginHookProcedure) == 56);
+
+}
 
 #endif //NCI_HOST_NATIVES_DAEMON_IPC_STRUCT_H

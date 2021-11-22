@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] int initRemotePltHook(const OriginHookProcedure &hookProc);
 
-    void dispatchHwHalIoEvent(const IoOperationEvent &event, const void *payload) override;
+    void dispatchHwHalIoEvent(const halpatch::IoOperationEvent &event, const void *payload) override;
 
     void dispatchRemoteProcessDeathEvent() override;
 
