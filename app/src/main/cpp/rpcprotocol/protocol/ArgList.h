@@ -19,116 +19,186 @@ namespace ipcprotocol {
 
 class ArgList {
 public:
-    using uchar = unsigned char;
-
     /**
-     * uchar type
-     * | -7- + -6- + -5- + -4- + -3- + -2- + -1- + -0- |
-     *   [7] RFU
-     *        [6] is array
-     *              [5 ... 4] type: map(3), number(2), string(1), raw(0)
-     *              |
-     *              + for type number(2)
-     *              |           [3 ... 2] number length 64/32/16/8=3/2/1/0
-     *              |                        [1] is bool or float or double
-     *              |                              [0] signed or unsigned
-     *              |
-     *              + for type string(1)
-     *              |           [3 ... 2] encoding UCS-32/UTF-16/UTF-8=2/1/0
-     *              |                     currently only support UTF-8
-     *              + for type raw(0)
-     *              |                               [0] must be 1
+     * *** uint32_t TypeId overview:
+     * uint8_t[3] complex type info, 0 if not complex, MSB
+     * uint8_t[2] index type, 0 if not used
+     * uint8_t[1] aux info, 0 if not used
+     * uint8_t[0] major type, LSB
+     * *** immediate major types: integer, float, double, bool, null
+     *      uint8_t[0] major type:
+     *      [6] always 1
+     *      [5] always 0, not buffer-pool type
+     *      [3] 0: float, double, bool, null
+     *          [2 ... 1] null(0), bool(1), float(2), double(3)
+     *      [3] 1: integer
+     *          [2 ... 1] length: 3/2/1/0=[us]int(64/32/16/8)_t
+     *          [0] signed(0), unsigned(1)
+     * *** buffer-pool major type: string, raw buffer, POD structure data
+     *      [6] always 1
+     *      [5] always 1, is buffer-pool type
+     *      [4] 0: string
+     *          [3 ... 2] encoding: UTF-8(0), UTF-16(1), UCS-32(2)
+     *          [1] endianness: little(0), big(1)
+     *          [0] reserved, always 0
+     *          Note that the string is not null-terminated.
+     *          Currently, only UTF-8 is supported.
+     *      [4] 1: raw buffer or POD structure data
+     *          [3] 0: raw buffer data
+     *              1: POD structure data, sizeof(T) is stored in [10 ... 0]{uint8_t[1], uint8_t[0][2 ... 0]},
+     *                  11 bits, max struct size is 2047 bytes
+     * *** complex types:
+     * 0: not a complex type
+     * non-zero: complex type
+     * [6] always 1 for complex types
+     * [5 ... 2] always 0, reserved
+     * [1] 0: array or set
+     *      [0] 0: array, 1: set
+     * [1] 1: map, index type is stored in uint8_t[2] index type, which must not be POD-structure data,
+     *          value type is stored in uint8_t[0] major type
+     * *** buffer layout:
+     * ArgListBuffer {
+     *     +0: uint32_t sizeof(ArgListBuffer),
+     *     +4: uint32_t argc,
+     *     +8: uint32_t[argc] argument types, aligned to 8 bytes,
+     *     +immediateValueStart: uint64_t[argc] immediate argument values,
+     *     +bufferPoolStart: uint8_t[][] buffer pools, each buffer pool is aligned to 8 bytes,
+     * }
+     * where immediateValueStart is the start of immediate values, bufferPoolStart is the start of buffer pools.
+     * immediateValueStart = 8 + (4 * argc + 7) / 8 * 8,
+     * bufferPoolStart = immediateValueStart + 8 * argc,
+     * every entry start offset is aligned to 8 bytes.
+     * *** reference to a buffer pool
+     * BufferEntry {
+     *     +0: uint32_t offset,
+     *     +4: uint32_t length,
+     * }
+     * BufferEntry is stored in uint64_t immediate values as its native byte order(usually little endian).
      */
     class Types {
     private:
-        constexpr static uchar T_ARRAY = 1u << 6u;
-        constexpr static uchar T_STRING = 1u << 4u;
-        constexpr static uchar T_RAW = 0u << 4u | 1u;
-        constexpr static uchar T_MAP = 3u << 4u;
-        constexpr static uchar L_FLOAT = 2u << 2u;
-        constexpr static uchar L_DOUBLE = 3u << 2u;
-        constexpr static uchar F_BOOLEAN = 1u << 1u;
-        constexpr static uchar F_DECIMAL = 1u << 1u;
+        constexpr static uint32_t F_VALID = 1u << 6u;
+        constexpr static uint32_t F_IMMEDIATE = F_VALID | 0u << 5u;
+        constexpr static uint32_t F_BUFFER_POOL = F_VALID | 1u << 5u;
+        constexpr static uint32_t T_NULL = F_IMMEDIATE | 0u << 1u;
+        constexpr static uint32_t T_BOOL = F_IMMEDIATE | 1u << 1u;
+        constexpr static uint32_t T_FLOAT = F_IMMEDIATE | 2u << 1u;
+        constexpr static uint32_t T_DOUBLE = F_IMMEDIATE | 3u << 1u;
+        constexpr static uint32_t T_INTEGER_BASE = F_IMMEDIATE | 3u << 1u;
+        constexpr static uint32_t L_8 = 0u << 1u;
+        constexpr static uint32_t L_16 = 1u << 1u;
+        constexpr static uint32_t L_32 = 2u << 1u;
+        constexpr static uint32_t L_64 = 3u << 1u;
+        constexpr static uint32_t F_SIGNED = 0u;
+        constexpr static uint32_t F_UNSIGNED = 1u;
+        constexpr static uint32_t T_STRING = F_BUFFER_POOL | 0u << 4u;
+        constexpr static uint32_t T_RAW_BUFFER = F_BUFFER_POOL | 1u << 4u;
+        constexpr static uint32_t T_STRUCTURE_BASE = F_BUFFER_POOL | 1u << 4u | 1u << 3u;
+        constexpr static uint32_t SHIFT_MAJOR = 0u;
+        constexpr static uint32_t SHIFT_AUX = 8u;
+        constexpr static uint32_t SHIFT_INDEX = 16u;
+        constexpr static uint32_t SHIFT_COMPLEX = 24u;
     public:
-        constexpr static uchar F_SIGNED = 0u;
-        constexpr static uchar F_UNSIGNED = 1u;
-        constexpr static uchar L_8 = 0u << 2u;
-        constexpr static uchar L_16 = 1u << 2u;
-        constexpr static uchar L_32 = 2u << 2u;
-        constexpr static uchar L_64 = 3u << 2u;
-        constexpr static uchar T_NUMBER = 2u << 4u;
-        constexpr static uchar MASK_ARRAY = T_ARRAY;
-        constexpr static uchar TYPE_BOOLEAN = T_NUMBER | L_8 | F_BOOLEAN;
-        constexpr static uchar TYPE_FLOAT = T_NUMBER | L_FLOAT | F_DECIMAL;
-        constexpr static uchar TYPE_DOUBLE = T_NUMBER | L_DOUBLE | F_DECIMAL;
-        constexpr static uchar TYPE_STRING = T_STRING;
-        constexpr static uchar TYPE_MAP = T_MAP;
-        constexpr static uchar TYPE_RAW = T_RAW;
-        constexpr static uchar TYPE_INVALID = 0u;
+        constexpr static uint32_t TYPE_BOOLEAN = T_BOOL;
+        constexpr static uint32_t TYPE_FLOAT = T_FLOAT;
+        constexpr static uint32_t TYPE_DOUBLE = T_DOUBLE;
+        constexpr static uint32_t TYPE_STRING = T_STRING;
+        constexpr static uint32_t TYPE_BYTE_BUFFER = T_RAW_BUFFER;
+        constexpr static uint32_t TYPE_INVALID = 0u;
 
         template<typename T>
-        constexpr static uchar getTypeId() {
-            static_assert(std::is_same<T, const std::string &>() || std::is_same<T, std::string>()
-                          || std::is_same<T, const char *>() || std::is_same<T, char *>()
-                          || std::is_same<T, bool>() || std::is_same<T, float>() || std::is_same<T, double>()
-                          || (std::is_integral<T>() && !std::is_array<T>()), "unsupported type");
-            if (std::is_same<T, const std::string &>() || std::is_same<T, std::string>()
-                || std::is_same<T, const char *>() || std::is_same<T, char *>()) {
+        constexpr static uint32_t getPrimitiveTypeId() {
+            if constexpr (std::is_same<T, const std::string &>() || std::is_same<T, std::string>()
+                          || std::is_same<T, const char *>() || std::is_same<T, char *>()) {
                 return TYPE_STRING;
-            } else if (std::is_same<T, bool>()) {
+            } else if constexpr(std::is_same<T, bool>()) {
                 return TYPE_BOOLEAN;
-            } else if (std::is_same<T, float>()) {
+            } else if constexpr(std::is_same<T, float>()) {
                 return TYPE_FLOAT;
-            } else if (std::is_same<T, double>()) {
+            } else if constexpr(std::is_same<T, double>()) {
                 return TYPE_DOUBLE;
-            } else if (std::is_integral<T>() && !std::is_array<T>()) {
-                uchar sign = std::is_unsigned<T>() ? F_UNSIGNED : F_SIGNED;
-                uchar len = L_64;
-                if (sizeof(T) == 1) {
-                    len = L_8;
-                } else if (sizeof(T) == 2) {
-                    len = L_16;
-                } else if (sizeof(T) == 4) {
-                    len = L_32;
-                }
-                return T_NUMBER | len | sign;
+            } else if constexpr(std::is_integral<T>() && !std::is_array<T>()) {
+                // integer
+                return T_INTEGER_BASE | (std::is_signed<T>() ? F_SIGNED : F_UNSIGNED)
+                       | (sizeof(T) == 1 ? L_8 : 0u)
+                       | (sizeof(T) == 2 ? L_16 : 0u)
+                       | (sizeof(T) == 4 ? L_32 : 0u)
+                       | (sizeof(T) == 8 ? L_64 : 0u);
+            } else if constexpr(std::is_same_v<T, std::vector<uint8_t>> || std::is_same_v<T, SharedBuffer>) {
+                // byte buffer
+                return TYPE_BYTE_BUFFER;
+            } else if constexpr(std::is_pod_v<T> && !std::is_array_v<T> && sizeof(T) < 2048) {
+                // POD structure buffer, max size 2047 bytes
+                constexpr size_t structSize = sizeof(T);
+                constexpr uint32_t high8bits = (structSize >> 3u) & 0xFFu;
+                constexpr uint32_t low3bits = structSize & 7u;
+                return T_STRUCTURE_BASE | (high8bits << SHIFT_AUX) | (low3bits << SHIFT_MAJOR);
             } else {
-                return 0;
+                // unsupported type
+                return TYPE_INVALID;
             }
         }
 
-        template<class T>
-        constexpr static uchar getTypeId(T) { return getTypeId<T>(); }
+        template<typename T>
+        constexpr static uint32_t getTypeId() {
+            // TODO: support complex type
+            return getPrimitiveTypeId<T>();
+        }
 
-        constexpr static bool isDouble(uchar type) {
+        template<class T>
+        constexpr static uint32_t getTypeId(T) { return getTypeId<T>(); }
+
+        /**
+         * Immediate types, byte buffer and structure are primitive types.
+         * Map, array, set, etc. are not primitive types.
+         * @param type
+         * @return is type primitive
+         */
+        constexpr static bool isPrimitiveType(uint32_t type) {
+            return (type >> SHIFT_COMPLEX) == 0;
+        }
+
+        constexpr static bool isDouble(uint32_t type) {
             return type == TYPE_DOUBLE;
         }
 
-        constexpr static bool isFloat(uchar type) {
+        constexpr static bool isFloat(uint32_t type) {
             return type == TYPE_FLOAT;
         }
 
-        constexpr static bool isString(uchar type) {
+        constexpr static bool isString(uint32_t type) {
             return type == TYPE_STRING;
+        }
+
+        constexpr static bool isByteBuffer(uint32_t type) {
+            return type == TYPE_BYTE_BUFFER;
+        }
+
+        constexpr static bool isStructure(uint32_t type) {
+            return isPrimitiveType(type) && ((type & T_STRUCTURE_BASE) == T_STRUCTURE_BASE);
+        }
+
+        constexpr static bool isImmediateValue(uint32_t type) {
+            return isPrimitiveType(type) && ((type & F_IMMEDIATE) == F_IMMEDIATE);
         }
     };
 
     class Builder {
     private:
         int mCount = 0;
-        HashMap<int, uchar> mArgTypes;
+        HashMap<int, uint32_t> mArgTypes;
         HashMap<int, uint64_t> mArgInlineVars;
         HashMap<int, SharedBuffer> mArgBuffers;
 
-        void pushRawInline(uchar type, uint64_t value);
+        void pushRawInline(uint32_t type, uint64_t value);
 
-        void pushRawBuffer(uchar type, const void *buffer, size_t size);
+        void pushRawBuffer(uint32_t type, const void *buffer, size_t size);
 
-        void pushRawInlineArray(uchar type, const uint64_t *values, int count);
+        void pushRawInlineArray(uint32_t type, const uint64_t *values, int count);
 
-//        void pushRawBufferArray(uchar type, void *buffer, size_t *size, int count);
+//        void pushRawBufferArray(uint32_t type, void *buffer, size_t *size, int count);
 
-//        void pushRawBufferArray(uchar type, const std::vector<SharedBuffer> &buffers);
+//        void pushRawBufferArray(uint32_t type, const std::vector<SharedBuffer> &buffers);
 
         static inline void extractStringBuffer(const char *in, const char **out, size_t *size) {
             if (in == nullptr) {
@@ -155,26 +225,19 @@ public:
 
         ArgList::Builder &push(const std::vector<uint8_t> &value);
 
+        ArgList::Builder &push(const SharedBuffer &value);
+
         ArgList::Builder &push(const char *value);
 
-        template<class T>
+        template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+                Types::isImmediateValue(TypeId) || Types::isStructure(TypeId), T>>
         ArgList::Builder &push(T value) {
-            static_assert(std::is_same<T, bool>() || std::is_same<T, float>() || std::is_same<T, double>()
-                          || (std::is_integral<T>() && !std::is_array<T>()), "not primitive");
-            if (std::is_same<T, bool>()) {
-                pushRawInline(Types::TYPE_BOOLEAN, value ? 1 : 0);
-            } else if (std::is_same<T, float>()) {
-                uint64_t v = 0;
-                *reinterpret_cast<T *>(&v) = value;
-                pushRawInline(Types::TYPE_FLOAT, v);
-            } else if (std::is_same<T, double>()) {
-                uint64_t v = 0;
-                *reinterpret_cast<T *>(&v) = value;
-                pushRawInline(Types::TYPE_DOUBLE, v);
+            if constexpr(Types::isImmediateValue(TypeId)) {
+                // immediate value
+                pushRawInline(TypeId, value);
             } else {
-                uint64_t v = 0;
-                *reinterpret_cast<T *>(&v) = value;
-                pushRawInline(Types::getTypeId<T>(), v);
+                // structure data
+                pushRawBuffer(TypeId, &value, sizeof(T));
             }
             return *this;
         }
@@ -233,18 +296,43 @@ public:
         return mLength;
     }
 
-    template<class T, typename Condition=std::enable_if_t<
-            (std::is_same<T, bool>() || std::is_same<T, float>() || std::is_same<T, double>() ||
-             (std::is_integral<T>() && !std::is_array<T>())) && sizeof(T) <= 8, T>>
+    /**
+     * Read the value of the argument at the given index.
+     * This method will return false if the index is out of bounds.
+     * @tparam T type of value
+     * @tparam TypeId type id of value
+     * @tparam CheckType check whether type id is correct
+     * @param out the result
+     * @param index the argument index
+     * @return true if success, false if failed
+     */
+    template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+            Types::isImmediateValue(TypeId) || Types::isStructure(TypeId), T>>
     [[nodiscard]] inline bool get(T *out, int index) const {
         uint64_t reg = 0;
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (Types::getTypeId<T>() != *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index)) {
+        if (TypeId != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
             return false;
         }
-        *out = *reinterpret_cast<T *>(&reg);
+        if constexpr(Types::isImmediateValue(TypeId)) {
+            *out = *reinterpret_cast<T *>(&reg);
+        } else {
+            // structure data
+            struct BufferEntry {
+                uint32_t offset;
+                uint32_t length;// in bytes
+            };
+            static_assert(sizeof(BufferEntry) == 8);
+            const BufferEntry *entry = reinterpret_cast<BufferEntry *>(&reg);// ub
+            auto offset = entry->offset;
+            auto len = entry->length;
+            if (offset + len > mLength) {
+                return false;
+            }
+            *out = *reinterpret_cast<const T *>(reinterpret_cast<const char *>(mBuffer) + offset);
+        }
         return true;
     }
 
@@ -254,7 +342,7 @@ public:
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (Types::getTypeId<std::string>() != *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index)) {
+        if (Types::getTypeId<std::string>() != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
             return false;
         }
         struct BufferEntry {
@@ -278,7 +366,7 @@ public:
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (Types::TYPE_RAW != *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index)) {
+        if (Types::TYPE_BYTE_BUFFER != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
             return false;
         }
         struct BufferEntry {
@@ -292,16 +380,16 @@ public:
         if (offset + len > mLength) {
             return false;
         }
-        *out->resize(len);
+        out->resize(len);
         memcpy(out->data(), reinterpret_cast<const char *>(mBuffer) + offset, len);
         return true;
     }
 
-    [[nodiscard]] inline uchar getType(int index) const {
+    [[nodiscard]] inline uint32_t getType(int index) const {
         if (!mIsValid || index < 0 || index >= mCount) {
             return Types::TYPE_INVALID;
         }
-        return *(reinterpret_cast<const uchar *>(mBuffer) + 8 + index);
+        return *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4);
     }
 };
 

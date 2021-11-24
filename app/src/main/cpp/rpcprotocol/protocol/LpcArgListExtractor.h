@@ -50,20 +50,32 @@ private:
 
 public:
     template<class R, class ...Args>
-    static inline std::function<TypedLpcResult<R>(Subject * , Args...)> is
+    static inline std::function<TypedLpcResult<R>(Subject *, Args...)> is
             (TypedLpcResult<R> (*pf)(Subject *, Args...)) {
         return std::function<TypedLpcResult<R>(Subject *, Args...)>(pf);
     }
 
+    template<class R=void, class ...Args>
+    static inline std::function<void(Subject *, Args...)> is
+            (void (*pf)(Subject *, Args...)) {
+        return std::function<void(Subject *, Args...)>(pf);
+    }
+
     template<class R>
     static LpcResult inline invoke(Subject *that, [[maybe_unused]] const ArgList &args,
-                                   const std::function<TypedLpcResult<R>(Subject * )> &func) {
+                                   const std::function<TypedLpcResult<R>(Subject *)> &func) {
         return LpcResult(func(that));
+    }
+
+    template<class R=void>
+    static void inline invoke(Subject *that, [[maybe_unused]] const ArgList &args,
+                              const std::function<void(Subject *)> &func) {
+        func(that);
     }
 
     template<class R, class ...Ts>
     static LpcResult invoke(Subject *that, const ArgList &args,
-                            const std::function<TypedLpcResult<R>(Subject * , Ts...)> &func) {
+                            const std::function<TypedLpcResult<R>(Subject *, Ts...)> &func) {
         std::tuple<Ts...> vs;
         if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
             return LpcResult(invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs));
@@ -71,6 +83,14 @@ public:
             LpcResult result;
             result.setError(LpcErrorCode::ERR_INVALID_ARGUMENT);
             return result;
+        }
+    }
+
+    template<class R=void, class ...Ts>
+    static void invoke(Subject *that, const ArgList &args, const std::function<void(Subject *, Ts...)> &func) {
+        std::tuple<Ts...> vs;
+        if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
+            invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs);
         }
     }
 };
