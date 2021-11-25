@@ -3,6 +3,7 @@
 #endif
 
 #include <stddef.h>
+#include <errno.h>
 
 #include "../libbasehalpatch/ipc/inject_io_init.h"
 
@@ -13,5 +14,11 @@ const char g_nci_host_version[] = NCI_HOST_VERSION;
 __attribute__((noinline, visibility("default")))
 void *nxp_hal_patch_inject_init(int fd) {
     (void) g_nci_host_version;
+    if (fd < 0) {
+        return (void *) -EINVAL;
+    }
+    if (initElfHeaderInfo("libnxphalpatch.so", &nxp_hal_patch_inject_init) == 0) {
+        return (void *) -EBADE;
+    }
     return (void *) (size_t) BaseHalPatchInitSocket(fd);
 }

@@ -80,6 +80,16 @@ static_assert(sizeof(IoSyscallInfo) == 40);
 static_assert(sizeof(IoOperationEvent) == sizeof(IoSyscallInfo) + 16);
 static_assert(sizeof(OriginHookProcedure) == 56);
 
+struct SharedObjectInfo {
+    constexpr static uint32_t SO_INFO_MAGIC =
+            uint32_t('N') | (uint32_t('S') << 8) | (uint32_t('O') << 16) | (uint32_t('I') << 24);
+    uint32_t magic;
+    uint32_t structSize;
+    uint64_t handle;
+    uint64_t initProcAddress;
+};
+static_assert(sizeof(SharedObjectInfo) == 24);
+
 }
 
 #endif //NCI_HOST_NATIVES_DAEMON_IPC_STRUCT_H

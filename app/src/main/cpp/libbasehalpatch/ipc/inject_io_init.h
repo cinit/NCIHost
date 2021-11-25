@@ -11,6 +11,8 @@ extern "C" {
 
 int BaseHalPatchInitSocket(int fd);
 
+void *initElfHeaderInfo(const char *soname, void *initFunction);
+
 int get_tracer_pid();
 
 #ifdef __cplusplus
