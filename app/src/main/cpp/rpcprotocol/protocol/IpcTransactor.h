@@ -7,6 +7,9 @@
 
 #include <mutex>
 #include <atomic>
+#include <vector>
+#include <string>
+#include <string_view>
 #include <unistd.h>
 
 #include "../utils/FixedThreadPool.h"
@@ -16,11 +19,13 @@
 
 namespace ipcprotocol {
 
+class BaseIpcObject;
+
 class IpcTransactor {
 public:
     class LpcEnv {
     public:
-        const IpcTransactor *object;
+        IpcTransactor *transactor;
         const SharedBuffer *buffer;
     };
 
@@ -29,8 +34,6 @@ public:
         static constexpr uint32_t IPC_FLAG_CRITICAL_CONTEXT = 0x10;
     };
 
-    using LpcFuncHandler = bool (*)(const LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
-    using EventHandler = void (*)(const LpcEnv &env, uint32_t funcId, const ArgList &args);
 private:
     static constexpr bool sVerboseDebugLog = false;
 
@@ -54,11 +57,11 @@ private:
     std::mutex mReadThreadMutex;
     std::string mName;
     ConcurrentHashMap<uint32_t, LpcReturnStatus *> mWaitingMap;
+    ConcurrentHashMap<uint32_t, BaseIpcObject *> mIpcObjects;
     std::atomic<uint32_t> mCurrentSequence = uint32_t((getpid() % 0x4000) << 8);
-    LpcFuncHandler mFuncHandler = nullptr;
-    EventHandler mEventHandler = nullptr;
+
 public:
-    IpcTransactor();
+    IpcTransactor() = default;
 
     ~IpcTransactor();
 
@@ -94,7 +97,7 @@ public:
         return mName.c_str();
     }
 
-    inline void setName(const std::string &name) {
+    inline void setName(std::string_view name) {
         std::scoped_lock<std::mutex> lk(mStatusLock);
         mName = name;
     }
@@ -112,13 +115,45 @@ public:
 
     void shutdown();
 
+    /**
+     * Register an IPC object.
+     * @param obj the object to register
+     * @return true if the object was registered, false if there is already an object with the same id
+     */
+    bool registerIpcObject(BaseIpcObject &obj);
+
+    /**
+     * Unregister an IPC object.
+     * @param proxyId the id of the object to unregister
+     * @return true if the object was unregistered, false if there is no object with the given id
+     */
+    bool unregisterIpcObject(uint32_t proxyId);
+
+    /**
+     * Test whether an IPC object is registered.
+     * @param proxyId the id of the object to test
+     * @return true if the object is registered, false if there is no object with the given id
+     */
+    bool hasIpcObject(uint32_t proxyId) const;
+
+    /**
+     * Get all registered IPC objects.
+     * @return the registered IPC objects
+     */
+    std::vector<BaseIpcObject *> getRegisteredIpcObjects() const;
+
+    /**
+     * Unregister all registered IPC objects.
+     */
+    void unregisterAllIpcObjects();
+
     int sendRawPacket(const void *buffer, size_t size);
 
-    int sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuffer &args);
+    int sendLpcRequest(uint32_t sequence, uint32_t proxyId, uint32_t funId, const SharedBuffer &args);
 
-    int sendLpcResponse(uint32_t sequence, const LpcResult &result);
+    int sendLpcResponse(uint32_t sequence, uint32_t proxyId, const LpcResult &result);
 
-    int sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId);
+    int sendLpcResponseError(uint32_t sequence, uint32_t proxyId, LpcErrorCode errorId);
 
     /**
      * Send an event to the end point.
@@ -129,7 +164,7 @@ public:
      * @param args event arguments
      * @return 0 on success, errno on failure
      */
-    int sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
+    int sendEventSync(uint32_t sequence, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args);
 
     /**
      * Send an event to the end point asynchronously.
@@ -137,51 +172,36 @@ public:
      * @param args event arguments
      * @return 0 on success, errno on failure
      */
-    int sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args);
+    int sendEventAsync(uint32_t sequence, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args);
 
     /**
      * Send an event to the end point.
      * @param sync whether to wait for the event to be sent
+     * @param proxyId the proxy id on the end point
      * @param eventId event type
      * @param args event arguments
      * @return 0 on success, errno on failure
      */
-    int sendEvent(bool sync, uint32_t eventId, const SharedBuffer &args) {
+    inline int sendEvent(bool sync, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args) {
         uint32_t sequence = mCurrentSequence.fetch_add(1, std::memory_order_relaxed);
         if (sync) {
-            return sendEventSync(sequence, eventId, args);
+            return sendEventSync(sequence, proxyId, eventId, args);
         } else {
-            return sendEventAsync(sequence, eventId, args);
+            return sendEventAsync(sequence, proxyId, eventId, args);
         }
     }
 
-    [[nodiscard]] LpcResult executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args);
-
-    template<class ... Args>
-    [[nodiscard]] inline LpcResult executeRemoteProcedure(uint32_t funcId, const Args &...args) {
-        return executeLpcTransaction(funcId, 0, ArgList::Builder().pushArgs(args...).build());
-    }
-
-    [[nodiscard]] inline EventHandler getEventHandler() const noexcept {
-        return mEventHandler;
-    }
-
-    [[nodiscard]] inline LpcFuncHandler getFunctionHandler() const noexcept {
-        return mFuncHandler;
-    }
-
-    void setEventHandler(EventHandler h);
-
-    void setFunctionHandler(LpcFuncHandler h);
+    [[nodiscard]] LpcResult executeLpcTransaction(uint32_t proxyId, uint32_t funcId,
+                                                  uint32_t ipcFlags, const SharedBuffer &args);
 
 private:
     void handleReceivedPacket(const void *buffer, size_t size);
 
-    void dispatchEventPacketAsync(const void *buffer, size_t size);
+    void dispatchEventPacketAsync(uint32_t proxyId, const void *buffer, size_t size);
 
-    void dispatchLpcRequestAsync(const void *buffer, size_t size);
+    void dispatchLpcRequestAsync(uint32_t proxyId, const void *buffer, size_t size);
 
-    void handleLpcResponsePacket(const void *buffer, size_t size);
+    void dispatchLpcResponsePacket(uint32_t proxyId, const void *buffer, size_t size);
 
     int detachLocked();
 
@@ -193,21 +213,21 @@ private:
 
     class LpcFunctionHandleContext {
     public:
-        LpcFuncHandler h;
-        IpcTransactor *object;
+        BaseIpcObject *obj;
+        IpcTransactor *transactor;
         SharedBuffer buffer;
     };
 
     class EventHandleContext {
     public:
-        EventHandler h;
-        IpcTransactor *object;
+        BaseIpcObject *obj;
+        IpcTransactor *transactor;
         SharedBuffer buffer;
     };
 
-    static void invokeLpcHandler(LpcFunctionHandleContext context);
+    static void dispatchFunctionCallToIpcObject(LpcFunctionHandleContext context);
 
-    static void invokeEventHandler(EventHandleContext context);
+    static void dispatchEventToIpcObject(EventHandleContext context);
 
     void runIpcLooper();
 

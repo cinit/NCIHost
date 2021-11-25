@@ -28,7 +28,7 @@
 #include "../ipc/IpcStateController.h"
 #include "rpcprotocol/log/Log.h"
 #include "rpcprotocol/protocol/rpc_struct.h"
-#include "rpcprotocol/protocol/IpcProxy.h"
+#include "rpcprotocol/protocol/IpcTransactor.h"
 
 #define LOG_TAG "ncihostd"
 

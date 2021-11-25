@@ -13,26 +13,15 @@
 
 #include "rpc_struct.h"
 #include "IpcTransactor.h"
+#include "BaseIpcObject.h"
 #include "../log/Log.h"
 
 #define LOG_TAG "IpcProxy"
 
 using namespace ipcprotocol;
 
-IpcTransactor::IpcTransactor() = default;
-
 IpcTransactor::~IpcTransactor() {
     shutdown();
-}
-
-void IpcTransactor::setEventHandler(IpcTransactor::EventHandler h) {
-    std::scoped_lock<std::mutex> _(mStatusLock);
-    mEventHandler = h;
-}
-
-void IpcTransactor::setFunctionHandler(IpcTransactor::LpcFuncHandler h) {
-    std::scoped_lock<std::mutex> _(mStatusLock);
-    mFuncHandler = h;
 }
 
 int IpcTransactor::attach(int fd) {
@@ -300,13 +289,15 @@ int IpcTransactor::sendRawPacket(const void *buffer, size_t size) {
     }
 }
 
-int IpcTransactor::sendLpcRequest(uint32_t sequence, uint32_t funId, const SharedBuffer &args) {
+int IpcTransactor::sendLpcRequest(uint32_t sequence, uint32_t proxyId, uint32_t funId, const SharedBuffer &args) {
     SharedBuffer result;
     result.ensureCapacity(sizeof(LpcTransactionHeader) + args.size());
     memcpy(result.at<char>(sizeof(LpcTransactionHeader)), args.get(), args.size());
     auto *h = result.at<LpcTransactionHeader>(0);
     h->header.length = (uint32_t) result.size();
     h->header.type = TrxnType::TRXN_TYPE_RPC;
+    h->header.proxyId = proxyId;
+    h->header.rfu4_0 = 0;
     h->funcId = funId;
     h->sequence = sequence;
     h->rpcFlags = 0;
@@ -314,8 +305,8 @@ int IpcTransactor::sendLpcRequest(uint32_t sequence, uint32_t funId, const Share
     return sendRawPacket(result.get(), result.size());
 }
 
-int IpcTransactor::sendLpcResponse(uint32_t sequence, const LpcResult &result) {
-    SharedBuffer buf = result.buildLpcResponsePacket(sequence);
+int IpcTransactor::sendLpcResponse(uint32_t sequence, uint32_t proxyId, const LpcResult &result) {
+    SharedBuffer buf = result.buildLpcResponsePacket(sequence, proxyId);
     if (buf.get() != nullptr) {
         return sendRawPacket(buf.get(), buf.size());
     } else {
@@ -323,12 +314,14 @@ int IpcTransactor::sendLpcResponse(uint32_t sequence, const LpcResult &result) {
     }
 }
 
-int IpcTransactor::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId) {
+int IpcTransactor::sendLpcResponseError(uint32_t sequence, uint32_t proxyId, LpcErrorCode errorId) {
     SharedBuffer buf;
     buf.ensureCapacity(sizeof(LpcTransactionHeader));
     auto *h = buf.at<LpcTransactionHeader>(0);
     h->header.length = sizeof(LpcTransactionHeader);
     h->header.type = TrxnType::TRXN_TYPE_RPC;
+    h->header.proxyId = proxyId;
+    h->header.rfu4_0 = 0;
     h->errorCode = static_cast<uint32_t>(errorId);
     h->sequence = sequence;
     h->rpcFlags = LPC_FLAG_ERROR;
@@ -336,7 +329,7 @@ int IpcTransactor::sendLpcResponseError(uint32_t sequence, LpcErrorCode errorId)
     return sendRawPacket(buf.get(), buf.size());
 }
 
-int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args) {
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();
@@ -345,6 +338,8 @@ int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t eventId, const Shar
     auto *h = result.at<EventTransactionHeader>(0);
     h->header.length = (uint32_t) result.size();
     h->header.type = TrxnType::TRXN_TYPE_EVENT;
+    h->header.proxyId = proxyId;
+    h->header.rfu4_0 = 0;
     h->eventId = eventId;
     h->sequence = sequence;
     h->eventFlags = 0;
@@ -352,7 +347,7 @@ int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t eventId, const Shar
     return sendRawPacket(result.get(), result.size());
 }
 
-int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t eventId, const SharedBuffer &args) {
+int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args) {
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();
@@ -361,6 +356,8 @@ int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t eventId, const Sha
     auto *h = result.at<EventTransactionHeader>(0);
     h->header.length = (uint32_t) result.size();
     h->header.type = TrxnType::TRXN_TYPE_EVENT;
+    h->header.proxyId = proxyId;
+    h->header.rfu4_0 = 0;
     h->eventId = eventId;
     h->sequence = sequence;
     h->eventFlags = 0;
@@ -385,7 +382,8 @@ int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t eventId, const Sha
     }
 }
 
-LpcResult IpcTransactor::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlags, const SharedBuffer &args) {
+LpcResult IpcTransactor::executeLpcTransaction(uint32_t proxyId, uint32_t funcId,
+                                               uint32_t ipcFlags, const SharedBuffer &args) {
     LpcResult result;
     uint32_t seq = mCurrentSequence.fetch_add(1);
     SharedBuffer buffer;
@@ -406,7 +404,7 @@ LpcResult IpcTransactor::executeLpcTransaction(uint32_t funcId, uint32_t ipcFlag
     }
     {
         std::unique_lock retlk(mtx);
-        if (sendLpcRequest(seq, funcId, args) != 0) {
+        if (sendLpcRequest(seq, proxyId, funcId, args) != 0) {
             mWaitingMap.remove(seq);
             result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
             return result;
@@ -434,62 +432,66 @@ void IpcTransactor::handleReceivedPacket(const void *buffer, size_t size) {
         LOGE("packet too small(%zu), ignore  %s", size, mName.c_str());
         return;
     }
-    if (size > 65536) {
+    if (size > 64 * 1024 * 1024) {
         LOGE("packet too large(%zu), ignore %s", size, mName.c_str());
         return;
     }
     const auto *header = reinterpret_cast<const TrxnPacketHeader *>(buffer);
     auto type = header->type;
+    uint32_t proxyId = header->proxyId;
     if (type == TrxnType::TRXN_TYPE_RPC) {
         if (reinterpret_cast<const LpcTransactionHeader *>(buffer)->funcId == 0) {
-            handleLpcResponsePacket(buffer, size);
+            dispatchLpcResponsePacket(proxyId, buffer, size);
         } else {
-            dispatchLpcRequestAsync(buffer, size);
+            dispatchLpcRequestAsync(proxyId, buffer, size);
         }
     } else if (type == TrxnType::TRXN_TYPE_EVENT) {
-        dispatchEventPacketAsync(buffer, size);
+        dispatchEventPacketAsync(proxyId, buffer, size);
     } else {
         LOGE("unknown type (%ud), ignore %s", type, mName.c_str());
     }
 }
 
-void IpcTransactor::dispatchEventPacketAsync(const void *buffer, size_t size) {
-    EventHandler h = mEventHandler;
-    if (h != nullptr) {
+void IpcTransactor::dispatchEventPacketAsync(uint32_t proxyId, const void *buffer, size_t size) {
+    uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
+    auto **ipcObj = mIpcObjects.get(proxyId);
+    if (ipcObj != nullptr) {
         SharedBuffer sb;
         if (!sb.ensureCapacity(size, std::nothrow_t())) {
             LOGE("failed to allocate buffer size = %zu, drop event  %s", size, mName.c_str());
             return;
         }
         memcpy(sb.get(), buffer, size);
-        EventHandleContext context = {h, this, sb};
+        EventHandleContext context = {*ipcObj, this, sb};
         mExecutor.execute([context]() {
-            IpcTransactor::invokeEventHandler(context);
+            IpcTransactor::dispatchEventToIpcObject(context);
         });
+    } else {
+        LOGW("event received for unknown proxy id %u %s", proxyId, mName.c_str());
     }
 }
 
-void IpcTransactor::dispatchLpcRequestAsync(const void *buffer, size_t size) {
-    LpcFuncHandler h = mFuncHandler;
+void IpcTransactor::dispatchLpcRequestAsync(uint32_t proxyId, const void *buffer, size_t size) {
     uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
-    if (h != nullptr) {
+    auto **ipcObj = mIpcObjects.get(proxyId);
+    if (ipcObj != nullptr) {
         SharedBuffer sb;
         if (!sb.ensureCapacity(size, std::nothrow_t())) {
-            sendLpcResponseError(seq, LpcErrorCode::ERR_REMOTE_INTERNAL_ERROR);
+            sendLpcResponseError(seq, proxyId, LpcErrorCode::ERR_REMOTE_INTERNAL_ERROR);
             LOGE("failed to allocate buffer size = %zu, return lpc error  %s", size, mName.c_str());
             return;
         }
         memcpy(sb.get(), buffer, size);
-        LpcFunctionHandleContext context = {h, this, sb};
+        LpcFunctionHandleContext context = {*ipcObj, this, sb};
         mExecutor.execute([context]() {
-            IpcTransactor::invokeLpcHandler(context);
+            IpcTransactor::dispatchFunctionCallToIpcObject(context);
         });
     } else {
-        sendLpcResponseError(seq, LpcErrorCode::ERR_NO_LPC_HANDLER);
+        sendLpcResponseError(seq, proxyId, LpcErrorCode::ERR_NO_REMOTE_OBJECT);
     }
 }
 
-void IpcTransactor::handleLpcResponsePacket(const void *buffer, size_t size) {
+void IpcTransactor::dispatchLpcResponsePacket(uint32_t, const void *buffer, size_t size) {
     uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
     LpcReturnStatus **pStatus = mWaitingMap.get(seq);
     if (pStatus != nullptr) {
@@ -502,63 +504,84 @@ void IpcTransactor::handleLpcResponsePacket(const void *buffer, size_t size) {
         }
         status->cond->notify_all();
     } else {
-        LOGE("handleLpcResponsePacket but no LpcReturnStatus found, seq=%ud  %s", seq, mName.c_str());
+        LOGE("dispatchLpcResponsePacket but no LpcReturnStatus found, seq=%ud  %s", seq, mName.c_str());
     }
 }
 
-void IpcTransactor::invokeLpcHandler(LpcFunctionHandleContext context) {
-    LpcEnv env = {context.object, &context.buffer};
-    SharedBuffer *sb = &context.buffer;
-    IpcTransactor *that = context.object;
-    LpcFuncHandler h = context.h;
-    uint32_t funcId = sb->at<LpcTransactionHeader>(0)->funcId;
-    uint32_t seq = sb->at<LpcTransactionHeader>(0)->sequence;
+void IpcTransactor::dispatchFunctionCallToIpcObject(LpcFunctionHandleContext context) {
+    BaseIpcObject &obj = *context.obj;
+    IpcTransactor &transactor = *context.transactor;
+    const SharedBuffer &buffer = context.buffer;
+    LpcEnv env = {&transactor, &buffer};
+    uint32_t proxyId = obj.getProxyId();
+    uint32_t funcId = buffer.at<LpcTransactionHeader>(0)->funcId;
+    uint32_t seq = buffer.at<LpcTransactionHeader>(0)->sequence;
     ArgList argList;
-    if (sb->size() > 24) {
-        argList = ArgList(sb->at<char>(sizeof(LpcTransactionHeader)),
-                          sb->size() - sizeof(LpcTransactionHeader));
+    if (buffer.size() > sizeof(LpcTransactionHeader)) {
+        argList = ArgList(buffer.at<char>(sizeof(LpcTransactionHeader)),
+                          buffer.size() - sizeof(LpcTransactionHeader));
     }
     LpcResult result;
-    int errcode = 0;
+    int errcode;
     if (argList.isValid()) {
-        if (h != nullptr) {
-            if (h(env, result, funcId, argList)) {
-                if (!result.isValid()) {
-                    LOGW("LpcHandle NOT return... funcId=%d", funcId);
-                    result.returnVoid();
-                }
-                errcode = that->sendLpcResponse(seq, result);
-            } else {
-                errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_UNKNOWN_REQUEST);
+        // dispatch the function call to IPC object
+        if (obj.dispatchLpcInvocation(env, result, funcId, argList)) {
+            // the function call is handled by IPC object
+            if (!result.isValid()) {
+                LOGW("LpcHandle NOT return... funcId=%d", funcId);
+                result.returnVoid();
             }
+            errcode = transactor.sendLpcResponse(seq, proxyId, result);
         } else {
-            errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_NO_LPC_HANDLER);
+            // no such function
+            errcode = transactor.sendLpcResponseError(seq, proxyId, LpcErrorCode::ERR_UNKNOWN_REQUEST);
         }
     } else {
-        errcode = that->sendLpcResponseError(seq, LpcErrorCode::ERR_BAD_REQUEST);
+        errcode = transactor.sendLpcResponseError(seq, proxyId, LpcErrorCode::ERR_BAD_REQUEST);
     }
     if (errcode != 0) {
         LOGE("send resp error=%d when handle seq=%d, funcId=%d", errcode, seq, funcId);
     }
 }
 
-void IpcTransactor::invokeEventHandler(EventHandleContext context) {
-    LpcEnv env = {context.object, &context.buffer};
-    SharedBuffer *sb = &context.buffer;
-    EventHandler h = context.h;
-    uint32_t eventId = sb->at<LpcTransactionHeader>(0)->funcId;
-    uint32_t seq = sb->at<LpcTransactionHeader>(0)->sequence;
+void IpcTransactor::dispatchEventToIpcObject(EventHandleContext context) {
+    BaseIpcObject &obj = *context.obj;
+    IpcTransactor &transactor = *context.transactor;
+    const SharedBuffer &buffer = context.buffer;
+    LpcEnv env = {&transactor, &buffer};
+    uint32_t eventId = buffer.at<EventTransactionHeader>(0)->eventId;
     ArgList argList;
-    if (sb->size() > 24) {
-        argList = ArgList(sb->at<char>(sizeof(EventTransactionHeader)),
-                          sb->size() - sizeof(EventTransactionHeader));
+    if (buffer.size() > sizeof(EventTransactionHeader)) {
+        argList = ArgList(buffer.at<char>(sizeof(EventTransactionHeader)),
+                          buffer.size() - sizeof(EventTransactionHeader));
     }
-    LpcResult result;
     if (argList.isValid()) {
-        if (h != nullptr) {
-            h(env, eventId, argList);
-        }
-    } else {
-        LOGE("bad event seq=%d, event_type=%d", seq, eventId);
+        // dispatch the event to IPC object, since it is an event, we do not care the result
+        (void) obj.dispatchEvent(env, eventId, argList);
     }
+}
+
+bool IpcTransactor::registerIpcObject(BaseIpcObject &obj) {
+    uint32_t id = obj.getProxyId();
+    return mIpcObjects.putIfAbsent(id, &obj);
+}
+
+bool IpcTransactor::unregisterIpcObject(uint32_t proxyId) {
+    return mIpcObjects.remove(proxyId);
+}
+
+bool IpcTransactor::hasIpcObject(uint32_t proxyId) const {
+    return mIpcObjects.containsKey(proxyId);
+}
+
+std::vector<BaseIpcObject *> IpcTransactor::getRegisteredIpcObjects() const {
+    std::vector<BaseIpcObject *> objects;
+    for (const auto &it: mIpcObjects.entrySet()) {
+        objects.push_back(*it->getValue());
+    }
+    return objects;
+}
+
+void IpcTransactor::unregisterAllIpcObjects() {
+    mIpcObjects.clear();
 }

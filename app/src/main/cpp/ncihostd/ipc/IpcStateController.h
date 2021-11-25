@@ -8,6 +8,7 @@
 #include "rpcprotocol/protocol/IpcTransactor.h"
 #include "rpcprotocol/protocol/LpcArgListExtractor.h"
 #include "../service/front/NciHostDaemonImpl.h"
+#include "../service/front/NciClientProxy.h"
 
 namespace ipcprotocol {
 
@@ -22,18 +23,11 @@ public:
     [[nodiscard]] IpcTransactor &getIpcProxy();
 
 private:
-    IpcTransactor mIpcProxy;
+    IpcTransactor mIpcTransactor;
     NciHostDaemonImpl mDaemon;
+    NciClientProxy mClientProxy;
 
     void init();
-
-    bool dispatchLpcRequest(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
-
-    static bool cbLpcHandler(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
-
-    static void cbEventHandler(const IpcTransactor::LpcEnv &env, uint32_t funcId, const ArgList &args);
-
-
 };
 
 }

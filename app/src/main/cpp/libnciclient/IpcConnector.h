@@ -10,6 +10,7 @@
 
 #include "../rpcprotocol/protocol/IpcTransactor.h"
 #include "NciHostDaemonProxy.h"
+#include "NciClientImpl.h"
 
 namespace ipcprotocol {
 
@@ -38,7 +39,7 @@ public:
      * return null if not connected
      */
     [[nodiscard]]
-    IpcTransactor *getIpcProxy();
+    IpcTransactor *getIpcTransactor();
 
     [[nodiscard]]
     INciHostDaemon *getNciDaemon();
@@ -74,9 +75,10 @@ private:
     std::string mIpcAbsSocketName;
     std::string mIpcPidFilePath;
     std::condition_variable mConnCondVar;
-    std::shared_ptr<IpcTransactor> mIpcProxy;
+    std::shared_ptr<IpcTransactor> mTransactor;
     std::shared_ptr<NciHostDaemonProxy> mNciProxy;
     std::vector<IpcStatusListener> mStatusListeners;
+    NciClientImpl mNciClient;
 
     explicit IpcConnector();
 

@@ -13,12 +13,15 @@ enum class TrxnType : uint32_t {
 struct TrxnPacketHeader {
     uint32_t length; // size of entire packet
     TrxnType type;
+    uint32_t proxyId; // 0 - 255 is reserved
+    uint32_t rfu4_0;
 };
 
 enum class LpcErrorCode : uint32_t {
     ERR_SUCCESS = 0,
     ERR_BROKEN_CONN = 0x01,
     ERR_LOCAL_INTERNAL_ERROR = 0x3,
+    ERR_NO_REMOTE_OBJECT = 0x11,
     ERR_BAD_REQUEST = 0x12,
     ERR_UNKNOWN_REQUEST = 0x13,
     ERR_NO_LPC_HANDLER = 0x14,
@@ -46,9 +49,9 @@ struct EventTransactionHeader {
     uint32_t reserved;
 };
 
-static_assert(sizeof(TrxnPacketHeader) == 8, "TrxnPacketHeader size error");
-static_assert(sizeof(LpcTransactionHeader) == 24, "RpcTransactionHeader size error");
-static_assert(sizeof(EventTransactionHeader) == 24, "EventTransactionHeader size error");
+static_assert(sizeof(TrxnPacketHeader) == 16, "TrxnPacketHeader size error");
+static_assert(sizeof(LpcTransactionHeader) == sizeof(TrxnPacketHeader) + 16, "RpcTransactionHeader size error");
+static_assert(sizeof(EventTransactionHeader) == sizeof(TrxnPacketHeader) + 16, "EventTransactionHeader size error");
 
 }
 

@@ -32,7 +32,12 @@ private:
     template<class R, int ...S, class ...Ts>
     static inline R invoke_forward(const std::function<R(Subject *, Ts...)> &func, Subject *that,
                                    seq<S...>, std::tuple<Ts...> &vs) {
-        return func(that, std::get<S>(vs) ...);
+        if constexpr(!std::is_same_v<R, void>) {
+            return func(that, std::get<S>(vs)...);
+        } else {
+            func(that, std::get<S>(vs)...);
+            return;
+        }
     }
 
     template<int N, class ...Args>
@@ -88,9 +93,10 @@ public:
 
     template<class R=void, class ...Ts>
     static void invoke(Subject *that, const ArgList &args, const std::function<void(Subject *, Ts...)> &func) {
-        std::tuple<Ts...> vs;
+        std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...> vs;
+        std::tuple<Ts...> vs_ref = vs;
         if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
-            invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs);
+            invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs_ref);
         }
     }
 };

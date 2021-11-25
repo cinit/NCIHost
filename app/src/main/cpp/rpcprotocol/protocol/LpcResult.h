@@ -123,7 +123,7 @@ public:
         mArgsBuffer.reset();
     }
 
-    [[nodiscard]] SharedBuffer buildLpcResponsePacket(uint32_t sequence) const;
+    [[nodiscard]] SharedBuffer buildLpcResponsePacket(uint32_t sequence, uint32_t proxyId) const;
 
     [[nodiscard]] static LpcResult fromLpcRespPacketBuffer(const SharedBuffer &buffer);
 };

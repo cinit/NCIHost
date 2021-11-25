@@ -6,12 +6,13 @@
 #define NCIHOSTD_NCIHOSTDAEMONIMPL_H
 
 #include "libbasehalpatch/ipc/daemon_ipc_struct.h"
-#include "rpcprotocol/INciHostDaemon.h"
 #include "rpcprotocol/protocol/IpcTransactor.h"
+#include "rpcprotocol/protocol/BaseIpcObject.h"
+#include "rpcprotocol/INciHostDaemon.h"
 
 namespace ipcprotocol {
 
-class NciHostDaemonImpl : public INciHostDaemon {
+class NciHostDaemonImpl : public INciHostDaemon, public BaseIpcObject {
 public:
     NciHostDaemonImpl() = default;
 
@@ -21,7 +22,12 @@ public:
 
     NciHostDaemonImpl &operator=(const NciHostDaemonImpl &) = delete;
 
-    bool dispatchLpcInvocation(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId, const ArgList &args);
+    [[nodiscard]] uint32_t getProxyId() const override;
+
+    bool dispatchLpcInvocation(const IpcTransactor::LpcEnv &env, LpcResult &result,
+                               uint32_t funcId, const ArgList &args) override;
+
+    bool dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eventId, const ArgList &args) override;
 
     TypedLpcResult<std::string> getVersionName() override;
 

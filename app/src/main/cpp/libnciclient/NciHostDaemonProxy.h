@@ -5,26 +5,19 @@
 #ifndef NCICLIENT_NCIHOSTDAEMONPROXY_H
 #define NCICLIENT_NCIHOSTDAEMONPROXY_H
 
-#include "../rpcprotocol/protocol/IpcTransactor.h"
-#include "../rpcprotocol/INciHostDaemon.h"
+#include "rpcprotocol/protocol/BaseIpcProxy.h"
+#include "rpcprotocol/protocol/IpcTransactor.h"
+#include "rpcprotocol/INciHostDaemon.h"
 
 namespace ipcprotocol {
 
-class NciHostDaemonProxy : public INciHostDaemon {
+class NciHostDaemonProxy : public INciHostDaemon, public BaseIpcProxy {
 public:
-    NciHostDaemonProxy();
+    NciHostDaemonProxy() = default;
 
-    explicit NciHostDaemonProxy(IpcTransactor *ipcProxy);
+    ~NciHostDaemonProxy() override = default;
 
-    ~NciHostDaemonProxy() override;
-
-    [[nodiscard]]
-    IpcTransactor *getIpcProxy() const noexcept;
-
-    void setIpcProxy(IpcTransactor *ipcProxy);
-
-    [[nodiscard]]
-    bool isConnected() const noexcept;
+    [[nodiscard]] uint32_t getProxyId() const override;
 
     TypedLpcResult<std::string> getVersionName() override;
 
@@ -35,22 +28,6 @@ public:
     TypedLpcResult<void> exitProcess() override;
 
     TypedLpcResult<int> testFunction(int value) override;
-
-private:
-    IpcTransactor *mProxy = nullptr;
-
-    template<class R>
-    static inline TypedLpcResult<R> throwBrokenConnectionErrorInternal() {
-        TypedLpcResult<R> result;
-        result.setError(LpcErrorCode::ERR_BROKEN_CONN);
-        return result;
-    }
-
-    template<class R, class ...Args>
-    inline TypedLpcResult<R> invokeRemoteProcedureInternal(uint32_t funcId, const Args &...args) {
-        return mProxy ? TypedLpcResult<R>((mProxy->executeRemoteProcedure(funcId, args...)))
-                      : throwBrokenConnectionErrorInternal<R>();
-    }
 };
 
 }

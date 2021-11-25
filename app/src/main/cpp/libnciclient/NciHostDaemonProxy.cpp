@@ -6,44 +6,28 @@
 
 using namespace ipcprotocol;
 
-NciHostDaemonProxy::NciHostDaemonProxy() = default;
-
 using Ids = INciHostDaemon::TransactionIds;
 
-NciHostDaemonProxy::NciHostDaemonProxy(IpcTransactor *ipcProxy)
-        : mProxy(ipcProxy) {
-}
-
-NciHostDaemonProxy::~NciHostDaemonProxy() = default;
-
-IpcTransactor *NciHostDaemonProxy::getIpcProxy() const noexcept {
-    return mProxy;
-}
-
-void NciHostDaemonProxy::setIpcProxy(IpcTransactor *ipcProxy) {
-    mProxy = ipcProxy;
-}
-
-bool NciHostDaemonProxy::isConnected() const noexcept {
-    return mProxy != nullptr && mProxy->isConnected();
+uint32_t NciHostDaemonProxy::getProxyId() const {
+    return PROXY_ID;
 }
 
 TypedLpcResult<std::string> NciHostDaemonProxy::getVersionName() {
-    return invokeRemoteProcedureInternal<std::string>(Ids::getVersionName);
+    return invokeRemoteProcedure<std::string>(Ids::getVersionName);
 }
 
 TypedLpcResult<int> NciHostDaemonProxy::getVersionCode() {
-    return invokeRemoteProcedureInternal<int>(Ids::getVersionCode);
+    return invokeRemoteProcedure<int>(Ids::getVersionCode);
 }
 
 TypedLpcResult<std::string> NciHostDaemonProxy::getBuildUuid() {
-    return invokeRemoteProcedureInternal<std::string>(Ids::getBuildUuid);
+    return invokeRemoteProcedure<std::string>(Ids::getBuildUuid);
 }
 
 TypedLpcResult<void> NciHostDaemonProxy::exitProcess() {
-    return invokeRemoteProcedureInternal<void>(Ids::exitProcess);
+    return invokeRemoteProcedure<void>(Ids::exitProcess);
 }
 
 TypedLpcResult<int> NciHostDaemonProxy::testFunction(int value) {
-    return invokeRemoteProcedureInternal<int, int>(Ids::testFunction, value);
+    return invokeRemoteProcedure<int, int>(Ids::testFunction, value);
 }

@@ -33,7 +33,7 @@ LpcResult LpcResult::fromLpcRespPacketBuffer(const SharedBuffer &buffer) {
     return result;
 }
 
-SharedBuffer LpcResult::buildLpcResponsePacket(uint32_t sequence) const {
+SharedBuffer LpcResult::buildLpcResponsePacket(uint32_t sequence, uint32_t proxyId) const {
     SharedBuffer result;
     if (mIsValid) {
         result.ensureCapacity(sizeof(LpcTransactionHeader) + mArgsBuffer.size());
@@ -41,6 +41,8 @@ SharedBuffer LpcResult::buildLpcResponsePacket(uint32_t sequence) const {
         auto *h = result.at<LpcTransactionHeader>(0);
         h->header.length = (uint32_t) result.size();
         h->header.type = TrxnType::TRXN_TYPE_RPC;
+        h->header.proxyId = proxyId;
+        h->header.rfu4_0 = 0;
         h->funcId = 0;
         h->sequence = sequence;
         h->rpcFlags = (mHasException ? LPC_FLAG_RESULT_EXCEPTION : 0) | (mErrorCode == 0 ? 0 : LPC_FLAG_ERROR);

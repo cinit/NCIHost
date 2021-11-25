@@ -6,17 +6,17 @@
 
 #include "IpcStateController.h"
 
-#define LOG_TAG "ncihostd"
+static const char *const LOG_TAG = "ncihostd";
 
 using namespace ipcprotocol;
 
 void IpcStateController::attachIpcSeqPacketSocket(int fd) {
-    if (int err = mIpcProxy.attach(fd); err != 0) {
+    if (int err = mIpcTransactor.attach(fd); err != 0) {
         LOGE("IpcProxy attach fd %d error %s", fd, strerror(err));
         close(fd);
     }
-    mIpcProxy.start();
-    mIpcProxy.join();
+    mIpcTransactor.start();
+    mIpcTransactor.join();
 }
 
 IpcStateController &IpcStateController::getInstance() {
@@ -31,22 +31,8 @@ IpcStateController &IpcStateController::getInstance() {
 }
 
 void IpcStateController::init() {
-    mIpcProxy.setFunctionHandler(&IpcStateController::cbLpcHandler);
-    mIpcProxy.setEventHandler(&IpcStateController::cbEventHandler);
-}
-
-bool IpcStateController::cbLpcHandler(const IpcTransactor::LpcEnv &env, LpcResult &result,
-                                      uint32_t funcId, const ArgList &args) {
-    return IpcStateController::getInstance().dispatchLpcRequest(env, result, funcId, args);
-}
-
-void IpcStateController::cbEventHandler(const IpcTransactor::LpcEnv &env, uint32_t funcId, const ArgList &args) {
-    LOGI("ignore event %x", funcId);
-}
-
-bool IpcStateController::dispatchLpcRequest(const IpcTransactor::LpcEnv &env, LpcResult &result, uint32_t funcId,
-                                            const ArgList &args) {
-    return mDaemon.dispatchLpcInvocation(env, result, funcId, args);
+    mIpcTransactor.registerIpcObject(mDaemon);
+    mClientProxy.attachToIpcTransactor(mIpcTransactor);
 }
 
 NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
@@ -54,5 +40,5 @@ NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
 }
 
 IpcTransactor &IpcStateController::getIpcProxy() {
-    return mIpcProxy;
+    return mIpcTransactor;
 }

@@ -11,6 +11,10 @@
 using namespace ipcprotocol;
 using namespace halpatch;
 
+uint32_t NciHostDaemonImpl::getProxyId() const {
+    return PROXY_ID;
+}
+
 TypedLpcResult<std::string> NciHostDaemonImpl::getVersionName() {
     return {NCI_HOST_VERSION};
 }
@@ -64,6 +68,11 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
     }
 }
 
+bool NciHostDaemonImpl::dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eventId, const ArgList &args) {
+    // we have no events to handle
+    return false;
+}
+
 int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const void *payload) {
     IpcTransactor &proxy = IpcStateController::getInstance().getIpcProxy();
     if (proxy.isConnected() && proxy.isRunning()) {
@@ -78,7 +87,7 @@ int NciHostDaemonImpl::sendIoOperationEvent(const IoOperationEvent &event, const
         if (!payloadBytes.empty()) {
             args.push(payloadBytes);
         }
-        return proxy.sendEvent(false, EventIds::IO_EVENT, args.build());
+        return proxy.sendEvent(false, PROXY_ID, EventIds::IO_EVENT, args.build());
     } else {
         return EPIPE;
     }
@@ -89,7 +98,7 @@ int NciHostDaemonImpl::sendRemoteDeathEvent(int pid) {
     if (proxy.isConnected() && proxy.isRunning()) {
         ArgList::Builder args;
         args.push(pid);
-        return proxy.sendEvent(false, EventIds::REMOTE_DEATH, args.build());
+        return proxy.sendEvent(false, PROXY_ID, EventIds::REMOTE_DEATH, args.build());
     } else {
         return EPIPE;
     }

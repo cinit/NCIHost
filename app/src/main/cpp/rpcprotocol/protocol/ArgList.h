@@ -91,7 +91,8 @@ public:
         constexpr static uint32_t L_64 = 3u << 1u;
         constexpr static uint32_t F_SIGNED = 0u;
         constexpr static uint32_t F_UNSIGNED = 1u;
-        constexpr static uint32_t T_STRING = F_BUFFER_POOL | 0u << 4u;
+        constexpr static uint32_t T_STRING_BASE = F_BUFFER_POOL | 0u << 4u;
+        constexpr static uint32_t F_STRING_UTF8 = 0u << 2u; // UTF-8
         constexpr static uint32_t T_RAW_BUFFER = F_BUFFER_POOL | 1u << 4u;
         constexpr static uint32_t T_STRUCTURE_BASE = F_BUFFER_POOL | 1u << 4u | 1u << 3u;
         constexpr static uint32_t SHIFT_MAJOR = 0u;
@@ -102,7 +103,7 @@ public:
         constexpr static uint32_t TYPE_BOOLEAN = T_BOOL;
         constexpr static uint32_t TYPE_FLOAT = T_FLOAT;
         constexpr static uint32_t TYPE_DOUBLE = T_DOUBLE;
-        constexpr static uint32_t TYPE_STRING = T_STRING;
+        constexpr static uint32_t TYPE_STRING = T_STRING_BASE | F_STRING_UTF8;
         constexpr static uint32_t TYPE_BYTE_BUFFER = T_RAW_BUFFER;
         constexpr static uint32_t TYPE_INVALID = 0u;
 
@@ -148,6 +149,10 @@ public:
         template<class T>
         constexpr static uint32_t getTypeId(T) { return getTypeId<T>(); }
 
+        constexpr static bool isValidType(uint32_t typeId) {
+            return typeId != 0u;
+        }
+
         /**
          * Immediate types, byte buffer and structure are primitive types.
          * Map, array, set, etc. are not primitive types.
@@ -155,7 +160,7 @@ public:
          * @return is type primitive
          */
         constexpr static bool isPrimitiveType(uint32_t type) {
-            return (type >> SHIFT_COMPLEX) == 0;
+            return isValidType(type) && (type >> SHIFT_COMPLEX) == 0;
         }
 
         constexpr static bool isDouble(uint32_t type) {
@@ -175,11 +180,12 @@ public:
         }
 
         constexpr static bool isStructure(uint32_t type) {
-            return isPrimitiveType(type) && ((type & T_STRUCTURE_BASE) == T_STRUCTURE_BASE);
+            return isPrimitiveType(type) &&
+                   ((type & (T_STRUCTURE_BASE | TYPE_BYTE_BUFFER | T_STRING_BASE)) == T_STRUCTURE_BASE);
         }
 
         constexpr static bool isImmediateValue(uint32_t type) {
-            return isPrimitiveType(type) && ((type & F_IMMEDIATE) == F_IMMEDIATE);
+            return isPrimitiveType(type) && ((type & (F_IMMEDIATE | F_BUFFER_POOL)) == F_IMMEDIATE);
         }
     };
 

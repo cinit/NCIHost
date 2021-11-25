@@ -5,6 +5,9 @@
 #ifndef NCI_HOST_INCIHOSTDAEMON_H
 #define NCI_HOST_INCIHOSTDAEMON_H
 
+#include <string>
+
+#include "libbasehalpatch/ipc/daemon_ipc_struct.h"
 #include "protocol/ArgList.h"
 #include "protocol/LpcResult.h"
 
@@ -12,6 +15,9 @@ namespace ipcprotocol {
 
 class INciHostDaemon {
 public:
+    static constexpr uint32_t PROXY_ID =
+            uint32_t('N') | (uint32_t('H') << 8) | (uint32_t('D') << 16) | (uint32_t('0') << 24);
+
     INciHostDaemon() = default;
 
     virtual ~INciHostDaemon() = default;

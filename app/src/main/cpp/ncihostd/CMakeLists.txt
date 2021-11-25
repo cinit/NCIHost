@@ -5,7 +5,7 @@ project(ncihostd)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(ncihostd startup/startup.c startup/daemon.cpp ipc/IpcStateController.cpp
-        service/front/NciHostDaemonImpl.cpp
+        service/front/NciHostDaemonImpl.cpp service/front/NciClientProxy.cpp
         elfsym/ElfView.cpp elfsym/ProcessView.cpp injection/so_injection.cpp injection/arch/ptrace_inject_utils.cpp
         injection/arch/ptrace_inject_arm_impl.cpp injection/arch/ptrace_inject_x86_impl.cpp
         service/ServiceManager.cpp

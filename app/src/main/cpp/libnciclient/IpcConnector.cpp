@@ -37,7 +37,7 @@ using IpcSocketMeta = struct {
 
 static_assert(sizeof(IpcSocketMeta) == 112, "IpcSocketMeta size error");
 
-#define LOG_TAG "IpcConnector"
+static const char *const LOG_TAG = "IpcConnector";
 
 IpcConnector *volatile IpcConnector::sInstance = nullptr;
 
@@ -50,36 +50,37 @@ void IpcConnector::handleLinkStart(int fd) {
     IpcTransactor *obj;
     {
         std::scoped_lock<std::mutex> lk(mLock);
-        if (mIpcProxy == nullptr) {
-            mIpcProxy = std::make_shared<IpcTransactor>();
-            mIpcProxy->setName("ncihostd");
+        if (mTransactor == nullptr) {
+            mTransactor = std::make_shared<IpcTransactor>();
+            mTransactor->setName("ncihostd");
+            mTransactor->registerIpcObject(mNciClient);
         }
         if (mNciProxy == nullptr) {
             mNciProxy = std::make_shared<NciHostDaemonProxy>();
-            mNciProxy->setIpcProxy(mIpcProxy.get());
+            mNciProxy->attachToIpcTransactor(*mTransactor);
         }
-        if (int err = mIpcProxy->attach(fd); err != 0) {
+        if (int err = mTransactor->attach(fd); err != 0) {
             LOGE("mIpcProxy.attach(%d) error: %d, %s", fd, err, strerror(err));
             return;
         }
         mIpcConnFd = fd;
-        mIpcProxy->start();
+        mTransactor->start();
         listeners = mStatusListeners;
-        obj = mIpcProxy.get();
+        obj = mTransactor.get();
         mConnCondVar.notify_all();
     }
     LOGI("link start");
     for (auto &l: listeners) {
         l(IpcStatusEvent::IPC_CONNECTED, obj);
     }
-    mIpcProxy->join();
+    mTransactor->join();
     LOGI("link closed");
     {
         std::scoped_lock<std::mutex> lk(mLock);
         mIpcListenFd = -1;
         listeners = mStatusListeners;
     }
-    if (mIpcProxy->isConnected()) {
+    if (mTransactor->isConnected()) {
         LOGE("mIpcProxy->join() return but mIpcProxy->isConnected() is true");
     }
     for (auto &l: listeners) {
@@ -264,12 +265,12 @@ IpcConnector &IpcConnector::getInstance() {
     return *sInstance;
 }
 
-IpcTransactor *IpcConnector::getIpcProxy() {
-    return mIpcConnFd == -1 ? nullptr : (mIpcProxy.get());
+IpcTransactor *IpcConnector::getIpcTransactor() {
+    return mIpcConnFd == -1 ? nullptr : (mTransactor.get());
 }
 
 INciHostDaemon *IpcConnector::getNciDaemon() {
-    return mIpcProxy ? (mIpcProxy->isConnected() ? mNciProxy.get() : nullptr) : nullptr;
+    return mTransactor ? (mTransactor->isConnected() ? mNciProxy.get() : nullptr) : nullptr;
 }
 
 /**
@@ -293,7 +294,7 @@ int IpcConnector::sendConnectRequest() {
 }
 
 bool IpcConnector::isConnected() {
-    return getIpcProxy() != nullptr && mIpcProxy->isConnected();
+    return getIpcTransactor() != nullptr && mTransactor->isConnected();
 }
 
 void IpcConnector::registerIpcStatusListener(IpcConnector::IpcStatusListener listener) {
@@ -312,7 +313,7 @@ bool IpcConnector::unregisterIpcStatusListener(IpcConnector::IpcStatusListener l
 
 int IpcConnector::waitForConnection(int timeout_ms) {
     std::unique_lock lk(mLock);
-    if (mIpcConnFd == -1 || mIpcProxy == nullptr) {
+    if (mIpcConnFd == -1 || mTransactor == nullptr) {
         return mConnCondVar.wait_for(lk, std::chrono::microseconds(timeout_ms)) == std::cv_status::timeout ? 0 : 1;
     } else {
         return 1;

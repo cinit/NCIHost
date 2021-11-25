@@ -5,7 +5,7 @@ project(nciclient)
 set(CMAKE_CXX_STANDARD 17)
 
 add_library(nciclient SHARED
-        version.c ipc_handle_jni.cpp IpcConnector.cpp NciHostDaemonProxy.cpp NciHostDaemonProxy.h)
+        version.c ipc_handle_jni.cpp IpcConnector.cpp NciClientImpl.cpp NciHostDaemonProxy.cpp NciHostDaemonProxy.h)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")
@@ -21,6 +21,9 @@ set_target_properties(nciclient PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
         )
+
+include_directories(..)
+
 target_compile_definitions(nciclient PRIVATE NCI_HOST_VERSION=\"${NCI_HOST_VERSION}\")
 
 target_link_libraries(nciclient rpcprotocol ${ANDROID_LIBS})
