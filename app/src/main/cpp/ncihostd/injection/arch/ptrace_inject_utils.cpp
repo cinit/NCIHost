@@ -57,8 +57,7 @@ int ptrace_read_data(int pid, uintptr_t addr, void *buffer, int size) {
     for (int i = 0; i < alignedWordCount; i++) {
         uintptr_t tmp;
         errno = 0;
-        if ((tmp = ::ptrace(PTRACE_POKEDATA, pid, alignedStart + i * sizeof(void *),
-                            *(const uintptr_t *) (((const char *) buffer) + offset))) == -1 && errno != 0) {
+        if ((tmp = ::ptrace(PTRACE_PEEKDATA, pid, alignedStart + i * sizeof(void *), 0)) == -1 && errno != 0) {
             return -errno;
         }
         memcpy((char *) buffer + offset, &tmp, sizeof(void *));
