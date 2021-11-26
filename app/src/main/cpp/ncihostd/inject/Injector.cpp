@@ -19,7 +19,7 @@
 #include "../../rpcprotocol/utils/Uuid.h"
 #include "../../rpcprotocol/utils/SELinux.h"
 
-#include "so_injection.h"
+#include "Injector.h"
 
 using namespace inject;
 using elfsym::ElfView;
@@ -48,11 +48,11 @@ static inline void loge(SessionLog *log, std::string_view msg) {
     }
 }
 
-void Injection::setSessionLog(SessionLog *log) {
+void Injector::setSessionLog(SessionLog *log) {
     mLog = log;
 }
 
-int Injection::selectTargetThread(int pid, int tid) {
+int Injector::selectTargetThread(int pid, int tid) {
     if (mTargetThreadId != 0) {
         detach();
     }
@@ -70,12 +70,12 @@ int Injection::selectTargetThread(int pid, int tid) {
     return 0;
 }
 
-bool Injection::isTargetSupported() const noexcept {
+bool Injector::isTargetSupported() const noexcept {
     int s = mProcView.getPointerSize();
     return s != 0 && s <= sizeof(void *);
 }
 
-int Injection::attachTargetProcess() {
+int Injector::attachTargetProcess() {
     if (mTargetThreadId == 0) {
         if (mLog) { mLog->error("try to attach but pid is null"); }
         return -EINVAL;
@@ -106,15 +106,15 @@ int Injection::attachTargetProcess() {
     return 0;
 }
 
-elfsym::ProcessView Injection::getProcessView() const {
+elfsym::ProcessView Injector::getProcessView() const {
     return mProcView;
 }
 
-int Injection::getPointerSize() const noexcept {
+int Injector::getPointerSize() const noexcept {
     return mProcView.getPointerSize();
 }
 
-int Injection::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
+int Injector::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
     if (const uintptr_t *cached = mRemoteLibcProc.get(symbol); cached != nullptr) {
         *pAddr = *cached;
         return 0;
@@ -172,7 +172,7 @@ int Injection::getRemoteLibcSymAddress(uintptr_t *pAddr, const char *symbol) {
     }
 }
 
-int Injection::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const {
+int Injector::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, const char *symbol) const {
     uintptr_t soBase = 0;
     std::string soPath;
     if (soname == nullptr) {
@@ -211,7 +211,7 @@ int Injection::getRemoteDynSymAddress(uintptr_t *pAddr, const char *soname, cons
     }
 }
 
-int Injection::allocateRemoteMemory(uintptr_t *remoteAddr, size_t size) {
+int Injector::allocateRemoteMemory(uintptr_t *remoteAddr, size_t size) {
     uintptr_t remoteMalloc = 0;
     if (int err; (err = getRemoteLibcSymAddress(&remoteMalloc, "malloc")) != 0) {
         if (mLog) { mLog->error("unable to get remote malloc"); }
@@ -223,15 +223,15 @@ int Injection::allocateRemoteMemory(uintptr_t *remoteAddr, size_t size) {
     return 0;
 }
 
-int Injection::writeRemoteMemory(uintptr_t remoteAddr, const void *buffer, size_t size) {
+int Injector::writeRemoteMemory(uintptr_t remoteAddr, const void *buffer, size_t size) {
     return ptrace_write_data(mTargetThreadId, remoteAddr, buffer, int(size));
 }
 
-int Injection::readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size) {
+int Injector::readRemoteMemory(uintptr_t remoteAddr, void *buffer, size_t size) {
     return ptrace_read_data(mTargetThreadId, remoteAddr, buffer, int(size));
 }
 
-int Injection::allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buffer, size_t size) {
+int Injector::allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buffer, size_t size) {
     uintptr_t rbuf = 0;
     if (int err = allocateRemoteMemory(&rbuf, size); err != 0) {
         loge(mLog, "unable to allocate remote memory, err=" + std::to_string(err));
@@ -246,7 +246,7 @@ int Injection::allocateCopyToRemoteMemory(uintptr_t *remoteAddr, const void *buf
     return 0;
 }
 
-int Injection::freeRemoteMemory(uintptr_t addr) {
+int Injector::freeRemoteMemory(uintptr_t addr) {
     uintptr_t remoteFree = 0;
     uintptr_t unused;
     if (int err; (err = getRemoteLibcSymAddress(&remoteFree, "free")) != 0) {
@@ -260,7 +260,7 @@ int Injection::freeRemoteMemory(uintptr_t addr) {
     return 0;
 }
 
-int Injection::getErrnoTls(int *result) {
+int Injector::getErrnoTls(int *result) {
     if (mErrnoTlsAddress == 0) {
         uintptr_t fp_errno_loc = 0;
         if (getRemoteLibcSymAddress(&fp_errno_loc, "__errno_location") != 0) {
@@ -285,15 +285,15 @@ int Injection::getErrnoTls(int *result) {
     return 0;
 }
 
-void Injection::detach() {
+void Injector::detach() {
     ptrace(PTRACE_DETACH, mTargetThreadId, nullptr, 0);
     mRemoteLibcProc.clear();
     mProcView = {};
     mErrnoTlsAddress = 0;
 }
 
-int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
-                                   const std::array<uintptr_t, 4> &args, int timeout) {
+int Injector::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
+                                  const std::array<uintptr_t, 4> &args, int timeout) {
     uintptr_t retval = -1;
     if (int err = ptrace_call_procedure(mArchitecture, mTargetThreadId, proc, &retval, args, timeout) != 0) {
         return err;
@@ -304,7 +304,7 @@ int Injection::callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
     return 0;
 }
 
-int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
+int Injector::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
     if (localSock < 0 || remoteSock < 0 || sendFd < 0) {
         return -EBADFD;
     }
@@ -471,7 +471,7 @@ int Injection::sendFileDescriptor(int localSock, int remoteSock, int sendFd) {
     return resultFd;
 }
 
-int Injection::establishUnixDomainSocket(int *self, int *that) {
+int Injector::establishUnixDomainSocket(int *self, int *that) {
     // init remote proc address
     constexpr int pf_close = 0;
     constexpr int pf_socket = 1;
@@ -648,7 +648,7 @@ int Injection::establishUnixDomainSocket(int *self, int *that) {
     return 0;
 }
 
-int Injection::closeRemoteFileDescriptor(int fd) {
+int Injector::closeRemoteFileDescriptor(int fd) {
     uintptr_t proc = 0;
     if (int err;(err = getRemoteLibcSymAddress(&proc, "close")) != 0) {
         loge(mLog, "unable to dlsym libc.so!close, err=" + std::to_string(err));
@@ -669,7 +669,7 @@ int Injection::closeRemoteFileDescriptor(int fd) {
     return 0;
 }
 
-int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
+int Injector::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
     uintptr_t linkerBase = 0;
     std::string linkerPath;
     uintptr_t libcBase = 0;
@@ -835,7 +835,7 @@ int Injection::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
     }
 }
 
-int Injection::readRemoteString(std::string *str, uintptr_t address) {
+int Injector::readRemoteString(std::string *str, uintptr_t address) {
     uintptr_t pos = address & ~(sizeof(void *) - 1);
     uintptr_t startOffset = address - pos;
     if (pos == 0) {
@@ -873,7 +873,7 @@ int Injection::readRemoteString(std::string *str, uintptr_t address) {
     return int(length - startOffset);
 }
 
-int Injection::getMainExecutableSEContext(std::string *context) const {
+int Injector::getMainExecutableSEContext(std::string *context) const {
     if (SELinux::isEnabled()) {
         int ret = SELinux::getFileSEContext(("/proc/" + std::to_string(mTargetProcessId) + "/exe").c_str(), context);
         if (ret < 0) {
@@ -886,11 +886,11 @@ int Injection::getMainExecutableSEContext(std::string *context) const {
     }
 }
 
-int Injection::refreshRemoteModules() {
+int Injector::refreshRemoteModules() {
     return mProcView.readProcess(mTargetProcessId);
 }
 
-uintptr_t Injection::getModuleBaseAddress(std::string_view moduleName) const {
+uintptr_t Injector::getModuleBaseAddress(std::string_view moduleName) const {
     for (const auto &m: mProcView.getModules()) {
         if (m.name == moduleName) {
             return m.baseAddress;
@@ -899,7 +899,7 @@ uintptr_t Injection::getModuleBaseAddress(std::string_view moduleName) const {
     return 0;
 }
 
-std::string Injection::getModulePath(std::string_view moduleName) const {
+std::string Injector::getModulePath(std::string_view moduleName) const {
     for (const auto &m: mProcView.getModules()) {
         if (m.name == moduleName) {
             return m.path;

@@ -3,8 +3,8 @@
 // Created by kinit on 2021-10-27.
 //
 
-#ifndef NCI_HOST_NATIVES_SO_INJECTION_H
-#define NCI_HOST_NATIVES_SO_INJECTION_H
+#ifndef NCI_HOST_NATIVES_INJECTOR_H
+#define NCI_HOST_NATIVES_INJECTOR_H
 
 #include <array>
 #include <string>
@@ -16,7 +16,7 @@
 
 namespace inject {
 
-class Injection {
+class Injector {
 private:
     SessionLog *mLog = nullptr;
     int mTargetThreadId = 0;
@@ -27,11 +27,11 @@ private:
     HashMap<std::string, uintptr_t> mRemoteLibcProc;
 
 public:
-    Injection() = default;
+    Injector() = default;
 
-    Injection(const Injection &) = delete;
+    Injector(const Injector &) = delete;
 
-    Injection &operator=(const Injection &o) = delete;
+    Injector &operator=(const Injector &o) = delete;
 
     void setSessionLog(SessionLog *log);
 
@@ -151,4 +151,4 @@ public:
 
 }
 
-#endif //NCI_HOST_NATIVES_SO_INJECTION_H
+#endif //NCI_HOST_NATIVES_INJECTOR_H
