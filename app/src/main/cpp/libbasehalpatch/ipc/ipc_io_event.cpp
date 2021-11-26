@@ -20,7 +20,7 @@ static uint32_t g_IoEventSequence = 0;
 static uint64_t getCurrentTimeMillis() {
     struct timespec ts = {};
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+    return uint64_t(ts.tv_sec) * 1000 + ts.tv_nsec / 1000000;
 }
 
 static void postIoEvent(const IoSyscallInfo &opInfo, const void *ioBuffer, size_t ioBufSize) {

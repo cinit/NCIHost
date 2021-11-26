@@ -15,9 +15,13 @@ private:
     std::string mLogTag;
 
 public:
+    DefaultSessionLogImpl() = default;
+
     explicit DefaultSessionLogImpl(const std::string_view &tag);
 
     ~DefaultSessionLogImpl() override = default;
+
+    void setLogTag(const std::string_view &tag);
 
     void error(std::string_view msg) override;
 

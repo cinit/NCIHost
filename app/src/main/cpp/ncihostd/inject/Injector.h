@@ -22,6 +22,7 @@ private:
     int mTargetThreadId = 0;
     int mTargetProcessId = 0;
     int mArchitecture = 0;
+    bool mIsAttached = false;
     elfsym::ProcessView mProcView;
     uintptr_t mErrnoTlsAddress = 0;
     HashMap<std::string, uintptr_t> mRemoteLibcProc;
@@ -35,14 +36,28 @@ public:
 
     void setSessionLog(SessionLog *log);
 
+    /**
+     * Set the target thread id and process id.
+     * @param pid target process id
+     * @param tid target thread id
+     * @return 0 on success, -errno on error
+     */
     [[nodiscard]]
     int selectTargetThread(int pid, int tid);
 
     [[nodiscard]]
     bool isTargetSupported() const noexcept;
 
+    /**
+     * use ptrace to attach to target process
+     * @return 0 on success, -errno on error
+     */
     [[nodiscard]]
     int attachTargetProcess();
+
+    [[nodiscard]] inline bool isAttached() const {
+        return mIsAttached;
+    }
 
     [[nodiscard]]
     elfsym::ProcessView getProcessView() const;
@@ -132,8 +147,14 @@ public:
     int callRemoteProcedure(uintptr_t proc, uintptr_t *pRetval,
                             const std::array<uintptr_t, 4> &args, int timeout = 1000);
 
+    /**
+     * Call dlopen on /proc/self/fd/<fd> in the target process.
+     * @param soname the name of the library to load, see ELF property SONAME
+     * @param remoteFd the remote fd of the library
+     * @return 0 on success, -errno on failure
+     */
     [[nodiscard]]
-    int remoteLoadLibraryFormFd(const char *soname, int remoteFd);
+    int remoteLoadLibraryFormFd(std::string_view soname, int remoteFd);
 
     /**
      * read C-style string (char*) from target process

@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(ncihostd startup/startup.c startup/daemon.cpp ipc/IpcStateController.cpp
         service/front/NciHostDaemonImpl.cpp service/front/NciClientProxy.cpp
         elfsym/ElfView.cpp elfsym/ProcessView.cpp inject/Injector.cpp inject/arch/ptrace_inject_utils.cpp
-        inject/arch/ptrace_inject_arm_impl.cpp inject/arch/ptrace_inject_x86_impl.cpp
+        inject/arch/ptrace_inject_arm_impl.cpp inject/arch/ptrace_inject_x86_impl.cpp inject/SysServicePatch.cpp
         service/ServiceManager.cpp service/hw/BaseHwHalHandler.cpp service/hw/nxpnci/NxpHalHandler.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")

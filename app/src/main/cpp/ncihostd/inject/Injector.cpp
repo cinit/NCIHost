@@ -96,6 +96,7 @@ int Injector::attachTargetProcess() {
         }
         return -err;
     }
+    mIsAttached = true;
     if (int err; (err = wait_for_signal(mTargetThreadId, 1000)) < 0) {
         if (mLog) { mLog->error("waitpid err=" + std::to_string(err)); }
         return err;
@@ -287,8 +288,7 @@ int Injector::getErrnoTls(int *result) {
 
 void Injector::detach() {
     ptrace(PTRACE_DETACH, mTargetThreadId, nullptr, 0);
-    mRemoteLibcProc.clear();
-    mProcView = {};
+    mIsAttached = false;
     mErrnoTlsAddress = 0;
 }
 
@@ -669,7 +669,7 @@ int Injector::closeRemoteFileDescriptor(int fd) {
     return 0;
 }
 
-int Injector::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
+int Injector::remoteLoadLibraryFormFd(std::string_view soname, int remoteFd) {
     uintptr_t linkerBase = 0;
     std::string linkerPath;
     uintptr_t libcBase = 0;
@@ -757,8 +757,8 @@ int Injector::remoteLoadLibraryFormFd(const char *soname, int remoteFd) {
                 pExtInfo->flags = ANDROID_DLEXT_USE_LIBRARY_FD;
                 pExtInfo->library_fd = remoteFd;
             }
-            if (soname) {
-                strncpy(localBuf + 64, soname, 32);
+            if (!soname.empty()) {
+                memcpy(localBuf + 64, soname.data(), std::min(size_t(32), soname.length()));
             }
             uintptr_t pf_dlopen_ext = linkerBase + dlopenRelAddr;
             uintptr_t retval = 0;

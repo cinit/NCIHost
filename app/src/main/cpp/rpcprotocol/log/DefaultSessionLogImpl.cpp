@@ -11,6 +11,10 @@ DefaultSessionLogImpl::DefaultSessionLogImpl(const std::string_view &tag) :
         mLogTag(tag) {
 }
 
+void DefaultSessionLogImpl::setLogTag(const std::string_view &tag) {
+    mLogTag = tag;
+}
+
 void DefaultSessionLogImpl::error(std::string_view msg) {
     Log::logBuffer(Log::Level::ERROR, mLogTag.c_str(), std::string(msg).c_str());
 }
