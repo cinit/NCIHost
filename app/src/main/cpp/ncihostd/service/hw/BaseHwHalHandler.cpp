@@ -22,7 +22,7 @@ void BaseHwHalHandler::stopSelf() {
     ServiceManager::getInstance().stopService(this);
 }
 
-int BaseHwHalHandler::onStart(void *args) {
+int BaseHwHalHandler::onStart(void *args, const std::shared_ptr<IBaseService> &sp) {
     StartupInfo const *startupInfo = static_cast<StartupInfo *>(args);
     if (startupInfo == nullptr || startupInfo->fd < 0) {
         return -EINVAL;
@@ -37,7 +37,7 @@ int BaseHwHalHandler::onStart(void *args) {
     }
     mFd = fd;
     mRemotePid = pid;
-    int result = doOnStart(args);
+    int result = doOnStart(args, sp);
     if (result < 0) {
         return result;
     }
@@ -57,20 +57,29 @@ bool BaseHwHalHandler::onStop() {
     if (!doOnStop()) {
         return false;
     }
+    // do not wait for thread exit here, std::shared_ptr will keep the object alive
     return true;
 }
 
 void BaseHwHalHandler::workerThread(BaseHwHalHandler *self) {
-    ssize_t i;
-    void *buffer = malloc(HAL_PACKET_MAX_LENGTH);
-    if (buffer == nullptr) {
-        self->mIsRunning = false;
-        return;
+    std::shared_ptr<IBaseService> spSelf;
+    for (const auto &wp: ServiceManager::getInstance().getRunningServices()) {
+        if (const auto &sp = wp.lock()) {
+            if (static_cast<IBaseService *>(self) == sp.get()) {
+                spSelf = sp;
+                break;
+            }
+        }
     }
+    if (!spSelf) {
+        LOGE("unable to find self in running services, this may cause bugs, eg access to a deleted object");
+    }
+    ssize_t i;
+    std::vector<uint8_t> buffer(HAL_PACKET_MAX_LENGTH);
     while (true) {
-        i = read(self->mFd, buffer, HAL_PACKET_MAX_LENGTH);
+        i = read(self->mFd, buffer.data(), HAL_PACKET_MAX_LENGTH);
         if (i > 0) {
-            self->dispatchHwHalPatchIpcPacket(buffer, i);
+            self->dispatchHwHalPatchIpcPacket(buffer.data(), i);
         } else {
             int err = errno;
             if (err == EPIPE) {
@@ -94,7 +103,6 @@ void BaseHwHalHandler::workerThread(BaseHwHalHandler *self) {
             }
         }
     }
-    free(buffer);
     self->mIsRunning = false;
     self->stopSelf();
 }
@@ -187,4 +195,8 @@ tuple<int, HalResponse, vector<uint8_t>> BaseHwHalHandler::sendHalRequest(const 
             return std::make_tuple(err, HalResponse(), vector<uint8_t>());
         }
     }
+}
+
+bool BaseHwHalHandler::isConnected() const {
+    return mIsRunning;
 }

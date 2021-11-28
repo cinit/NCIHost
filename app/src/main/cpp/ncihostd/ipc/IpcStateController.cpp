@@ -42,3 +42,7 @@ NciHostDaemonImpl &IpcStateController::getNciHostDaemon() {
 IpcTransactor &IpcStateController::getIpcProxy() {
     return mIpcTransactor;
 }
+
+NciClientProxy &IpcStateController::getNciClientProxy() {
+    return mClientProxy;
+}

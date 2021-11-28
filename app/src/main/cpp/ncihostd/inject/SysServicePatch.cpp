@@ -103,7 +103,7 @@ int SysServicePatch::patchService() {
         return remoteSoFd;
     }
     // call dlopen in target process
-    if (int err = mInjector.remoteLoadLibraryFormFd(mSharedObjectName, remoteSoFd); err != 0) {
+    if (int err = mInjector.remoteLoadLibraryFormFd(mSharedObjectName, remoteSoFd, nullptr); err != 0) {
         LOGE("Failed to remote load shared object: %d", err);
         return err;
     }

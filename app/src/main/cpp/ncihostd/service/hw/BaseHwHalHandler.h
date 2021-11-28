@@ -30,13 +30,15 @@ public:
 
     ~BaseHwHalHandler() override = default;
 
-    [[nodiscard]] int onStart(void *args) override;
+    [[nodiscard]] int onStart(void *args, const std::shared_ptr<IBaseService> &sp) override;
 
     [[nodiscard]] bool onStop() override;
 
-    [[nodiscard]] virtual int doOnStart(void *args) = 0;
+    [[nodiscard]] virtual int doOnStart(void *args, const std::shared_ptr<IBaseService> &sp) = 0;
 
     [[nodiscard]] virtual bool doOnStop() = 0;
+
+    [[nodiscard]] virtual bool isConnected() const;
 
     /**
      * Send a message to the HAL service and wait for a response.

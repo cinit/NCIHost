@@ -4,6 +4,7 @@
 #ifndef NCI_HOST_NATIVES_IBASESERVICE_H
 #define NCI_HOST_NATIVES_IBASESERVICE_H
 
+#include <memory>
 #include <string_view>
 
 namespace hwhal {
@@ -23,7 +24,7 @@ public:
      * @param args The arguments to the service, may be NULL.
      * @return non-negative on success, negative on failure.
      */
-    [[nodiscard]] virtual int onStart(void *args) = 0;
+    [[nodiscard]] virtual int onStart(void *args, const std::shared_ptr<IBaseService> &sp) = 0;
 
     /**
      * Called when the service is requested to stop.

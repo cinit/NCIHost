@@ -28,7 +28,7 @@ public:
     static ServiceManager &getInstance();
 
     [[nodiscard]]
-    const std::vector<std::shared_ptr<IBaseService>> &getRunningServices() const;
+    std::vector<std::weak_ptr<IBaseService>> getRunningServices() const;
 
     [[nodiscard]]
     std::vector<std::shared_ptr<IBaseService>> findServiceByName(std::string_view name) const;
@@ -55,20 +55,21 @@ public:
      * Start target service.
      * @tparam ServiceType the service to start.
      * @param args optional arguments to pass to the service.
-     * @return [result, service], result is non-negative on success, negative on failure.
+     * @return [result, wpService], result is non-negative on success, negative on failure.
      */
     template<typename ServiceType>
     [[nodiscard]]
-    std::tuple<int, ServiceType *> startService(void *args) {
-        auto *service = new ServiceType();
-        auto result = service->onStart(args);
+    std::tuple<int, std::weak_ptr<IBaseService>> startService(void *args) {
+        // do not use std::make_shared here, type mismatch
+        std::shared_ptr<IBaseService> sp((IBaseService *) (new ServiceType()));
+        int result = sp->onStart(args, sp);
         if (result < 0) {
-            delete service;
-            return std::make_tuple(result, nullptr);
+            // sp is automatically destroyed
+            return std::make_tuple(result, std::weak_ptr<IBaseService>());
         }
         std::scoped_lock lock(mLock);
-        mRunningServices.push_back(std::shared_ptr<IBaseService>(service));
-        return std::make_tuple(result, service);
+        mRunningServices.push_back(sp);
+        return std::make_tuple(result, sp);
     }
 };
 

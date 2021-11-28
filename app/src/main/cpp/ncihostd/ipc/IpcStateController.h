@@ -20,6 +20,8 @@ public:
 
     [[nodiscard]] NciHostDaemonImpl &getNciHostDaemon();
 
+    [[nodiscard]] NciClientProxy &getNciClientProxy();
+
     [[nodiscard]] IpcTransactor &getIpcProxy();
 
 private:

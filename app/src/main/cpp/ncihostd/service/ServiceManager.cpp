@@ -17,8 +17,14 @@ ServiceManager &ServiceManager::getInstance() {
     return *sInstance;
 }
 
-const std::vector<std::shared_ptr<IBaseService>> &ServiceManager::getRunningServices() const {
-    return mRunningServices;
+std::vector<std::weak_ptr<IBaseService>> ServiceManager::getRunningServices() const {
+    std::scoped_lock lock(mLock);
+    std::vector<std::weak_ptr<IBaseService>> resultList;
+    resultList.reserve(mRunningServices.size());
+    for (auto &s: mRunningServices) {
+        resultList.push_back(s);
+    }
+    return resultList;
 }
 
 std::vector<std::shared_ptr<IBaseService>> ServiceManager::findServiceByName(std::string_view name) const {
