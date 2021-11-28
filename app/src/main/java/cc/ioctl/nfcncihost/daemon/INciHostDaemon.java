@@ -1,5 +1,7 @@
 package cc.ioctl.nfcncihost.daemon;
 
+import java.io.IOException;
+
 public interface INciHostDaemon {
     boolean isConnected();
 
@@ -11,5 +13,9 @@ public interface INciHostDaemon {
 
     void exitProcess();
 
-    int testFunction(int value);
+    boolean isDeviceSupported();
+
+    boolean isHwServiceConnected();
+
+    boolean initHwServiceConnection(String soPath) throws IOException;
 }

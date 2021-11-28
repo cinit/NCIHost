@@ -2,24 +2,14 @@
 // Created by kinit on 2021-05-15.
 //
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
 #include <sys/un.h>
-#include <pthread.h>
 #include <jni.h>
-
-#include <climits>
-#include <csignal>
 #include <cerrno>
 #include <mutex>
-#include <algorithm>
 
 #include "ipc_handle_jni.h"
 #include "IpcConnector.h"
 #include "../rpcprotocol/log/Log.h"
-#include "../rpcprotocol/utils/io_utils.h"
 
 #define LOG_TAG "ipc_handle_jni"
 
@@ -71,6 +61,48 @@ bool jniThrowLpcResultErrorOrException(JNIEnv *env, const TypedLpcResult<T> &res
             env->ThrowNew(env->FindClass("java/lang/RuntimeException"), ex.what());
         }
         return true;
+    }
+    return false;
+}
+
+template<class T>
+bool jniThrowLpcResultErrorOrCorruption(JNIEnv *env, const TypedLpcResult<T> &result) {
+    if (uint32_t err = result.getError(); err != 0) {
+        std::string msg;
+        switch (LpcErrorCode(err)) {
+            case LpcErrorCode::ERR_NO_LPC_HANDLER:
+                msg = "no LPC support in the remote end";
+                break;
+            case LpcErrorCode::ERR_BROKEN_CONN:
+                msg = "connection broken";
+                break;
+            case LpcErrorCode::ERR_INVALID_ARGUMENT:
+                msg = "argument list mismatch";
+                break;
+            case LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR:
+                msg = "ERR_LOCAL_INTERNAL_ERROR";
+                break;
+            case LpcErrorCode::ERR_BAD_REQUEST:
+                msg = "ERR_BAD_BUFFER";
+                break;
+            case LpcErrorCode::ERR_REMOTE_INTERNAL_ERROR:
+                msg = "ERR_REMOTE_INTERNAL_ERROR";
+                break;
+            case LpcErrorCode::ERR_TIMEOUT_IN_CRITICAL_CONTEXT:
+                msg = "ERR_TIMEOUT_IN_CRITICAL_CONTEXT";
+                break;
+            default:
+                msg = std::string("unknown error: ") + std::to_string(err);
+        }
+        env->ThrowNew(env->FindClass("android/os/RemoteException"), msg.c_str());
+        return true;
+    } else if (result.hasException()) {
+        if (RemoteException ex; !result.getException(&ex)) {
+            env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                          "error while read exception from LpcResult");
+            return true;
+        }
+        return false;
     }
     return false;
 }
@@ -284,12 +316,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_exitProcess
 
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
- * Method:    testFunction
- * Signature: (I)I
+ * Method:    isDeviceSupported
+ * Signature: ()Z
  */
-extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_testFunction
-        (JNIEnv *env, jobject, jint v1) {
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isDeviceSupported
+        (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
     if (proxy == nullptr) {
@@ -297,9 +329,9 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_testFunction
                       "attempt to transact while proxy object not available");
         return 0;
     } else {
-        if (auto lpcResult = proxy->testFunction(v1);
+        if (auto lpcResult = proxy->isDeviceSupported();
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
-            int r;
+            bool r;
             if (lpcResult.getResult(&r)) {
                 return r;
             } else {
@@ -309,5 +341,84 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_testFunction
             }
         }
         return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    isHwServiceConnected
+ * Signature: ()Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->isHwServiceConnected();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    initHwServiceConnection
+ * Signature: (Ljava/lang/String;)Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
+        (JNIEnv *env, jobject, jstring jstrSoPath) {
+    if (jstrSoPath == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/NullPointerException"),
+                      "null so path");
+        return 0;
+    }
+    const char *strSoPath = env->GetStringUTFChars(jstrSoPath, nullptr);
+    if (strSoPath == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/OutOfMemoryError"),
+                      "out of memory");
+        return 0;
+    }
+    std::string soPath(strSoPath);
+    env->ReleaseStringUTFChars(jstrSoPath, strSoPath);
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return false;
+    } else {
+        if (auto lpcResult = proxy->initHwServiceConnection(soPath);
+                !jniThrowLpcResultErrorOrCorruption(env, lpcResult)) {
+            bool r;
+            if (lpcResult.hasException()) {
+                RemoteException exception = {1, EBADMSG, "invalid exception data structure"};
+                (void) lpcResult.getException(&exception);
+                env->ThrowNew(env->FindClass("java/io/IOException"), exception.what());
+                return false;
+            }
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return false;
+            }
+        }
+        return false;
     }
 }

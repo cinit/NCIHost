@@ -1,5 +1,7 @@
 package cc.ioctl.nfcncihost.daemon.internal;
 
+import java.io.IOException;
+
 import cc.ioctl.nfcncihost.daemon.INciHostDaemon;
 
 public class NciHostDaemonProxy implements INciHostDaemon {
@@ -19,5 +21,11 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public native void exitProcess();
 
     @Override
-    public native int testFunction(int value);
+    public native boolean isDeviceSupported();
+
+    @Override
+    public native boolean isHwServiceConnected();
+
+    @Override
+    public native boolean initHwServiceConnection(String soPath) throws IOException;
 }

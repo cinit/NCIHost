@@ -103,11 +103,27 @@ JNIEXPORT void JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonPro
 
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
- * Method:    testFunction
- * Signature: (I)I
+ * Method:    isDeviceSupported
+ * Signature: ()Z
  */
-JNIEXPORT jint JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_testFunction
-  (JNIEnv *, jobject, jint);
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isDeviceSupported
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    isHwServiceConnected
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    initHwServiceConnection
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
+  (JNIEnv *, jobject, jstring);
 
 #ifdef __cplusplus
 }
