@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "rpcprotocol/utils/SELinux.h"
 #include "rpcprotocol/utils/FileMemMap.h"
 #include "rpcprotocol/log/Log.h"
 #include "libbasehalpatch/ipc/daemon_ipc_struct.h"
@@ -83,6 +84,15 @@ int SysServicePatch::patchService() {
     if (int err = mInjector.selectTargetThread(mTargetPid, mTargetPid); err < 0) {
         return err;
     }
+    if (SELinux::isEnabled()) {
+        // SELinux is enabled, we need to change the context of the shared object
+        std::string magiskContext = "u:object_r:magisk_file:s0";
+        // TODO: if Magisk is not available, use the same context as the original shared object
+        if (int err = SELinux::setFileSEContext(mSharedObjectFd, magiskContext);err < 0) {
+            LOGE("Failed to set SELinux context for %s, err=%d", mSharedObjectName.c_str(), err);
+            return -err;
+        }
+    }
     if (!mInjector.isAttached()) {
         if (int err = mInjector.attachTargetProcess(); err != 0) {
             LOGE("Failed to attach to target process: %d", err);
@@ -108,6 +118,12 @@ int SysServicePatch::patchService() {
         return err;
     }
     mPatchBaseAddress = mInjector.getModuleBaseAddress(mSharedObjectName);
+    if (mPatchBaseAddress == 0) {
+        LOGE("ERROR: remote reported dlopen success failed to get base address of %s", mSharedObjectName.c_str());
+        return -EINVAL;
+    } else {
+        LOGD("remote dlopen base address of %s is %p", mSharedObjectName.c_str(), (void *) (mPatchBaseAddress));
+    }
     return 0;
 }
 
@@ -162,6 +178,7 @@ int SysServicePatch::connectToService(int &localSocket, int &remoteSocket) {
         return err;
     }
     if (initFunctionAddress == 0) {
+        LOGE("Failed to find init function address");
         return -EFAULT;
     }
     // call init function in target process
@@ -171,6 +188,8 @@ int SysServicePatch::connectToService(int &localSocket, int &remoteSocket) {
         return err;
     }
     if (retValue != 0) {
+        std::string errorMessage = "remote init function reported failure: " + std::to_string(int(retValue));
+        LOGE("%s", errorMessage.c_str());
         return -std::abs(int(retValue));
     }
     // return the socket connection, the socket fds will be used by the caller, so we should not touch them anymore

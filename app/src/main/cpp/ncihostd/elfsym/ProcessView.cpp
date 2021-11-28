@@ -20,7 +20,7 @@ using namespace elfsym;
 int ProcessView::readProcess(int pid) {
     mPointerSize = 0;
     mProcessModules.clear();
-    char buffer[256];
+    char buffer[4096];
     snprintf(buffer, 64, "/proc/%d/exe", pid);
     int fd = open(buffer, O_RDONLY | O_CLOEXEC);
     if (fd < 0) {
@@ -49,7 +49,7 @@ int ProcessView::readProcess(int pid) {
         mArchitecture = 0;
         return EINVAL;
     }
-    snprintf(buffer, 64, "/proc/%d/maps", pid);
+    snprintf(buffer, 256, "/proc/%d/maps", pid);
     // xHook Copyright (c) 2018-present, iQIYI, Inc. https://github.com/iqiyi/xHook
     FILE *pf = fopen(buffer, "r");
     if (!pf) {
