@@ -97,7 +97,7 @@ HwServiceStatus NxpHalHandler::getHwServiceStatus() {
         return status;
     }
     for (const auto &p: processList) {
-        if (p.name == EXEC_NAME) {
+        if (p.name == EXEC_NAME && p.uid < 10000) {
             // found hal driver service
             status.valid = true;
             status.serviceName = p.name;

@@ -169,7 +169,7 @@ TypedLpcResult<bool> NciHostDaemonImpl::initHwServiceConnection(const std::strin
     if (currentStatus == 0) {
         OriginHookProcedure hookProc = {};
         if (int err = servicePatch.getPltHookEntries(hookProc,
-                                                     NxpHalHandler::EXEC_NAME); err != 0) {
+                                                     NxpHalHandler::TARGET_SO_NAME); err != 0) {
             std::string errMsg = "failed to get hook entries: " + std::to_string(err);
             return LpcResult::throwException({1, uint32_t(err), errMsg});
         }

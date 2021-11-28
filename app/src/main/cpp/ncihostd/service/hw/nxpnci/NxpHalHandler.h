@@ -15,7 +15,8 @@ namespace hwhal {
 
 class NxpHalHandler : public BaseHwHalHandler {
 public:
-    static constexpr const char *EXEC_NAME = "nfc_nci.nqx.default.hw.so";
+    static constexpr const char *EXEC_NAME = "vendor.nxp.hardware.nfc@2.0-service";
+    static constexpr const char *TARGET_SO_NAME = "nfc_nci.nqx.default.hw.so";
     static constexpr const char *INIT_SYMBOL = "nxp_hal_patch_inject_init";
     static constexpr const char *DEV_PATH = "/dev/nq-nci";
 
