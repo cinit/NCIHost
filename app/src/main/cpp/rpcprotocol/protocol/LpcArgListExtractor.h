@@ -81,9 +81,10 @@ public:
     template<class R, class ...Ts>
     static LpcResult invoke(Subject *that, const ArgList &args,
                             const std::function<TypedLpcResult<R>(Subject *, Ts...)> &func) {
-        std::tuple<Ts...> vs;
+        std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...> vs;
+        std::tuple<Ts...> vs_ref = vs;
         if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
-            return LpcResult(invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs));
+            return LpcResult(invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs_ref));
         } else {
             LpcResult result;
             result.setError(LpcErrorCode::ERR_INVALID_ARGUMENT);

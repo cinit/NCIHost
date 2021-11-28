@@ -249,8 +249,8 @@ public:
         }
 
         template<class T0, class...Tp>
-        inline ArgList::Builder &pushArgs(T0 v0, Tp...vp) {
-            push(v0);
+        inline ArgList::Builder &pushArgs(T0 &&v0, Tp &&...vp) {
+            push(std::forward<T0>(v0));
             pushArgs(vp...);
             return *this;
         }
