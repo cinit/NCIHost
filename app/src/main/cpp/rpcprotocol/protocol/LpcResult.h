@@ -43,7 +43,7 @@ public:
         return mIsValid;
     }
 
-    [[nodiscard]] inline bool isSuccessful() const noexcept {
+    [[nodiscard]] inline bool isTransacted() const noexcept {
         return mIsValid && (mErrorCode == 0);
     }
 
@@ -154,8 +154,8 @@ public:
         return mResult.isValid();
     }
 
-    [[nodiscard]] inline bool isSuccessful() const noexcept {
-        return mResult.isSuccessful();
+    [[nodiscard]] inline bool isTransacted() const noexcept {
+        return mResult.isTransacted();
     }
 
     [[nodiscard]] inline bool hasException() const noexcept {
@@ -226,8 +226,8 @@ public:
         return mResult.isValid();
     }
 
-    [[nodiscard]] inline bool isSuccessful() const noexcept {
-        return mResult.isSuccessful();
+    [[nodiscard]] inline bool isTransacted() const noexcept {
+        return mResult.isTransacted();
     }
 
     [[nodiscard]] inline bool hasException() const noexcept {
@@ -242,12 +242,14 @@ public:
         return mResult.getError();
     }
 
-    inline void throwException(const RemoteException &exception) {
-        mResult.throwException(exception);
+    static TypedLpcResult<void> throwException(const RemoteException &exception) {
+        TypedLpcResult<void> result;
+        result.throwException(exception);
+        return result;
     }
 
     inline void setException(const RemoteException &exception) {
-        mResult.throwException(exception);
+        mResult.setException(exception);
     }
 
     inline void returnVoid() {

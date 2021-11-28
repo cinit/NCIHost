@@ -272,7 +272,7 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_exitProcess
     } else {
         if (auto lpcResult = proxy->exitProcess();
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
-            if (lpcResult.isSuccessful()) {
+            if (lpcResult.isTransacted()) {
                 return;
             } else {
                 env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
