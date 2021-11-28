@@ -152,6 +152,7 @@ void IpcTransactor::shutdownLocked() {
 }
 
 void IpcTransactor::notifyWaitingCalls() {
+    std::scoped_lock<std::mutex> lk(mWaitingMapMutex);
     for (auto &it: mWaitingMap.entrySet()) {
         if (LpcReturnStatus **pStatus = it->getValue();
                 pStatus != nullptr) {
@@ -387,9 +388,8 @@ LpcResult IpcTransactor::executeLpcTransaction(uint32_t proxyId, uint32_t funcId
     LpcResult result;
     uint32_t seq = mCurrentSequence.fetch_add(1);
     SharedBuffer buffer;
-    std::mutex mtx;
     std::condition_variable condvar;
-    LpcReturnStatus returnStatus = {&condvar, &buffer, 0};
+    LpcReturnStatus returnStatus = {&condvar, 0, &buffer, 0};
     {
         std::scoped_lock<std::mutex> lk(mRunningEntryMutex);
         if (!isConnected()) {
@@ -400,19 +400,24 @@ LpcResult IpcTransactor::executeLpcTransaction(uint32_t proxyId, uint32_t funcId
             result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
             return result;
         }
+        std::unique_lock retlk(mWaitingMapMutex);
         mWaitingMap.put(seq, &returnStatus);
     }
-    {
-        std::unique_lock retlk(mtx);
-        if (sendLpcRequest(seq, proxyId, funcId, args) != 0) {
-            mWaitingMap.remove(seq);
-            result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
-            return result;
-        }
+    if (sendLpcRequest(seq, proxyId, funcId, args) != 0) {
+        std::unique_lock retlk(mWaitingMapMutex);
+        mWaitingMap.remove(seq);
+        result.setError(LpcErrorCode::ERR_LOCAL_INTERNAL_ERROR);
+        return result;
+    }
+    // request sent, wait for response, note that a response may arrive before we wait
+    std::unique_lock retlk(mWaitingMapMutex);
+    if (returnStatus.semaphore == 0) {
+        // response not arrived, wait for it
         if ((ipcFlags & IpcFlags::IPC_FLAG_CRITICAL_CONTEXT) != 0) {
             if (condvar.wait_for(retlk, std::chrono::milliseconds(1000)) == std::cv_status::timeout) {
                 mWaitingMap.remove(seq);
                 result.setError(LpcErrorCode::ERR_TIMEOUT_IN_CRITICAL_CONTEXT);
+                return result;
             }
         } else {
             condvar.wait(retlk);
@@ -493,9 +498,15 @@ void IpcTransactor::dispatchLpcRequestAsync(uint32_t proxyId, const void *buffer
 
 void IpcTransactor::dispatchLpcResponsePacket(uint32_t, const void *buffer, size_t size) {
     uint32_t seq = reinterpret_cast<const LpcTransactionHeader *>(buffer)->sequence;
-    LpcReturnStatus **pStatus = mWaitingMap.get(seq);
+    LpcReturnStatus **pStatus;
+    {
+        std::scoped_lock lk(mWaitingMapMutex);
+        pStatus = mWaitingMap.get(seq);
+    }
     if (pStatus != nullptr) {
+        std::scoped_lock lk(mWaitingMapMutex);
         LpcReturnStatus *status = *pStatus;
+        status->semaphore = 1;
         if (status->buffer->resetSize(size, false)) {
             memcpy(status->buffer->get(), buffer, size);
             status->error = 0;

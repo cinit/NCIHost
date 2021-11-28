@@ -40,6 +40,7 @@ private:
     class LpcReturnStatus {
     public:
         std::condition_variable *cond;
+        volatile int semaphore = 0;
         SharedBuffer *buffer;
         volatile uint32_t error;
     };
@@ -56,7 +57,8 @@ private:
     volatile bool mIsRunning = false;
     std::mutex mReadThreadMutex;
     std::string mName;
-    ConcurrentHashMap<uint32_t, LpcReturnStatus *> mWaitingMap;
+    std::mutex mWaitingMapMutex; // must be released in finite time
+    HashMap<uint32_t, LpcReturnStatus *> mWaitingMap;
     ConcurrentHashMap<uint32_t, BaseIpcObject *> mIpcObjects;
     std::atomic<uint32_t> mCurrentSequence = uint32_t((getpid() % 0x4000) << 8);
 

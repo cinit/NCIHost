@@ -69,7 +69,7 @@ public:
 
     inline void setException(const RemoteException &exception) {
         mArgsBuffer = ArgList::Builder().pushArgs(exception.typeId, exception.errorCode, exception.message).build();
-        mHasException = false;
+        mHasException = true;
         mErrorCode = 0;
         mIsValid = true;
     }
@@ -110,7 +110,7 @@ public:
         uint32_t status = 0;
         std::string msg;
         if (ArgList args(mArgsBuffer.get(), mArgsBuffer.size());
-                args.get(&type, 0) || args.get(&status, 1) || args.get(&msg, 2)) {
+                args.get(&type, 0) && args.get(&status, 1) && args.get(&msg, 2)) {
             *exception = {type, status, msg};
             return true;
         }

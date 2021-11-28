@@ -302,6 +302,13 @@ public:
         return mLength;
     }
 
+    [[nodiscard]] inline uint32_t getType(int index) const {
+        if (!mIsValid || index < 0 || index >= mCount) {
+            return Types::TYPE_INVALID;
+        }
+        return *reinterpret_cast<const uint32_t *>((const uint8_t *) mBuffer + 8 + index * 4);
+    }
+
     /**
      * Read the value of the argument at the given index.
      * This method will return false if the index is out of bounds.
@@ -319,7 +326,7 @@ public:
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (TypeId != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
+        if (TypeId != getType(index)) {
             return false;
         }
         if constexpr(Types::isImmediateValue(TypeId)) {
@@ -348,7 +355,7 @@ public:
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (Types::getTypeId<std::string>() != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
+        if (Types::TYPE_STRING != getType(index)) {
             return false;
         }
         struct BufferEntry {
@@ -372,7 +379,7 @@ public:
         if (!readRawInlineValue(&reg, index)) {
             return false;
         }
-        if (Types::TYPE_BYTE_BUFFER != *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4)) {
+        if (Types::TYPE_BYTE_BUFFER != getType(index)) {
             return false;
         }
         struct BufferEntry {
@@ -389,13 +396,6 @@ public:
         out->resize(len);
         memcpy(out->data(), reinterpret_cast<const char *>(mBuffer) + offset, len);
         return true;
-    }
-
-    [[nodiscard]] inline uint32_t getType(int index) const {
-        if (!mIsValid || index < 0 || index >= mCount) {
-            return Types::TYPE_INVALID;
-        }
-        return *(reinterpret_cast<const uint32_t *>(mBuffer) + 8 + index * 4);
     }
 };
 
