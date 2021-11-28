@@ -27,7 +27,11 @@ public:
 
     TypedLpcResult<void> exitProcess() override;
 
-    TypedLpcResult<int> testFunction(int value) override;
+    TypedLpcResult<bool> isDeviceSupported() override;
+
+    TypedLpcResult<bool> isHwServiceConnected() override;
+
+    TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) override;
 };
 
 }

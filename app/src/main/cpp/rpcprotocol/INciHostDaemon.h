@@ -34,7 +34,13 @@ public:
     virtual TypedLpcResult<void> exitProcess() = 0;
 
     [[nodiscard]]
-    virtual TypedLpcResult<int> testFunction(int value) = 0;
+    virtual TypedLpcResult<bool> isDeviceSupported() = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> isHwServiceConnected() = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) = 0;
 
     class TransactionIds {
     public:
@@ -42,13 +48,9 @@ public:
         static constexpr uint32_t getVersionCode = 2;
         static constexpr uint32_t getBuildUuid = 3;
         static constexpr uint32_t exitProcess = 4;
-        static constexpr uint32_t testFunction = 5;
-    };
-
-    class EventIds {
-    public:
-        static constexpr uint32_t IO_EVENT = 0x10001;
-        static constexpr uint32_t REMOTE_DEATH = 0x10002;
+        static constexpr uint32_t isDeviceSupported = 10;
+        static constexpr uint32_t isHwServiceConnected = 11;
+        static constexpr uint32_t initHwServiceConnection = 12;
     };
 };
 

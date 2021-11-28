@@ -28,6 +28,14 @@ TypedLpcResult<void> NciHostDaemonProxy::exitProcess() {
     return invokeRemoteProcedure<void>(Ids::exitProcess);
 }
 
-TypedLpcResult<int> NciHostDaemonProxy::testFunction(int value) {
-    return invokeRemoteProcedure<int, int>(Ids::testFunction, value);
+TypedLpcResult<bool> NciHostDaemonProxy::isDeviceSupported() {
+    return invokeRemoteProcedure<bool>(Ids::isDeviceSupported);
+}
+
+TypedLpcResult<bool> NciHostDaemonProxy::isHwServiceConnected() {
+    return invokeRemoteProcedure<bool>(Ids::isHwServiceConnected);
+}
+
+TypedLpcResult<bool> NciHostDaemonProxy::initHwServiceConnection(const std::string &soPath) {
+    return invokeRemoteProcedure<bool, const std::string &>(Ids::initHwServiceConnection, soPath);
 }

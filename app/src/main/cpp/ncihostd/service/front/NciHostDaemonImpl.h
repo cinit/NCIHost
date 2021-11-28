@@ -37,13 +37,11 @@ public:
 
     TypedLpcResult<void> exitProcess() override;
 
-    TypedLpcResult<int> testFunction(int value) override;
+    TypedLpcResult<bool> isDeviceSupported() override;
 
-    int sendIoOperationEvent(const halpatch::IoOperationEvent &event, const void *payload);
+    TypedLpcResult<bool> isHwServiceConnected() override;
 
-    int sendRemoteDeathEvent(int pid);
-
-private:
+    TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) override;
 };
 
 }
