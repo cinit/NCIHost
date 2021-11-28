@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <cerrno>
 #include <cstring>
+#include <string>
 
 #include "../../rpcprotocol/utils/TextUtils.h"
 
@@ -98,7 +99,11 @@ int ProcessView::readProcess(int pid) {
             continue;
         }
         auto tmp = utils::splitString(path, "/");
-        mProcessModules.emplace_back(Module{tmp[tmp.size() - 1], path, address});
+        std::string soName = tmp[tmp.size() - 1];
+        if (soName.find(" (deleted)") != std::string::npos) {
+            soName = soName.substr(0, soName.length() - strlen(" (deleted)"));
+        }
+        mProcessModules.emplace_back(Module{soName, path, address});
     }
     fclose(pf);
     return 0;

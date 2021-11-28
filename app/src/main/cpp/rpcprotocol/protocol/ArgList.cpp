@@ -46,7 +46,7 @@ ArgList::Builder &ArgList::Builder::push(const string &value) {
     if (buffer == nullptr) {
         pushRawInline(Types::TYPE_STRING, 0);
     } else {
-        pushRawBuffer(Types::TYPE_STRING, (const void *) buffer, size + 1);
+        pushRawBuffer(Types::TYPE_STRING, (const void *) buffer, size);
     }
     return *this;
 }
@@ -70,7 +70,7 @@ ArgList::Builder &ArgList::Builder::push(const char *value) {
     if (buffer == nullptr) {
         pushRawInline(Types::TYPE_STRING, 0);
     } else {
-        pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size + 1);
+        pushRawBuffer(Types::TYPE_STRING, (void *) buffer, size);
     }
     return *this;
 }

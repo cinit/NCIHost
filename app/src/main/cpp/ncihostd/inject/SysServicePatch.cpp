@@ -120,6 +120,9 @@ int SysServicePatch::patchService() {
     mPatchBaseAddress = mInjector.getModuleBaseAddress(mSharedObjectName);
     if (mPatchBaseAddress == 0) {
         LOGE("ERROR: remote reported dlopen success failed to get base address of %s", mSharedObjectName.c_str());
+        for (const auto &m: mInjector.getProcessView().getModules()) {
+            LOGE("%s: %p", m.name.c_str(), (void *) (m.baseAddress));
+        }
         return -EINVAL;
     } else {
         LOGD("remote dlopen base address of %s is %p", mSharedObjectName.c_str(), (void *) (mPatchBaseAddress));
