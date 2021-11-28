@@ -49,14 +49,14 @@ protected:
      * @return the result of the remote invocation
      */
     template<typename R, typename ...Args>
-    [[nodiscard]] TypedLpcResult <R> invokeRemoteProcedure(uint32_t procId, Args &&...args) {
+    [[nodiscard]] TypedLpcResult<R> invokeRemoteProcedure(uint32_t procId, Args &&...args) {
         LpcResult result = dispatchProxyInvocation(procId, ArgList::Builder().pushArgs<Args...>(
                 std::forward<Args>(args)...).build());
         return TypedLpcResult<R>(result);
     }
 
     template<typename R, typename ...Args>
-    [[nodiscard]] TypedLpcResult <R> invokeRemoteProcedure(uint32_t procId) {
+    [[nodiscard]] TypedLpcResult<R> invokeRemoteProcedure(uint32_t procId) {
         LpcResult result = dispatchProxyInvocation(procId, ArgList::Builder().build());
         return TypedLpcResult<R>(result);
     }

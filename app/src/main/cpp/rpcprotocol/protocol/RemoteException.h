@@ -15,16 +15,16 @@ class RemoteException : public std::exception {
 public:
     RemoteException();
 
-    RemoteException(uint32_t type, uint32_t status, const char *msg = nullptr);
+    RemoteException(uint32_t type, uint32_t err, const char *msg = nullptr);
 
-    RemoteException(uint32_t type, uint32_t status, const std::string &msg);
+    RemoteException(uint32_t type, uint32_t err, const std::string &msg);
 
     ~RemoteException() noexcept override;
 
     const char *what() const noexcept override;
 
     uint32_t typeId = 0;
-    uint32_t statusCode = 0;
+    uint32_t errorCode = 0;
     std::string message;
 private:
     std::string showMessage;

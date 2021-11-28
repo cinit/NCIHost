@@ -17,14 +17,14 @@ ServiceManager &ServiceManager::getInstance() {
     return *sInstance;
 }
 
-std::vector<IBaseService *> ServiceManager::getRunningServices() const {
+const std::vector<std::shared_ptr<IBaseService>> &ServiceManager::getRunningServices() const {
     return mRunningServices;
 }
 
-std::vector<IBaseService *> ServiceManager::findServiceByName(std::string_view name) const {
-    std::vector<IBaseService *> result;
+std::vector<std::shared_ptr<IBaseService>> ServiceManager::findServiceByName(std::string_view name) const {
+    std::vector<std::shared_ptr<IBaseService>> result;
     std::scoped_lock lock(mLock);
-    for (auto *service: mRunningServices) {
+    for (auto &service: mRunningServices) {
         if (service->getName() == name) {
             result.push_back(service);
         }
@@ -38,7 +38,8 @@ size_t ServiceManager::getRunningServiceCount() const {
 
 bool ServiceManager::stopService(IBaseService *service) {
     std::scoped_lock lock(mLock);
-    if (auto it = std::find(mRunningServices.begin(), mRunningServices.end(), service);
+    if (auto it = std::find_if(mRunningServices.begin(), mRunningServices.end(),
+                               [&](const auto &sp) { return sp.get() == service; });
             it != mRunningServices.end()) {
         if (service->onStop()) {
             mRunningServices.erase(it);
@@ -50,5 +51,6 @@ bool ServiceManager::stopService(IBaseService *service) {
 
 bool ServiceManager::hasService(const IBaseService *service) const {
     std::scoped_lock lock(mLock);
-    return std::find(mRunningServices.begin(), mRunningServices.end(), service) != mRunningServices.end();
+    return std::find_if(mRunningServices.begin(), mRunningServices.end(),
+                        [&](const auto &sp) { return sp.get() == service; }) != mRunningServices.end();
 }

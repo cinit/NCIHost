@@ -151,10 +151,11 @@ public:
      * Call dlopen on /proc/self/fd/<fd> in the target process.
      * @param soname the name of the library to load, see ELF property SONAME
      * @param remoteFd the remote fd of the library
+     * @param errMsg optional error message
      * @return 0 on success, -errno on failure
      */
     [[nodiscard]]
-    int remoteLoadLibraryFormFd(std::string_view soname, int remoteFd);
+    int remoteLoadLibraryFormFd(std::string_view soname, int remoteFd, std::string *pErrMsg);
 
     /**
      * read C-style string (char*) from target process

@@ -61,16 +61,17 @@ public:
         return mErrorCode;
     }
 
-    inline void throwException(const RemoteException &exception) {
-        mArgsBuffer = ArgList::Builder().pushArgs(exception.typeId, exception.statusCode, exception.message).build();
+    static inline LpcResult throwException(const RemoteException &exception) {
+        LpcResult result;
+        result.setException(exception);
+        return result;
+    }
+
+    inline void setException(const RemoteException &exception) {
+        mArgsBuffer = ArgList::Builder().pushArgs(exception.typeId, exception.errorCode, exception.message).build();
         mHasException = false;
         mErrorCode = 0;
         mIsValid = true;
-    }
-
-    template<class T>
-    inline void setException(const RemoteException &exception) {
-        throwException(exception);
     }
 
     inline void returnVoid() {
@@ -146,7 +147,7 @@ public:
 
     ~TypedLpcResult() = default;
 
-    explicit TypedLpcResult(const LpcResult &result) : mResult(result) {
+    inline TypedLpcResult(const LpcResult &result) : mResult(result) {
     }
 
     [[nodiscard]] inline bool isValid() const noexcept {
@@ -169,12 +170,14 @@ public:
         return mResult.getError();
     }
 
-    inline void throwException(const RemoteException &exception) {
-        mResult.throwException(exception);
+    static TypedLpcResult<T> throwException(const RemoteException &exception) {
+        TypedLpcResult<T> result;
+        result.throwException(exception);
+        return result;
     }
 
     inline void setException(const RemoteException &exception) {
-        mResult.throwException(exception);
+        mResult.setException(exception);
     }
 
     inline void returnVoid() {

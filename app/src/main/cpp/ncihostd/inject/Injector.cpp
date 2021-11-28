@@ -669,7 +669,7 @@ int Injector::closeRemoteFileDescriptor(int fd) {
     return 0;
 }
 
-int Injector::remoteLoadLibraryFormFd(std::string_view soname, int remoteFd) {
+int Injector::remoteLoadLibraryFormFd(std::string_view soname, int remoteFd, std::string *pErrMsg) {
     uintptr_t linkerBase = 0;
     std::string linkerPath;
     uintptr_t libcBase = 0;
@@ -791,8 +791,11 @@ int Injector::remoteLoadLibraryFormFd(std::string_view soname, int remoteFd) {
                     }
                     std::string errMsg;
                     if (int e2 = readRemoteString(&errMsg, retval); e2 < 0) {
-                        loge(mLog, "remote dlopen failed,  read __loader_dlerror err=" + std::to_string(e2));
+                        loge(mLog, "remote dlopen failed, read __loader_dlerror err=" + std::to_string(e2));
                         return -EFAULT;
+                    }
+                    if (pErrMsg != nullptr) {
+                        *pErrMsg = errMsg;
                     }
                     loge(mLog, "call remote __loader_android_dlopen_ext failed, err=" + errMsg);
                     return -EFAULT;

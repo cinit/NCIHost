@@ -11,10 +11,10 @@ RemoteException::RemoteException() = default;
 
 RemoteException::~RemoteException() noexcept = default;
 
-RemoteException::RemoteException(uint32_t type, uint32_t status, const char *msg)
-        : typeId(type), statusCode(status) {
+RemoteException::RemoteException(uint32_t type, uint32_t err, const char *msg)
+        : typeId(type), errorCode(err) {
     std::ostringstream s;
-    s << type << ":" << status;
+    s << type << ":" << err;
     if (msg != nullptr) {
         message = msg;
         s << " " << msg;
@@ -22,10 +22,10 @@ RemoteException::RemoteException(uint32_t type, uint32_t status, const char *msg
     showMessage = s.str();
 }
 
-RemoteException::RemoteException(uint32_t type, uint32_t status, const std::string &msg)
-        : typeId(type), statusCode(status) {
+RemoteException::RemoteException(uint32_t type, uint32_t err, const std::string &msg)
+        : typeId(type), errorCode(err) {
     std::ostringstream s;
-    s << type << ":" << status;
+    s << type << ":" << err;
     if (!msg.empty()) {
         message = msg;
         s << " " << msg;

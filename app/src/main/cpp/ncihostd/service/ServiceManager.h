@@ -8,6 +8,7 @@
 #include <vector>
 #include <tuple>
 #include <mutex>
+#include <memory>
 
 #include "IBaseService.h"
 
@@ -27,10 +28,10 @@ public:
     static ServiceManager &getInstance();
 
     [[nodiscard]]
-    std::vector<IBaseService *> getRunningServices() const;
+    const std::vector<std::shared_ptr<IBaseService>> &getRunningServices() const;
 
     [[nodiscard]]
-    std::vector<IBaseService *> findServiceByName(std::string_view name) const;
+    std::vector<std::shared_ptr<IBaseService>> findServiceByName(std::string_view name) const;
 
     /**
      * Stop the service and remove it from the list of running services.
@@ -47,7 +48,7 @@ public:
 
 private:
     mutable std::mutex mLock;
-    std::vector<IBaseService *> mRunningServices;
+    std::vector<std::shared_ptr<IBaseService>> mRunningServices;
 
 public:
     /**
@@ -66,7 +67,7 @@ public:
             return std::make_tuple(result, nullptr);
         }
         std::scoped_lock lock(mLock);
-        mRunningServices.push_back(service);
+        mRunningServices.push_back(std::shared_ptr<IBaseService>(service));
         return std::make_tuple(result, service);
     }
 };
