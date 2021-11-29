@@ -157,7 +157,8 @@ int SysServicePatch::connectToService(int &localSocket, int &remoteSocket) {
     };
     static_assert(sizeof(ElfHeaderLike) == 16, "sizeof(ElfHeaderLike) != 16");
     ElfHeaderLike headerLike = {};
-    if (int err = mInjector.readRemoteMemory(mPatchBaseAddress, &headerLike, sizeof(headerLike));err != 0) {
+    if (int err = mInjector.readRemoteMemory(mPatchBaseAddress, &headerLike, sizeof(headerLike)); err != 0) {
+        LOGE("Failed to read ELF header: %d", err);
         return err;
     }
     uint32_t offset = headerLike.offset;
@@ -175,10 +176,12 @@ int SysServicePatch::connectToService(int &localSocket, int &remoteSocket) {
         }
     }
     // find init function address from the ELF file if we don't find
-    if (int err = mInjector.getRemoteDynSymAddress(&initFunctionAddress,
-                                                   std::string(mSharedObjectName).c_str(),
-                                                   std::string(mInitSymbolName).c_str()); err != 0) {
-        return err;
+    if (initFunctionAddress == 0) {
+        if (int err = mInjector.getRemoteDynSymAddress(&initFunctionAddress,
+                                                       std::string(mSharedObjectName).c_str(),
+                                                       std::string(mInitSymbolName).c_str()); err != 0) {
+            return err;
+        }
     }
     if (initFunctionAddress == 0) {
         LOGE("Failed to find init function address");
