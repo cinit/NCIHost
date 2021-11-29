@@ -32,7 +32,7 @@ import cc.ioctl.nfcncihost.util.ByteUtils;
 
 public class HomeFragment extends Fragment {
 
-    //    private HomeViewModel homeViewModel;
+    // private HomeViewModel homeViewModel;
     static ExecutorService tp = Executors.newCachedThreadPool();
 
     TextView textView;
@@ -54,13 +54,13 @@ public class HomeFragment extends Fragment {
                     }
                     String shortFileName2 = fileName.split("/")[fileName.split("/").length - 1];
                     fileNames.put(event.fd, shortFileName2);
-                    textView.append("\n" + time + ": " + operationName
+                    textView.append(time + ": " + operationName
                             + "(" + (shortFileName == null ? event.fd : shortFileName) + "): " + fileName);
                     break;
                 }
                 case CLOSE: {
                     plainTextFds.remove(event.fd);
-                    textView.append("\n" + time + ": " + operationName + "("
+                    textView.append(time + ": " + operationName + "("
                             + event.fd + ")" + (shortFileName == null ? "" : ": " + shortFileName));
                     break;
                 }
@@ -68,12 +68,12 @@ public class HomeFragment extends Fragment {
                 case WRITE: {
                     if (plainTextFds.contains(event.fd)) {
                         String data = new String(event.buffer, 0, event.buffer.length);
-                        textView.append("\n" + time + ": " + operationName
+                        textView.append(time + ": " + operationName
                                 + "(" + (shortFileName == null ? event.fd : shortFileName) + "): \"" + data + "\"");
                     } else {
                         // hex
                         String data = ByteUtils.bytesToHexString(event.buffer);
-                        textView.append("\n" + time + ": " + operationName
+                        textView.append(time + ": " + operationName
                                 + "(" + (shortFileName == null ? event.fd : shortFileName) + "): " + data + "");
                     }
                     break;
@@ -81,21 +81,21 @@ public class HomeFragment extends Fragment {
                 case IOCTL: {
                     int request = (int) event.directArg1;
                     long arg = event.directArg2;
-                    textView.append("\n" + time + ": " + operationName
+                    textView.append(time + ": " + operationName
                             + "(" + (shortFileName == null ? event.fd : shortFileName) + "): request="
                             + Integer.toHexString(request) + ", arg=" + Long.toHexString(arg)
                             + ", ret=" + Long.toHexString(event.retValue));
                     break;
                 }
                 case SELECT: {
-                    textView.append("\n" + time + ": " + operationName + "(...)");
+                    textView.append(time + ": " + operationName + "(...)");
                     break;
                 }
                 default: {
-                    textView.append("\n" + time + ": " + operationName + "(" + event.fd + ")");
+                    textView.append(time + ": " + operationName + "(" + event.fd + ")");
                 }
             }
-
+            textView.append("\n");
         });
     }
 
