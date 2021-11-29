@@ -34,4 +34,8 @@ public:
 
 }
 
+void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload);
+
+void NciClientImpl_forwardRemoteDeathEvent(int pid);
+
 #endif //NCI_HOST_NATIVES_NCICLIENTIMPL_H

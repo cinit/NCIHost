@@ -1,24 +1,45 @@
 package cc.ioctl.nfcncihost.daemon;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import java.io.File;
+import java.io.IOException;
 
 import cc.ioctl.nfcncihost.daemon.internal.NciHostDaemonProxy;
 import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 
 public class IpcNativeHandler {
 
+    private static final String TAG = "IpcNativeHandler";
     private final long mNativeHandler;
-
     private static volatile boolean sInit = false;
     private static volatile String sDirPath = null;
-    private static NciHostDaemonProxy mProxy = null;
+    static NciHostDaemonProxy mProxy = null;
+    static Thread sEventHandlerThread = null;
 
     private IpcNativeHandler(final long h) {
         mNativeHandler = h;
+    }
+
+    static class RemoteEventHandler implements Runnable {
+        @Override
+        public void run() {
+            try {
+                while (mProxy != null) {
+                    NciHostDaemonProxy.NativeEventPacket packet = mProxy.waitForEvent();
+                    if (packet != null) {
+                        mProxy.dispatchRemoteEvent(packet);
+                    } else {
+                        throw new IOException("waitForEvent() returned null");
+                    }
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "RemoteEventHandler: IOException: " + e.getMessage());
+            }
+        }
     }
 
     private IpcNativeHandler() {
@@ -50,6 +71,7 @@ public class IpcNativeHandler {
     public static void initForSocketDir() {
         checkProcess();
         ntInitForSocketDir(sDirPath);
+        startEventHandler();
     }
 
     private static void checkProcess() {
@@ -86,7 +108,21 @@ public class IpcNativeHandler {
             return mProxy;
         }
         ntRequestConnection();
-        return ntWaitForConnection(timeout) ? mProxy : null;
+        if (ntWaitForConnection(timeout)) {
+            startEventHandler();
+            return mProxy;
+        } else {
+            return null;
+        }
+    }
+
+    static void startEventHandler() {
+        synchronized (IpcNativeHandler.class) {
+            if (sEventHandlerThread == null || !sEventHandlerThread.isAlive()) {
+                sEventHandlerThread = new Thread(new RemoteEventHandler());
+                sEventHandlerThread.start();
+            }
+        }
     }
 
     public interface IpcConnectionListener {

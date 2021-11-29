@@ -6,15 +6,24 @@
 #include <jni.h>
 #include <cerrno>
 #include <mutex>
+#include <vector>
+#include <tuple>
+#include <condition_variable>
 
 #include "ipc_handle_jni.h"
 #include "IpcConnector.h"
 #include "../rpcprotocol/log/Log.h"
+#include "NciClientImpl.h"
 
 #define LOG_TAG "ipc_handle_jni"
 
 using namespace std;
 using namespace ipcprotocol;
+
+static std::mutex g_EventMutex;
+static std::condition_variable g_EventWaitCondition;
+static std::vector<std::tuple<halpatch::IoOperationEvent, std::vector<uint8_t>>> g_IoEventVec;
+static std::vector<int> g_RemoteDeathVec;
 
 extern "C" void __android_log_print(int level, const char *tag, const char *fmt, ...);
 
@@ -421,4 +430,66 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_initHwServiceConnect
         }
         return false;
     }
+}
+
+
+void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) {
+    std::scoped_lock<std::mutex> lock(g_EventMutex);
+    g_IoEventVec.emplace_back(event, payload);
+    g_EventWaitCondition.notify_all();
+}
+
+void NciClientImpl_forwardRemoteDeathEvent(int pid) {
+    std::scoped_lock<std::mutex> lock(g_EventMutex);
+    g_RemoteDeathVec.emplace_back(pid);
+    g_EventWaitCondition.notify_all();
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    waitForEvent
+ * Signature: ()Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jobject JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
+        (JNIEnv *env, jobject) {
+    std::unique_lock<std::mutex> lock(g_EventMutex);
+    while (g_IoEventVec.empty() && g_RemoteDeathVec.empty()) {
+        g_EventWaitCondition.wait(lock);
+    }
+    // check for remote death
+    if (!g_RemoteDeathVec.empty()) {
+        int deathEvent = g_RemoteDeathVec.back();
+        g_RemoteDeathVec.pop_back();
+        jmethodID ctor = env->GetMethodID(
+                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RemoteDeathPacket"),
+                "<init>", "(I)V");
+        jobject packet = env->NewObject(
+                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RemoteDeathPacket"),
+                ctor, deathEvent);
+        return packet;
+    }
+    // check for io event
+    if (!g_IoEventVec.empty()) {
+        halpatch::IoOperationEvent event = std::get<0>(g_IoEventVec.back());
+        std::vector<uint8_t> payload = std::get<1>(g_IoEventVec.back());
+        g_IoEventVec.pop_back();
+        jmethodID ctor = env->GetMethodID(
+                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
+                "<init>", "([B[B)V");
+        jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
+        env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent), (jbyte *) &event);
+        jbyteArray buffer2 = nullptr;
+        if (payload.size() > 0) {
+            buffer2 = env->NewByteArray(payload.size());
+            env->SetByteArrayRegion(buffer2, 0, payload.size(), (jbyte *) payload.data());
+        }
+        jobject packet = env->NewObject(
+                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
+                ctor, buffer1, buffer2);
+        return packet;
+    }
+    // should not happen
+    env->ThrowNew(env->FindClass("java/io/IOException"), "internal error");
+    return nullptr;
 }

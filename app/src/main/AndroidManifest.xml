@@ -54,12 +54,13 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/cfg_network_security"
+        android:requestRawExternalStorageAccess="true"
         android:resizeableActivity="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppDefault"
         android:usesNonSdkApi="true"
-        tools:targetApi="o">
+        tools:targetApi="s">
 
         <activity
             android:name=".activity.SettingsActivity"

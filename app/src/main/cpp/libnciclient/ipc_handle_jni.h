@@ -125,6 +125,47 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemo
 JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
   (JNIEnv *, jobject, jstring);
 
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    waitForEvent
+ * Signature: ()Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
+ */
+JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
+  (JNIEnv *, jobject);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_NativeEventPacket */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_NativeEventPacket
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_NativeEventPacket
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif

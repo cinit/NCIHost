@@ -44,9 +44,9 @@ bool NciClientImpl::dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eve
 }
 
 void NciClientImpl::onIoEvent(const IoOperationEvent &event, const std::vector<uint8_t> &payload) {
-    LOGI("onIoEvent: %d", event.info.opType);
+    NciClientImpl_forwardRemoteIoEvent(event, payload);
 }
 
 void NciClientImpl::onRemoteDeath(int pid) {
-    LOGW("onRemoteDeath: %d", pid);
+    NciClientImpl_forwardRemoteDeathEvent(pid);
 }
