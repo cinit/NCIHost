@@ -63,7 +63,6 @@ void IpcConnector::handleLinkStart(int fd) {
             LOGE("mIpcProxy.attach(%d) error: %d, %s", fd, err, strerror(err));
             return;
         }
-        mIpcConnFd = fd;
         mTransactor->start();
         listeners = mStatusListeners;
         obj = mTransactor.get();
@@ -266,11 +265,11 @@ IpcConnector &IpcConnector::getInstance() {
 }
 
 IpcTransactor *IpcConnector::getIpcTransactor() {
-    return mIpcConnFd == -1 ? nullptr : (mTransactor.get());
+    return (mTransactor && mTransactor->isConnected()) ? mTransactor.get() : nullptr;
 }
 
 INciHostDaemon *IpcConnector::getNciDaemon() {
-    return mTransactor ? (mTransactor->isConnected() ? mNciProxy.get() : nullptr) : nullptr;
+    return (mTransactor && mTransactor->isConnected()) ? mNciProxy.get() : nullptr;
 }
 
 /**
@@ -313,7 +312,7 @@ bool IpcConnector::unregisterIpcStatusListener(IpcConnector::IpcStatusListener l
 
 int IpcConnector::waitForConnection(int timeout_ms) {
     std::unique_lock lk(mLock);
-    if (mIpcConnFd == -1 || mTransactor == nullptr) {
+    if (mTransactor == nullptr || !mTransactor->isConnected()) {
         return mConnCondVar.wait_for(lk, std::chrono::microseconds(timeout_ms)) == std::cv_status::timeout ? 0 : 1;
     } else {
         return 1;

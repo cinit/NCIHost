@@ -44,11 +44,21 @@ void NxpHalHandler::dispatchHwHalIoEvent(const IoOperationEvent &event, const vo
                           static_cast<const uint8_t *>(payload) + event.info.bufferLength);
     }
     IpcStateController::getInstance().getNciClientProxy().onIoEvent(event, payloadVec);
+    // add the event to the queue tail
+    std::scoped_lock lock(mEventMutex);
+    mHistoryIoEvents.emplace_back(event, payloadVec);
+    // drop the oldest event if the queue is full
+    if (mHistoryIoEvents.size() > MAX_HISTORY_EVENT_SIZE) {
+        mHistoryIoEvents.pop_front();
+    }
 }
 
 void NxpHalHandler::dispatchRemoteProcessDeathEvent() {
     LOGW("Remote process death event received, pid: %d", getRemotePid());
     IpcStateController::getInstance().getNciClientProxy().onRemoteDeath(getRemotePid());
+    // clear the IO event history if the remote process is dead
+    std::scoped_lock lock(mEventMutex);
+    mHistoryIoEvents.clear();
 }
 
 int NxpHalHandler::getRemotePltHookStatus() {

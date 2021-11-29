@@ -69,7 +69,6 @@ private:
     pthread_t mIpcListenThread = 0;
     bool mInitialized = false;
     int mIpcListenFd = -1;
-    int mIpcConnFd = -1;
     int mIpcFileFlagFd = -1;
     std::mutex mLock;
     std::string mIpcAbsSocketName;

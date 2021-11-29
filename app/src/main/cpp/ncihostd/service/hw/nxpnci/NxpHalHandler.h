@@ -7,6 +7,9 @@
 
 #include <string>
 #include <memory>
+#include <deque>
+#include <mutex>
+#include <tuple>
 
 #include "../../HwServiceStatus.h"
 #include "../BaseHwHalHandler.h"
@@ -19,6 +22,7 @@ public:
     static constexpr const char *TARGET_SO_NAME = "nfc_nci.nqx.default.hw.so";
     static constexpr const char *INIT_SYMBOL = "nxp_hal_patch_inject_init";
     static constexpr const char *DEV_PATH = "/dev/nq-nci";
+    static constexpr ssize_t MAX_HISTORY_EVENT_SIZE = 500;
 
     using StartupInfo = BaseHwHalHandler::StartupInfo;
 
@@ -44,8 +48,12 @@ public:
 
     static HwServiceStatus getHwServiceStatus();
 
+    // TODO: add get history event
+
 private:
     std::string mDescription;
+    std::mutex mEventMutex;
+    std::deque<std::tuple<halpatch::IoOperationEvent, std::vector<uint8_t>>> mHistoryIoEvents;
     static std::weak_ptr<IBaseService> sWpInstance;
 };
 
