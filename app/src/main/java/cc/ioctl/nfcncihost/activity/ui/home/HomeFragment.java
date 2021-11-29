@@ -81,8 +81,10 @@ public class HomeFragment extends Fragment {
                 case IOCTL: {
                     int request = (int) event.directArg1;
                     long arg = event.directArg2;
-                    textView.append("\n" + time + ": " + operationName + "(" + (shortFileName == null ? event.fd : shortFileName) + "): request="
-                            + Integer.toHexString(request) + ", arg=" + Long.toHexString(arg));
+                    textView.append("\n" + time + ": " + operationName
+                            + "(" + (shortFileName == null ? event.fd : shortFileName) + "): request="
+                            + Integer.toHexString(request) + ", arg=" + Long.toHexString(arg)
+                            + ", ret=" + Long.toHexString(event.retValue));
                     break;
                 }
                 case SELECT: {
