@@ -9,21 +9,32 @@ import androidx.annotation.UiThread;
 import java.util.HashSet;
 
 import cc.ioctl.nfcncihost.activity.BaseActivity;
-import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
+import cc.ioctl.nfcncihost.activity.ui.startup.TransientInitActivity;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
+/**
+ * The startup procedure of the application.
+ * The {@link TransientInitActivity} is started in the startup procedure.
+ * Startup procedures are executed in the following order:
+ * 1. The background tasks, eg. loading the shared library, initializing the MMKV, etc.
+ * 2. The foreground tasks, eg. showing the @{@link cc.ioctl.nfcncihost.activity.ui.startup.WarnFragment}
+ * After the startup procedure is finished, the application will start the target activity which the intent requires.
+ * If no activity is required, the application will start the default activity like android.intent.action.MAIN.
+ *
+ * @author cinit
+ */
 @SuppressWarnings("MapOrSetKeyShouldOverrideHashCodeEquals")
 public class StartupDirector implements Runnable {
     private static final String TAG = "StartupDirector";
 
-    private SplashActivity mSplashActivity;
+    private TransientInitActivity mTransientInitActivity;
     private final HashSet<BaseActivity> mSuspendedActivities = new HashSet<>();
     private volatile boolean mDisableInterception = false;
     private volatile boolean mBackgroundStepsDone = false;
     private volatile boolean mForegroundStartupFinished = false;
-    private volatile boolean mIsShowingSplash = false;
+    private volatile boolean mIsInitActivityStarted = false;
     private volatile boolean mIsForeground = false;
-    private volatile boolean mStartSplashRequested = false;
+    private volatile boolean mStartInitActivityRequested = false;
 
     public static StartupDirector onAppStart() {
         StartupDirector director = new StartupDirector();
@@ -38,19 +49,19 @@ public class StartupDirector implements Runnable {
         }
         if (activity instanceof BaseActivity) {
             mIsForeground = true;
-            if (activity instanceof SplashActivity) {
-                mSplashActivity = (SplashActivity) activity;
+            if (activity instanceof TransientInitActivity) {
+                mTransientInitActivity = (TransientInitActivity) activity;
                 if (mBackgroundStepsDone) {
-                    mIsShowingSplash = true;
+                    mIsInitActivityStarted = true;
                     return false;
                 } else {
-                    mSplashActivity.showSplash();
-                    mIsShowingSplash = true;
+                    mTransientInitActivity.showSplash();
+                    mIsInitActivityStarted = true;
                 }
             } else {
                 mSuspendedActivities.add((BaseActivity) activity);
-                if (!mIsShowingSplash) {
-                    startSplashActivity(activity);
+                if (!mIsInitActivityStarted) {
+                    startInitActivity(activity);
                 }
             }
             return true;
@@ -75,11 +86,11 @@ public class StartupDirector implements Runnable {
     private void onBackgroundStepsEnd() {
         mBackgroundStepsDone = true;
         if (mIsForeground) {
-            if (mSplashActivity != null) {
-                mSplashActivity.callOnCreateProc();
+            if (mTransientInitActivity != null) {
+                mTransientInitActivity.callOnCreateProcInternal();
             } else {
                 if (!mSuspendedActivities.isEmpty()) {
-                    startSplashActivity(mSuspendedActivities.iterator().next());
+                    startInitActivity(mSuspendedActivities.iterator().next());
                 }
             }
         }
@@ -100,38 +111,38 @@ public class StartupDirector implements Runnable {
         this.mDisableInterception = disableInterception;
     }
 
-    private void startSplashActivity(Activity activity) {
-        if (!mStartSplashRequested) {
-            Intent splash = new Intent(activity, SplashActivity.class);
-            splash.putExtra(SplashActivity.TAG_SHADOW_SPLASH, true);
-            activity.startActivity(splash);
-            mStartSplashRequested = true;
+    private void startInitActivity(Activity activity) {
+        if (!mStartInitActivityRequested) {
+            Intent intent = new Intent(activity, TransientInitActivity.class);
+            intent.putExtra(TransientInitActivity.TAG_HAS_ACTIVITY_ON_STACK, true);
+            activity.startActivity(intent);
+            mStartInitActivityRequested = true;
         }
     }
 
     @UiThread
     public void cancelAllPendingActivity() {
-        mStartSplashRequested = false;
+        mStartInitActivityRequested = false;
         if (!mForegroundStartupFinished) {
             for (BaseActivity activity : mSuspendedActivities) {
                 activity.finish();
             }
             mSuspendedActivities.clear();
         }
-        mIsShowingSplash = false;
+        mIsInitActivityStarted = false;
         mIsForeground = false;
     }
 
     @UiThread
     public void onForegroundStartupFinish() {
-        mStartSplashRequested = false;
+        mStartInitActivityRequested = false;
         if (!mForegroundStartupFinished) {
             Log.d(TAG, "onForegroundStartupFinish: execute");
             mBackgroundStepsDone = true;
             mForegroundStartupFinished = true;
-            mSplashActivity = null;
+            mTransientInitActivity = null;
             for (BaseActivity activity : mSuspendedActivities) {
-                activity.callOnCreateProc();
+                activity.callOnCreateProcInternal();
             }
             mSuspendedActivities.clear();
         }

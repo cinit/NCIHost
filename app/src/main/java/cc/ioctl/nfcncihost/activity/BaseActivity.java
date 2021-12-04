@@ -13,19 +13,20 @@ import androidx.fragment.app.FragmentManager;
 
 import java.lang.reflect.Field;
 
-import cc.ioctl.nfcncihost.activity.splash.SplashActivity;
+import cc.ioctl.nfcncihost.activity.ui.startup.TransientInitActivity;
 import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
 /**
  * Late-onCreate feature for Activity
+ * TODO: implement Fragment late-onCreate feature
  */
 public class BaseActivity extends AppActivity {
     private static final String FRAGMENTS_TAG = "android:support:fragments";
     private boolean mIsFinishingInOnCreate = false;
     private boolean mIsResultWaiting;
     private boolean mIsResume = false;
-    private boolean mIsSplashing = false;
+    private boolean mIsInitializing = false;
     private boolean mIsStartSkipped = false;
     private Intent mNewIntent;
     private Bundle mOnCreateBundle = null;
@@ -47,15 +48,15 @@ public class BaseActivity extends AppActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         Intent intent = getIntent();
-        this.mIsSplashing = MainApplicationImpl.getInstance().onActivityCreate(this, intent);
-        if (this.mIsSplashing) {
+        this.mIsInitializing = MainApplicationImpl.getInstance().onActivityCreate(this, intent);
+        if (this.mIsInitializing) {
             this.mOnCreateBundle = savedInstanceState;
             if (savedInstanceState != null) {
                 savedInstanceState.remove(FRAGMENTS_TAG);
             }
-            super.onCreate(savedInstanceState);
+            super.onCreate(shouldRetainActivitySavedInstanceState() ? savedInstanceState : null);
         } else {
-            super.onCreate(savedInstanceState);
+            super.onCreate(shouldRetainActivitySavedInstanceState() ? savedInstanceState : null);
             doOnCreate(savedInstanceState);
         }
     }
@@ -75,12 +76,27 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        if (!this.mIsSplashing) {
+        super.onPostCreate(shouldRetainActivitySavedInstanceState() ? savedInstanceState : null);
+        if (!this.mIsInitializing) {
             doOnPostCreate(savedInstanceState);
         } else {
             this.mPostCreateBundle = savedInstanceState;
         }
+    }
+
+    /**
+     * Get whether the savedInstanceState should be ignored. This is useful for activities that
+     * saved instance are transient and should not be saved. If this method returns true, the
+     * savedInstanceState passed to {@link Activity#onCreate(Bundle)}, {@link Activity#onPostCreate(Bundle)}
+     * and {@link Activity#onRestoreInstanceState(Bundle)} will be null, but {@link BaseActivity#doOnCreate(Bundle)}
+     * and {@link BaseActivity#doOnPostCreate(Bundle)} will still receive the original savedInstanceState.
+     * A trivial activity that does not handle savedInstanceState specially can return true.
+     * Note: This method is called before {@link #doOnCreate(Bundle)} and should be constexpr.
+     *
+     * @return true if the savedInstanceState should be ignored.
+     */
+    protected boolean shouldRetainActivitySavedInstanceState() {
+        return true;
     }
 
     /**
@@ -89,8 +105,8 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        if (!this.mIsSplashing) {
+        super.onRestoreInstanceState(shouldRetainActivitySavedInstanceState() ? savedInstanceState : null);
+        if (!this.mIsInitializing) {
             doOnRestoreInstanceState(savedInstanceState);
         } else {
             this.mOnRestoreBundle = savedInstanceState;
@@ -104,11 +120,10 @@ public class BaseActivity extends AppActivity {
     @Deprecated
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnSaveInstanceState(outState);
         }
     }
-
 
     /**
      * @deprecated use {@link #doOnDestroy()} instead.
@@ -116,16 +131,16 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onDestroy() {
-        if (!this.mIsSplashing || this.mIsFinishingInOnCreate) {
+        if (!this.mIsInitializing || this.mIsFinishingInOnCreate) {
             doOnDestroy();
         }
         super.onDestroy();
     }
 
-    public void callOnCreateProc() {
+    public void callOnCreateProcInternal() {
         boolean hasFocus = true;
-        if (this.mIsSplashing) {
-            this.mIsSplashing = false;
+        if (this.mIsInitializing) {
+            this.mIsInitializing = false;
             bypassStateLossCheck();
             if (doOnCreate(this.mOnCreateBundle) && !isFinishing()) {
                 if (this.mIsStartSkipped) {
@@ -157,7 +172,7 @@ public class BaseActivity extends AppActivity {
                     }
                 }
             } else if (isFinishing()) {
-                this.mIsSplashing = true;
+                this.mIsInitializing = true;
                 this.mIsFinishingInOnCreate = true;
             }
         }
@@ -196,7 +211,7 @@ public class BaseActivity extends AppActivity {
     @Deprecated
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnNewIntent(intent);
         } else {
             this.mNewIntent = intent;
@@ -209,7 +224,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnActivityResult(requestCode, resultCode, intent);
         } else {
             this.mIsResultWaiting = true;
@@ -227,7 +242,7 @@ public class BaseActivity extends AppActivity {
     @Deprecated
     protected void onStart() {
         super.onStart();
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnStart();
         } else {
             this.mIsStartSkipped = true;
@@ -240,7 +255,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     public boolean dispatchKeyEvent(KeyEvent event) {
-        if (this.mIsSplashing) {
+        if (this.mIsInitializing) {
             return false;
         }
         return doDispatchKeyEvent(event);
@@ -256,7 +271,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onStop() {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnStop();
         } else {
             this.mIsStartSkipped = false;
@@ -287,7 +302,7 @@ public class BaseActivity extends AppActivity {
             // i don't know
         }
         this.mIsResume = true;
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnResume();
         }
     }
@@ -299,7 +314,7 @@ public class BaseActivity extends AppActivity {
     @Deprecated
     protected void onPostResume() {
         super.onPostResume();
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnPostResume();
         }
     }
@@ -310,7 +325,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnConfigurationChanged(newConfig);
         }
         super.onConfigurationChanged(newConfig);
@@ -323,7 +338,7 @@ public class BaseActivity extends AppActivity {
     @Deprecated
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnWindowFocusChanged(hasFocus);
         } else {
             this.mWindowFocusState = hasFocus ? 1 : 0;
@@ -336,7 +351,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     public void onBackPressed() {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnBackPressed();
         }
     }
@@ -347,7 +362,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (this.mIsSplashing) {
+        if (this.mIsInitializing) {
             return false;
         }
         return doOnKeyDown(keyCode, event);
@@ -359,7 +374,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onUserLeaveHint() {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnUserLeaveHint();
         }
         super.onUserLeaveHint();
@@ -371,7 +386,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onPause() {
-        if (!this.mIsSplashing) {
+        if (!this.mIsInitializing) {
             doOnPause();
         }
         this.mIsResume = false;
@@ -454,7 +469,7 @@ public class BaseActivity extends AppActivity {
     @Override
     @SuppressWarnings("deprecation")
     public void startActivityForResult(Intent intent, int requestCode, @Nullable Bundle options) {
-        if (this instanceof SplashActivity) {
+        if (this instanceof TransientInitActivity) {
             StartupDirector director = MainApplicationImpl.sDirector;
             if (director != null && director.isStartup()) {
                 director.setDisableInterception(true);

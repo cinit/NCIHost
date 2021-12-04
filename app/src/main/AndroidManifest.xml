@@ -80,7 +80,8 @@
         </activity>
 
         <activity
-            android:name=".activity.splash.SplashActivity"
+            android:name=".activity.ui.startup.TransientInitActivity"
+            android:exported="false"
             android:launchMode="singleTop" />
 
         <activity

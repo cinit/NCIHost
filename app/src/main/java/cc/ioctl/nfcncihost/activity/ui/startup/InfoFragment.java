@@ -1,4 +1,4 @@
-package cc.ioctl.nfcncihost.activity.splash;
+package cc.ioctl.nfcncihost.activity.ui.startup;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-public class InfoFragment extends SplashActivity.AbsInteractiveStepFragment {
+public class InfoFragment extends TransientInitActivity.AbsInteractiveStepFragment {
 
     private static final String PREF_INT_LAST_VERSION_CODE = "PREF_KEY_LAST_VERSION_CODE";
 

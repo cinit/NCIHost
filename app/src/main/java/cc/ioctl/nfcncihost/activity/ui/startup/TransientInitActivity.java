@@ -1,4 +1,4 @@
-package cc.ioctl.nfcncihost.activity.splash;
+package cc.ioctl.nfcncihost.activity.ui.startup;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -28,20 +28,30 @@ import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
 
 /**
- * Activity for
+ * The start-up initialization Activity for
  * 1. StartupDirector
  * 2. EULA
  * 3. Ask for permissions.
  * 4. What's new.
+ * <p>
+ * Note that this Activity does **NOT** save state, all saved state is removed on onCreate.
+ *
+ * @author cinit
  **/
-public class SplashActivity extends BaseActivity {
-
-    public static final String TAG_SHADOW_SPLASH = SplashActivity.class.getName() + ".TAG_SHADOW_SPLASH";
+public class TransientInitActivity extends BaseActivity {
+    public static final String TAG_HAS_ACTIVITY_ON_STACK = TransientInitActivity.class.getName() + ".TAG_HAS_ACTIVITY_ON_STACK";
     private Iterator<AbsInteractiveStepFragment> steps;
     private Fragment currentFragment;
     private Bundle mSavedFragmentsInstance = null;
-    private static final String SAVED_FRAGMENT_DATA = "SAVED_FRAGMENT_DATA";
+    private static final String SAVED_FRAGMENT_DATA = TransientInitActivity.class.getName() + ".SAVED_FRAGMENT_DATA";
 
+    /**
+     * Called by the {@link StartupDirector} when the background startup is finished.
+     * This is the beginning of the interactive startup.
+     *
+     * @param savedInstanceState the saved instance state
+     * @return always true
+     */
     @Override
     protected boolean doOnCreate(@Nullable Bundle savedInstanceState) {
         super.doOnCreate(null);
@@ -62,6 +72,11 @@ public class SplashActivity extends BaseActivity {
         return true;
     }
 
+    @Override
+    protected void doOnPostCreate(Bundle bundle) {
+        super.doOnPostCreate(bundle);
+    }
+
     @UiThread
     private void finishInteractiveStartup() {
         StartupDirector director = MainApplicationImpl.sDirector;
@@ -69,7 +84,7 @@ public class SplashActivity extends BaseActivity {
             director.onForegroundStartupFinish();
         }
         Intent intent = getIntent();
-        if (!intent.hasExtra(TAG_SHADOW_SPLASH)) {
+        if (!intent.hasExtra(TAG_HAS_ACTIVITY_ON_STACK)) {
             Intent target = new Intent(intent);
             target.setComponent(new ComponentName(this, DashboardActivity.class));
             startActivity(target);
@@ -96,6 +111,19 @@ public class SplashActivity extends BaseActivity {
         doOnBackPressed();
     }
 
+    @Override
+    protected boolean shouldRetainActivitySavedInstanceState() {
+        // drop all saved state for framework, we will handle it ourselves on doOnCreate
+        return false;
+    }
+
+    /**
+     * Show the splash screen.
+     * Note that this method is called before {@link #doOnCreate(Bundle)} by the {@link StartupDirector}.
+     * The splash screen is shown when the {@link StartupDirector} is executing background initialization tasks.
+     * When StartupDirector finishes background initialization, it will call {@link #doOnCreate(Bundle)},
+     * and this time this activity will run interactive startup.
+     */
     @SuppressLint("SetTextI18n")
     @UiThread
     public void showSplash() {
@@ -105,8 +133,7 @@ public class SplashActivity extends BaseActivity {
         }
         setContentView(R.layout.activity_splash);
         TextView tvVersion = findViewById(R.id.splash_version);
-        tvVersion.setText("version " + BuildConfig.VERSION_NAME + "-"
-                + (BuildConfig.DEBUG ? "debug" : "release"));
+        tvVersion.setText("version " + BuildConfig.VERSION_NAME + "-" + (BuildConfig.DEBUG ? "debug" : "release"));
     }
 
     @UiThread
@@ -159,11 +186,11 @@ public class SplashActivity extends BaseActivity {
 
     public abstract static class AbsInteractiveStepFragment extends Fragment implements InteractiveStep, Comparable<AbsInteractiveStepFragment> {
         protected MMKV config = ConfigManager.getDefaultConfig();
-        protected SplashActivity activity;
+        protected TransientInitActivity activity;
 
         @Override
         public void onAttach(@NonNull Context context) {
-            activity = (SplashActivity) context;
+            activity = (TransientInitActivity) context;
             super.onAttach(context);
         }
 

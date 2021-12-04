@@ -1,4 +1,4 @@
-package cc.ioctl.nfcncihost.activity.splash;
+package cc.ioctl.nfcncihost.activity.ui.startup;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,7 +15,7 @@ import java.util.Locale;
 import cc.ioctl.nfcncihost.R;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
-public class WarnFragment extends SplashActivity.AbsInteractiveStepFragment {
+public class WarnFragment extends TransientInitActivity.AbsInteractiveStepFragment {
     private static final String PREF_BOOL_USAGE_WARN = "PREF_BOOL_ABOUT_WARN";
     private static final String SS_TIME_LEFT = "SS_TIME_LEFT";
     private static final int FORCE_READ_TIME_SEC = 5;
