@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context=".activity.DashboardActivity">
+    tools:context=".activity.MainUiFragmentActivity">
 
     <com.google.android.material.appbar.AppBarLayout
         style="@style/Widget.AppDefault.ActionBar"

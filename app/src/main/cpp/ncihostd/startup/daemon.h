@@ -6,13 +6,13 @@
 #define NCI_HOST_DAEMON_H
 
 #ifdef __cplusplus
+extern "C" {
+#endif
 
-extern "C" void startDaemon(int uid, const char *ipcFilePath);
+void startDaemon(int uid, const char *ipcFilePath, int daemonize);
 
-#else
-
-void startDaemon(int uid, const char *ipcFilePath);
-
+#ifdef __cplusplus
+};
 #endif
 
 #endif //NCI_HOST_DAEMON_H

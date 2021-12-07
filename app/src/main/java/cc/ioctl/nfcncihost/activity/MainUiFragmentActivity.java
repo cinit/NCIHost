@@ -12,6 +12,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
@@ -23,13 +24,21 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.IOException;
+
 import cc.ioctl.nfcncihost.R;
+import cc.ioctl.nfcncihost.daemon.INciHostDaemon;
+import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcncihost.ipc.NfcControllerManager;
 import cc.ioctl.nfcncihost.service.NfcCardEmuFgSvc;
 import cc.ioctl.nfcncihost.service.NfcControllerManagerService;
+import cc.ioctl.nfcncihost.util.RootShell;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
-public class DashboardActivity extends BaseActivity {
+/**
+ * The general purpose fragment host activity
+ */
+public class MainUiFragmentActivity extends BaseActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
     volatile NfcControllerManager nfcMgr;
@@ -48,7 +57,7 @@ public class DashboardActivity extends BaseActivity {
         public void onServiceDisconnected(ComponentName name) {
             nfcMgr = null;
             if (!isFinishing()) {
-                ThreadManager.post(() -> Toast.makeText(DashboardActivity.this,
+                ThreadManager.post(() -> Toast.makeText(MainUiFragmentActivity.this,
                         "onServiceDisconnected", Toast.LENGTH_SHORT).show());
             }
         }
@@ -62,8 +71,8 @@ public class DashboardActivity extends BaseActivity {
             mSvcIntent = null;
             new AlertDialog.Builder(this).setTitle("Error").setMessage("bind error")
                     .setCancelable(false).setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                finish();
-            }).show();
+                        finish();
+                    }).show();
         }
         setContentView(R.layout.activity_dashboard);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -82,7 +91,43 @@ public class DashboardActivity extends BaseActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+        ThreadManager.execute(() -> {
+            // try to connect to the NCI daemon
+            INciHostDaemon daemon = IpcNativeHandler.connect(3000);
+            if (daemon == null) {
+                ThreadManager.post(this::requestRootToStartDaemon);
+            }
+        });
         return true;
+    }
+
+    @UiThread
+    private void requestRootToStartDaemon() {
+        // show a dialog while we are waiting for root
+        final AlertDialog requestDialog = new AlertDialog.Builder(this)
+                .setTitle("Requesting root")
+                .setMessage("Please grant root permission")
+                .show();
+        // try request root permission
+        ThreadManager.execute(() -> {
+            requestDialog.dismiss();
+            String errMsg;
+            try {
+                INciHostDaemon daemon = IpcNativeHandler.startDaemonWithRootShell();
+            } catch (IOException | RuntimeException e) {
+                errMsg = e.toString();
+                ThreadManager.post(() -> new AlertDialog.Builder(this).setTitle("Error")
+                        .setMessage("Error starting root daemon: \n" + errMsg)
+                        .setPositiveButton(android.R.string.ok, null).show());
+            } catch (RootShell.NoRootShellException e) {
+                errMsg = e.getMessage();
+                ThreadManager.post(() -> {
+                    new AlertDialog.Builder(this).setTitle("Unable to get root")
+                            .setMessage("Unable to request root permission, is your device rooted?\n" + errMsg)
+                            .setPositiveButton(android.R.string.ok, null).show();
+                });
+            }
+        });
     }
 
     @Override

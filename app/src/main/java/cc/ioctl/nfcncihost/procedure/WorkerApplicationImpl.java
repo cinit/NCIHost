@@ -28,12 +28,20 @@ public class WorkerApplicationImpl extends BaseApplicationImpl {
     public static WorkerApplicationImpl getInstance() {
         Application app = BaseApplicationImpl.sApplication;
         if (app == null) {
-            throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
+            throw new IllegalStateException("calling WorkerApplicationImpl.getInstance() before init");
         }
         if (app instanceof WorkerApplicationImpl) {
             return (WorkerApplicationImpl) app;
         } else {
-            throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
+            throw new IllegalStateException("calling WorkerApplicationImpl.getInstance() in wrong process");
         }
+    }
+
+    public static boolean isInServiceProcess() {
+        BaseApplicationImpl app = BaseApplicationImpl.sApplication;
+        if (app == null) {
+            throw new IllegalStateException("calling WorkerApplicationImpl.isInServiceProcess() before init");
+        }
+        return app instanceof WorkerApplicationImpl;
     }
 }

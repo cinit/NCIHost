@@ -98,8 +98,7 @@ public class StartupDirector implements Runnable {
 
     private int[] getTargetSteps() {
         return new int[]{
-                StepFactory.STEP_LOAD_NATIVE_LIBS,
-                StepFactory.STEP_LOAD_CONFIG,
+                StepFactory.STEP_EARLY_INIT,
         };
     }
 

@@ -13,6 +13,11 @@ import java.util.concurrent.Executors;
 public class ThreadManager {
     private static final ExecutorService sExecutor = Executors.newCachedThreadPool();
 
+    /**
+     * Executes the given runnable on a background thread.
+     *
+     * @param r The runnable to execute.
+     */
     public static void execute(@NonNull Runnable r) {
         sExecutor.execute(r);
     }
@@ -23,20 +28,35 @@ public class ThreadManager {
         throw new AssertionError("No instance for you!");
     }
 
+    /**
+     * Post the given runnable to the UI thread.
+     *
+     * @param r           The runnable to post.
+     * @param delayMillis The delay in milliseconds.
+     */
     @SuppressLint("LambdaLast")
-    public static void postDelayed(@NonNull Runnable r, long ms) {
+    public static void postDelayed(@NonNull Runnable r, long delayMillis) {
         Objects.requireNonNull(r);
         if (sHandler == null) {
             sHandler = new Handler(Looper.getMainLooper());
         }
-        sHandler.postDelayed(r, ms);
+        sHandler.postDelayed(r, delayMillis);
     }
 
-    //kotlin friendly?
-    public static void postDelayed(long ms, @NonNull Runnable r) {
-        postDelayed(r, ms);
+    /**
+     * Post the given runnable to the UI thread.
+     * Same as {@link #postDelayed(Runnable, long)}
+     * Kotlin friendly version.
+     */
+    public static void postDelayed(long delayMillis, @NonNull Runnable r) {
+        postDelayed(r, delayMillis);
     }
 
+    /**
+     * Post the given runnable to the UI thread.
+     *
+     * @param r The runnable to post.
+     */
     public static void post(@NonNull Runnable r) {
         postDelayed(r, 0L);
     }

@@ -39,6 +39,22 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntRe
 JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntWaitForConnection
   (JNIEnv *, jclass, jint);
 
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Method:    getIpcPidFileFD
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getIpcPidFileFD
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Method:    getKernelArchitecture
+ * Signature: ()Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getKernelArchitecture
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
@@ -47,6 +63,17 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntWa
 
 #ifndef _Included_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_IpcConnectionListener
 #define _Included_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_IpcConnectionListener
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_IpcNativeHandler_RemoteEventHandler */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_RemoteEventHandler
+#define _Included_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_RemoteEventHandler
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -141,6 +168,28 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemon
 
 #ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
 #define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawIoEventPacket */
+
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawIoEventPacket
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawIoEventPacket
 #ifdef __cplusplus
 extern "C" {
 #endif

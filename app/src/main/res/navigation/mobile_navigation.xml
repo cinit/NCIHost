@@ -13,7 +13,7 @@
 
     <fragment
         android:id="@+id/nav_gallery"
-        android:name="cc.ioctl.nfcncihost.activity.ui.gallery.GalleryFragment"
+        android:name="cc.ioctl.nfcncihost.activity.ui.dump.NciDumpFragment"
         android:label="@string/menu_gallery"
         tools:layout="@layout/fragment_gallery" />
 

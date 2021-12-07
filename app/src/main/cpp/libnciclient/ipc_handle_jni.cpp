@@ -3,6 +3,8 @@
 //
 
 #include <sys/un.h>
+#include <unistd.h>
+#include <sys/utsname.h>
 #include <jni.h>
 #include <cerrno>
 #include <mutex>
@@ -492,4 +494,33 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
     // should not happen
     env->ThrowNew(env->FindClass("java/io/IOException"), "internal error");
     return nullptr;
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Method:    getKernelArchitecture
+ * Signature: ()Ljava/lang/String;
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jstring JNICALL
+Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getKernelArchitecture
+        (JNIEnv *env, jclass) {
+    struct utsname uts = {};
+    if (uname(&uts) != 0) {
+        env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                      ("uname() failed: " + std::string(strerror(errno))).c_str());
+        return nullptr;
+    }
+    return env->NewStringUTF(uts.machine);
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Method:    getIpcPidFileFD
+ * Signature: ()I
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
+Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getIpcPidFileFD
+        (JNIEnv *, jclass) {
+    const IpcConnector &connector = IpcConnector::getInstance();
+    return int(connector.getIpcFileFlagFd());
 }

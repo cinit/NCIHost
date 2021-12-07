@@ -139,9 +139,6 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         INciHostDaemon daemon = IpcNativeHandler.peekConnection();
-        if (daemon == null) {
-            daemon = IpcNativeHandler.connect(100);
-        }
         if (daemon != null) {
             if (!daemon.isHwServiceConnected()) {
                 StringBuilder sb = new StringBuilder();

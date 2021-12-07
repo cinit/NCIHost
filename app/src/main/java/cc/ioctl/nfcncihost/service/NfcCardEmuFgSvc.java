@@ -15,7 +15,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import cc.ioctl.nfcncihost.R;
-import cc.ioctl.nfcncihost.activity.DashboardActivity;
+import cc.ioctl.nfcncihost.activity.MainUiFragmentActivity;
 import cc.ioctl.nfcncihost.util.ThreadManager;
 
 public class NfcCardEmuFgSvc extends Service {
@@ -40,7 +40,7 @@ public class NfcCardEmuFgSvc extends Service {
 
     private void updateEmulationFgState(String cardName) {
         PendingIntent configIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, DashboardActivity.class), 0);
+                new Intent(this, MainUiFragmentActivity.class), 0);
         PendingIntent stopIntent = PendingIntent.getService(this, 0,
                 new Intent(this, NfcCardEmuFgSvc.class)
                         .setAction(NfcCardEmuFgSvc.ACTION_STOP_CARD_EMU), 0);
@@ -68,7 +68,7 @@ public class NfcCardEmuFgSvc extends Service {
 
     private void updateRequestPermFgState() {
         PendingIntent configIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, DashboardActivity.class), 0);
+                new Intent(this, MainUiFragmentActivity.class), 0);
         Notification.Builder builder;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);

@@ -31,12 +31,20 @@ public class MainApplicationImpl extends WorkerApplicationImpl {
     public static MainApplicationImpl getInstance() {
         Application app = BaseApplicationImpl.sApplication;
         if (app == null) {
-            throw new IllegalStateException("calling " + TAG + ".getInstance() before init");
+            throw new IllegalStateException("calling MainApplicationImpl.getInstance() before init");
         }
         if (app instanceof MainApplicationImpl) {
             return (MainApplicationImpl) app;
         } else {
-            throw new IllegalStateException("calling " + TAG + ".getInstance() in wrong process");
+            throw new IllegalStateException("calling MainApplicationImpl.getInstance() in wrong process");
         }
+    }
+
+    public static boolean isInMainProcess() {
+        BaseApplicationImpl app = BaseApplicationImpl.sApplication;
+        if (app == null) {
+            throw new IllegalStateException("calling MainApplicationImpl.isInMainProcess() before init");
+        }
+        return app instanceof MainApplicationImpl;
     }
 }

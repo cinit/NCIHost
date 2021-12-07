@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <algorithm>
+#include <sys/utsname.h>
+#include <unistd.h>
 
 #include "../log/Log.h"
 
@@ -69,6 +71,23 @@ std::vector<ProcessInfo> getRunningProcessInfo() {
     }
     closedir(dir);
     return runningProcesses;
+}
+
+int getKernelArchitecture() noexcept {
+    struct utsname uts = {};
+    if (uname(&uts) != 0) {
+        return -errno;
+    }
+    if (strcmp(uts.machine, "x86_64") == 0) {
+        return Architecture::ARCH_X86_64;
+    } else if (strcmp(uts.machine, "x86") == 0) {
+        return Architecture::ARCH_X86;
+    } else if (strcmp(uts.machine, "arm") == 0) {
+        return Architecture::ARCH_ARM;
+    } else if (strcmp(uts.machine, "aarch64") == 0) {
+        return Architecture::ARCH_AARCH64;
+    }
+    return -ENOTSUP;
 }
 
 }

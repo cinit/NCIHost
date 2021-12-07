@@ -68,7 +68,7 @@
             android:label="@string/title_activity_settings" />
 
         <activity
-            android:name=".activity.DashboardActivity"
+            android:name=".activity.MainUiFragmentActivity"
             android:exported="true"
             android:theme="@style/Theme.AppDefault.NoActionBar">
             <intent-filter>

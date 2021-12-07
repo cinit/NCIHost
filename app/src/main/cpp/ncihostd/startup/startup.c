@@ -47,7 +47,8 @@ void setArgv(char **argv, int argc, const char *shortName, const char *longName)
 int main(int argc, char *argv[]) {
     if (argc <= 1) {
         printVersionAndExit();
-    } else if (argc == 4) {
+    } else if (argc == 4 || argc == 5) {
+        int daemonize = 1;
         char *end;
         int uid = (int) strtol(argv[1], &end, 10);
         if (uid <= 0 || *end != '\0') {
@@ -64,9 +65,18 @@ int main(int argc, char *argv[]) {
             printf("argv[3]: Invalid target FD.\n");
             _exit(1);
         }
+        if (argc == 5) {
+            if (strcmp(argv[4], "--no-daemon") == 0) {
+                daemonize = 0;
+            } else {
+                printf("use '--no-daemon' to skip daemonize so that log can be printed to stdout\n");
+                printf("Invalid argv[4]: %s, abort.\n", argv[4]);
+                _exit(1);
+            }
+        }
         if (getegid() != 0) {
             printf("Root(uid=0) is required.\n");
-            // _exit(1);
+            _exit(1);
         }
         char buf[108] = {};
         snprintf(buf, 108, "/proc/%d/fd/%d", pid, targetFd);
@@ -84,17 +94,15 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         printf("using path: %s\n", ipcFilePath);
-        // TODO: daemonize here...(dup /dev/null)
         printf("Stub, skip setns /proc/1/ns/mnt\n");
         char namebuf[32] = {};
         snprintf(namebuf, 32, "ncihostd: [uid %d]", uid);
         setArgv(argv, argc, "ncihostd", namebuf);
         signal(SIGPIPE, SIG_IGN);
-        startDaemon(uid, ipcFilePath);
+        startDaemon(uid, ipcFilePath, daemonize);
     } else {
-        printf("$0 <UID> <PID> <FD>\n");
+        printf("$0 <UID> <PID> <FD> [--no-daemon]\n");
         return 1;
     }
     return 0;
 }
-

@@ -22,7 +22,7 @@ import java.util.Iterator;
 import cc.ioctl.nfcncihost.BuildConfig;
 import cc.ioctl.nfcncihost.R;
 import cc.ioctl.nfcncihost.activity.BaseActivity;
-import cc.ioctl.nfcncihost.activity.DashboardActivity;
+import cc.ioctl.nfcncihost.activity.MainUiFragmentActivity;
 import cc.ioctl.nfcncihost.activity.config.ConfigManager;
 import cc.ioctl.nfcncihost.procedure.MainApplicationImpl;
 import cc.ioctl.nfcncihost.procedure.StartupDirector;
@@ -39,6 +39,13 @@ import cc.ioctl.nfcncihost.procedure.StartupDirector;
  * @author cinit
  **/
 public class TransientInitActivity extends BaseActivity {
+    /**
+     * Whether there are any activities on the activity stack waiting for the initialization to complete.
+     * If there are, then when this activity is finished, the TransientInitActivity will just finish,
+     * so that the next activity on the stack will be resumed.
+     * If there are no activities on the stack, then the TransientInitActivity will finish itself and
+     * start the MAIN/LAUNCHER activity.
+     */
     public static final String TAG_HAS_ACTIVITY_ON_STACK = TransientInitActivity.class.getName() + ".TAG_HAS_ACTIVITY_ON_STACK";
     private Iterator<AbsInteractiveStepFragment> steps;
     private Fragment currentFragment;
@@ -77,6 +84,10 @@ public class TransientInitActivity extends BaseActivity {
         super.doOnPostCreate(bundle);
     }
 
+    /**
+     * This is called when the interactive startup is finished.
+     * This will start the target activity if there is one, or start the MAIN/LAUNCHER activity if there is not.
+     */
     @UiThread
     private void finishInteractiveStartup() {
         StartupDirector director = MainApplicationImpl.sDirector;
@@ -86,7 +97,7 @@ public class TransientInitActivity extends BaseActivity {
         Intent intent = getIntent();
         if (!intent.hasExtra(TAG_HAS_ACTIVITY_ON_STACK)) {
             Intent target = new Intent(intent);
-            target.setComponent(new ComponentName(this, DashboardActivity.class));
+            target.setComponent(new ComponentName(this, MainUiFragmentActivity.class));
             startActivity(target);
         }
         finish();
@@ -170,6 +181,12 @@ public class TransientInitActivity extends BaseActivity {
         return fragments;
     }
 
+    /**
+     * Abort the interactive startup.
+     * This is usually called when the user does not agree to the EULA or the disclaimer.
+     * This method will finish this activity and call {@link StartupDirector#cancelAllPendingActivity()} to
+     * pop all pending activities on the stack. After that, the entire application will seem to be terminated.
+     */
     public void abortInteractiveStartup() {
         StartupDirector director = MainApplicationImpl.sDirector;
         if (director != null) {
@@ -194,9 +211,21 @@ public class TransientInitActivity extends BaseActivity {
             super.onAttach(context);
         }
 
+        /**
+         * Compare this fragment to another fragment based on the order.
+         * If the order is the same, then the hash code.
+         *
+         * @param o another fragment
+         * @return the comparison result
+         */
         @Override
         public int compareTo(AbsInteractiveStepFragment o) {
-            return this.getOrder() - o.getOrder();
+            int order = getOrder() - o.getOrder();
+            if (order == 0) {
+                return hashCode() - o.hashCode();
+            } else {
+                return order;
+            }
         }
     }
 

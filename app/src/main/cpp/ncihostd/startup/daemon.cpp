@@ -22,6 +22,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <memory>
+#include <csignal>
 
 #include "common.h"
 #include "daemon.h"
@@ -166,9 +167,71 @@ void log_print_handler(Log::Level level, const char *tag, const char *msg) {
     std::cout.flush();
 }
 
-extern "C" void startDaemon(int uid, const char *ipcFilePath) {
+int startup_do_daemonize() {
+    // set cwd and umask
+    if (chdir("/") != 0) {
+        printf("chdir error: %d, %s", errno, strerror(errno));
+        return -1;
+    }
+    umask(0);
+    // ignore signal SIGHUP and SIGPIPE
+    struct sigaction sa = {};
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if ((sigaction(SIGHUP, &sa, nullptr) < 0) || (sigaction(SIGPIPE, &sa, nullptr) < 0)) {
+        printf("sigaction error: %d, %s", errno, strerror(errno));
+        exit(-1);
+    }
+    // fork to set session id
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("fork error: %d, %s", errno, strerror(errno));
+        return -1;
+    }
+    if (pid > 0) {
+        exit(0);
+    }
+    // change to new session
+    if (setsid() < 0) {
+        printf("setsid error: %d, %s", errno, strerror(errno));
+        return -1;
+    }
+    // fork again to drop tty
+    pid = fork();
+    if (pid < 0) {
+        printf("fork error: %d, %s", errno, strerror(errno));
+        return -1;
+    }
+    if (pid > 0) {
+        exit(0);
+    }
+    // close stdin, stdout, stderr
+    int fd = open("/dev/null", O_RDWR);
+    if (fd < 0) {
+        printf("open /dev/null error: %d, %s", errno, strerror(errno));
+        return -1;
+    }
+    for (int i = 0; i < 3; i++) {
+        dup2(fd, i);
+    }
+    close(fd);
+    return 0;
+}
+
+extern "C" void startDaemon(int uid, const char *ipcFilePath, int daemonize) {
     clock_gettime(CLOCK_MONOTONIC, &gStartTime);
-    Log::setLogHandler(&log_print_handler);
+    if (daemonize) {
+        // daemonize process
+        int err = startup_do_daemonize();
+        if (err < 0) {
+            printf("startup_do_daemonize error: %d", err);
+            exit(-1);
+        }
+    } else {
+        // do not daemonize, just use stdout as log output
+        Log::setLogHandler(&log_print_handler);
+    }
     if (std::string(ipcFilePath).find("/ipc.pid") == std::string::npos) {
         LOGE("INVALID PATH: %s", ipcFilePath);
         return;

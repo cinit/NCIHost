@@ -37,6 +37,61 @@ public class NativeInterface {
         dir.delete();
     }
 
+    /**
+     * Extracts the native library from the APK and returns the file.
+     *
+     * @param libName    the soname, eg. "libnfc-nci.so"
+     * @param abiName    the ABI name, eg. "armeabi-v7a"
+     * @param dirName    the internal directory name, eg. "hal_patch"
+     * @param executable whether to chmod +x the file
+     * @return the extracted file
+     */
+    public static File extractNativeLibFromApk(String libName, String abiName, String dirName, boolean executable) {
+        Context context = BaseApplicationImpl.getInstance();
+        File mainDir = new File(context.getFilesDir(), dirName);
+        if (!mainDir.exists() && !mainDir.mkdirs()) {
+            throw new IllegalStateException("Failed to create " + dirName + " directory");
+        }
+        // clean up old patch files
+        File[] files = mainDir.listFiles();
+        final String currentVersion = BuildConfig.BUILD_UUID;
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory() && !file.getName().equals(currentVersion)) {
+                    deleteDir(file);
+                }
+            }
+        }
+        File patchDir = new File(mainDir, currentVersion + File.separator + abiName);
+        if (!patchDir.exists() && !patchDir.mkdirs()) {
+            throw new IllegalStateException("Failed to create patch directory");
+        }
+        File patchFile = new File(patchDir, libName);
+        if (!patchFile.exists()) {
+            // extract patch file from apk lib directory
+            try (FileOutputStream fos = new FileOutputStream(patchFile);
+                 InputStream is = NativeInterface.class.getResourceAsStream("/lib/" + abiName + "/" + libName)) {
+                if (is == null) {
+                    throw new IllegalStateException("Failed to read patch file from apk");
+                }
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = is.read(buffer)) > 0) {
+                    fos.write(buffer, 0, len);
+                }
+                fos.flush();
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to extract patch file from apk", e);
+            }
+        }
+        if (executable) {
+            if (!patchFile.setExecutable(true, false) && !patchFile.canExecute()) {
+                throw new IllegalStateException("Failed to set executable flag on " + patchFile.getAbsolutePath());
+            }
+        }
+        return patchFile;
+    }
+
     public static File getNfcHalServicePatchFile(NfcHalServicePatch patch, ABI abi) {
         String patchFileName;
         switch (patch) {
@@ -66,45 +121,7 @@ public class NativeInterface {
             default:
                 throw new IllegalArgumentException("Unknown ABI type");
         }
-        Context context = BaseApplicationImpl.getInstance();
-        File mainDir = new File(context.getFilesDir(), "hal_patch");
-        if (!mainDir.exists() && !mainDir.mkdirs()) {
-            throw new IllegalStateException("Failed to create hal_patch directory");
-        }
-        // clean up old patch files
-        File[] files = mainDir.listFiles();
-        final String patchVersion = BuildConfig.BUILD_UUID;
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory() && !file.getName().equals(patchVersion)) {
-                    deleteDir(file);
-                }
-            }
-        }
-        File patchDir = new File(mainDir, patchVersion + File.separator + abiName);
-        if (!patchDir.exists() && !patchDir.mkdirs()) {
-            throw new IllegalStateException("Failed to create patch directory");
-        }
-        File patchFile = new File(patchDir, patchFileName);
-        if (!patchFile.exists()) {
-            // extract patch file from apk lib directory
-            try (FileOutputStream fos = new FileOutputStream(patchFile);
-                 InputStream is = NativeInterface.class
-                         .getResourceAsStream("/lib/" + abiName + "/" + patchFileName)) {
-                if (is == null) {
-                    throw new IllegalStateException("Failed to read patch file from apk");
-                }
-                byte[] buffer = new byte[4096];
-                int len;
-                while ((len = is.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
-                }
-                fos.flush();
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to extract patch file from apk", e);
-            }
-        }
-        return patchFile;
+        return extractNativeLibFromApk(patchFileName, abiName, "hal_patch", false);
     }
 
 }

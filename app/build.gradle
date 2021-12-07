@@ -77,6 +77,7 @@ dependencies {
     implementation 'de.psdev.licensesdialog:licensesdialog:2.2.0'
     implementation 'io.noties.markwon:core:4.6.2'
     implementation 'org.lsposed.hiddenapibypass:hiddenapibypass:2.0'
+    implementation "com.github.topjohnwu.libsu:core:3.1.2"
     implementation 'androidx.appcompat:appcompat:1.4.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'

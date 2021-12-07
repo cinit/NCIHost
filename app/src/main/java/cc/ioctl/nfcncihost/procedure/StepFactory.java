@@ -1,21 +1,16 @@
 package cc.ioctl.nfcncihost.procedure;
 
 import cc.ioctl.nfcncihost.procedure.step.EmptyStep;
-import cc.ioctl.nfcncihost.procedure.step.LoadConfig;
-import cc.ioctl.nfcncihost.procedure.step.LoadNativeLibs;
+import cc.ioctl.nfcncihost.procedure.step.EarlyInit;
 
 public class StepFactory {
 
-    public static final int STEP_LOAD_NATIVE_LIBS = 10;
-    public static final int STEP_LOAD_CONFIG = 12;
-
+    public static final int STEP_EARLY_INIT = 10;
 
     public static Step getStep(int id) {
         switch (id) {
-            case STEP_LOAD_NATIVE_LIBS:
-                return new LoadNativeLibs();
-            case STEP_LOAD_CONFIG:
-                return new LoadConfig();
+            case STEP_EARLY_INIT:
+                return new EarlyInit();
             default:
                 return new EmptyStep();
         }
