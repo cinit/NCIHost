@@ -119,11 +119,14 @@ public class IpcNativeHandler {
         }
         initForSocketDir();
         ntRequestConnection();
-        boolean connected = ntWaitForConnection(timeout / 2);
+        long start = System.currentTimeMillis();
+        boolean connected = ntWaitForConnection(20);
         if (!connected) {
             ntRequestConnection();
-            connected = ntWaitForConnection(timeout / 2);
+            connected = ntWaitForConnection(Math.max(timeout - 20, 20));
         }
+        long delta = System.currentTimeMillis() - start;
+        Log.d(TAG, "connect: " + (connected ? "success" : "fail") + " in " + delta + "ms");
         if (connected) {
             startEventHandler();
             return mProxy;
@@ -172,7 +175,7 @@ public class IpcNativeHandler {
         }
         initForSocketDir();
         // if the daemon is already running, return it
-        INciHostDaemon daemon = connect(3000);
+        INciHostDaemon daemon = connect(300);
         if (daemon != null) {
             return daemon;
         }
@@ -201,7 +204,7 @@ public class IpcNativeHandler {
             throw new IOException(sb.toString());
         }
         // connect to the daemon
-        daemon = connect(3000);
+        daemon = connect(1000);
         if (daemon == null) {
             throw new IOException("failed to connect to daemon after starting with root shell");
         }

@@ -313,7 +313,7 @@ bool IpcConnector::unregisterIpcStatusListener(IpcConnector::IpcStatusListener l
 int IpcConnector::waitForConnection(int timeout_ms) {
     std::unique_lock lk(mLock);
     if (mTransactor == nullptr || !mTransactor->isConnected()) {
-        return mConnCondVar.wait_for(lk, std::chrono::microseconds(timeout_ms)) == std::cv_status::timeout ? 0 : 1;
+        return mConnCondVar.wait_for(lk, std::chrono::milliseconds(timeout_ms)) == std::cv_status::timeout ? 0 : 1;
     } else {
         return 1;
     }

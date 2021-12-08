@@ -93,7 +93,7 @@ public class MainUiFragmentActivity extends BaseActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
         ThreadManager.execute(() -> {
             // try to connect to the NCI daemon
-            INciHostDaemon daemon = IpcNativeHandler.connect(3000);
+            INciHostDaemon daemon = IpcNativeHandler.connect(200);
             if (daemon == null) {
                 ThreadManager.post(this::requestRootToStartDaemon);
             }
