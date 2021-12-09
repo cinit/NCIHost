@@ -26,6 +26,7 @@ static std::mutex g_EventMutex;
 static std::condition_variable g_EventWaitCondition;
 static std::vector<std::tuple<halpatch::IoOperationEvent, std::vector<uint8_t>>> g_IoEventVec;
 static std::vector<int> g_RemoteDeathVec;
+static bool g_isNciHostDaemonConnected = false;
 
 extern "C" void __android_log_print(int level, const char *tag, const char *fmt, ...);
 
@@ -118,9 +119,11 @@ bool jniThrowLpcResultErrorOrCorruption(JNIEnv *env, const TypedLpcResult<T> &re
     return false;
 }
 
+void IpcNativeCallback_IpcStatusChangeListener(IpcConnector::IpcStatusEvent event, IpcTransactor *obj);
+
 extern "C" [[maybe_unused]] JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     Log::setLogHandler(&android_log_handler);
-    (void) IpcConnector::getInstance();
+    IpcConnector::getInstance().registerIpcStatusListener(&IpcNativeCallback_IpcStatusChangeListener);
     return JNI_VERSION_1_6;
 }
 
@@ -447,6 +450,21 @@ void NciClientImpl_forwardRemoteDeathEvent(int pid) {
     g_EventWaitCondition.notify_all();
 }
 
+void IpcNativeCallback_IpcStatusChangeListener(IpcConnector::IpcStatusEvent event, IpcTransactor *obj) {
+    std::unique_lock lock(g_EventMutex);
+    if (event == IpcConnector::IpcStatusEvent::IPC_CONNECTED) {
+        if (!g_isNciHostDaemonConnected) {
+            g_isNciHostDaemonConnected = true;
+            g_EventWaitCondition.notify_all();
+        }
+    } else if (event == IpcConnector::IpcStatusEvent::IPC_DISCONNECTED) {
+        if (g_isNciHostDaemonConnected) {
+            g_isNciHostDaemonConnected = false;
+            g_EventWaitCondition.notify_all();
+        }
+    }
+}
+
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
  * Method:    waitForEvent
@@ -458,6 +476,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
     std::unique_lock<std::mutex> lock(g_EventMutex);
     while (g_IoEventVec.empty() && g_RemoteDeathVec.empty()) {
         g_EventWaitCondition.wait(lock);
+    }
+    // check for connection loss
+    if (bool conn = IpcConnector::getInstance().isConnected(); conn != g_isNciHostDaemonConnected) {
+        g_isNciHostDaemonConnected = conn;
+        // send a null event to notify the upper layer that the connection state has changed
+        return nullptr;
     }
     // check for remote death
     if (!g_RemoteDeathVec.empty()) {
@@ -482,7 +506,7 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
         jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
         env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent), (jbyte *) &event);
         jbyteArray buffer2 = nullptr;
-        if (payload.size() > 0) {
+        if (!payload.empty()) {
             buffer2 = env->NewByteArray(payload.size());
             env->SetByteArrayRegion(buffer2, 0, payload.size(), (jbyte *) payload.data());
         }
