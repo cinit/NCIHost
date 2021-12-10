@@ -122,6 +122,14 @@ JNIEXPORT jstring JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemon
 
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    getSelfPid
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getSelfPid
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
  * Method:    exitProcess
  * Signature: ()V
  */
@@ -154,6 +162,14 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemo
 
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    ntGetHistoryIoEvents
+ * Signature: (II)Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/RawHistoryIoEventList;
+ */
+JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
+  (JNIEnv *, jobject, jint, jint);
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
  * Method:    waitForEvent
  * Signature: ()Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
  */
@@ -164,21 +180,10 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemon
 }
 #endif
 #endif
-/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket */
+/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawHistoryIoEventList */
 
-#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
-#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType */
-
-#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType
-#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_IoEventPacket_IoOperationType
+#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawHistoryIoEventList
+#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawHistoryIoEventList
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,17 +195,6 @@ extern "C" {
 
 #ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawIoEventPacket
 #define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RawIoEventPacket
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* Header for class cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket */
-
-#ifndef _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket
-#define _Included_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_RemoteDeathPacket
 #ifdef __cplusplus
 extern "C" {
 #endif

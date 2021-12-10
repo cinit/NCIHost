@@ -24,6 +24,10 @@ TypedLpcResult<std::string> NciHostDaemonProxy::getBuildUuid() {
     return invokeRemoteProcedure<std::string>(Ids::getBuildUuid);
 }
 
+TypedLpcResult<int> NciHostDaemonProxy::getSelfPid() {
+    return invokeRemoteProcedure<int>(Ids::getSelfPid);
+}
+
 TypedLpcResult<void> NciHostDaemonProxy::exitProcess() {
     return invokeRemoteProcedure<void>(Ids::exitProcess);
 }
@@ -38,4 +42,10 @@ TypedLpcResult<bool> NciHostDaemonProxy::isHwServiceConnected() {
 
 TypedLpcResult<bool> NciHostDaemonProxy::initHwServiceConnection(const std::string &soPath) {
     return invokeRemoteProcedure<bool, const std::string &>(Ids::initHwServiceConnection, soPath);
+}
+
+TypedLpcResult<INciHostDaemon::HistoryIoOperationEventList>
+NciHostDaemonProxy::getHistoryIoOperations(uint32_t start, uint32_t length) {
+    return invokeRemoteProcedure<INciHostDaemon::HistoryIoOperationEventList, const uint32_t &, const uint32_t &>(
+            Ids::getHistoryIoOperations, start, length);
 }

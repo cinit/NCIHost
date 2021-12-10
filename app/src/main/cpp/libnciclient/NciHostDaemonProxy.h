@@ -25,6 +25,8 @@ public:
 
     TypedLpcResult<std::string> getBuildUuid() override;
 
+    TypedLpcResult<int> getSelfPid() override;
+
     TypedLpcResult<void> exitProcess() override;
 
     TypedLpcResult<bool> isDeviceSupported() override;
@@ -32,6 +34,8 @@ public:
     TypedLpcResult<bool> isHwServiceConnected() override;
 
     TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) override;
+
+    TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) override;
 };
 
 }

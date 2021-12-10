@@ -8,7 +8,7 @@ add_library(rpcprotocol STATIC
         protocol/ArgList.cpp utils/FixedThreadPool.cpp utils/shared_memory.cpp utils/SELinux.cpp
         utils/auto_close_fd.cpp utils/ProcessUtils.cpp
         protocol/RemoteException.cpp utils/SharedBuffer.cpp protocol/IpcTransactor.cpp protocol/LpcResult.cpp
-        protocol/BaseIpcObject.cpp protocol/BaseIpcProxy.cpp
+        protocol/BaseIpcObject.cpp protocol/BaseIpcProxy.cpp INciHostDaemon.cpp
         log/Log.cpp utils/io_utils.cpp utils/Uuid.cpp utils/SignalHandler.cpp utils/FileMemMap.cpp utils/TextUtils.cpp
         log/SessionLog.h log/DefaultSessionLogImpl.cpp)
 

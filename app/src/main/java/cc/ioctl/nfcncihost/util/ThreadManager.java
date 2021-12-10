@@ -22,6 +22,15 @@ public class ThreadManager {
         sExecutor.execute(r);
     }
 
+    /**
+     * Executes the given runnable on a background thread.
+     *
+     * @param r The runnable to execute.
+     */
+    public static void async(@NonNull Runnable r) {
+        sExecutor.execute(r);
+    }
+
     private static Handler sHandler;
 
     private ThreadManager() {
@@ -50,6 +59,20 @@ public class ThreadManager {
      */
     public static void postDelayed(long delayMillis, @NonNull Runnable r) {
         postDelayed(r, delayMillis);
+    }
+
+    /**
+     * Same as {@link android.app.Activity#runOnUiThread(Runnable)}
+     *
+     * @param r The runnable to run.
+     */
+    public static void runOnUiThread(@NonNull Runnable r) {
+        Objects.requireNonNull(r);
+        if (Looper.getMainLooper().getThread() == Thread.currentThread()) {
+            r.run();
+        } else {
+            postDelayed(r, 0);
+        }
     }
 
     /**

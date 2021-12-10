@@ -11,6 +11,7 @@
 #include <mutex>
 #include <tuple>
 
+#include "rpcprotocol/INciHostDaemon.h"
 #include "../../HwServiceStatus.h"
 #include "../BaseHwHalHandler.h"
 
@@ -46,9 +47,12 @@ public:
 
     void dispatchRemoteProcessDeathEvent() override;
 
-    static HwServiceStatus getHwServiceStatus();
+    [[nodiscard]] ipcprotocol::INciHostDaemon::HistoryIoOperationEventList
+    getHistoryIoOperationEvents(uint32_t start, uint32_t count);
 
-    // TODO: add get history event
+    [[nodiscard]] static HwServiceStatus getHwServiceStatus();
+
+    [[nodiscard]] static std::shared_ptr<IBaseService> getWeakInstance();
 
 private:
     std::string mDescription;

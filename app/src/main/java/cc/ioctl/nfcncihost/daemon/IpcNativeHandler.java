@@ -9,12 +9,14 @@ import com.topjohnwu.superuser.Shell;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 
 import cc.ioctl.nfcncihost.NativeInterface;
 import cc.ioctl.nfcncihost.daemon.internal.NciHostDaemonProxy;
 import cc.ioctl.nfcncihost.procedure.BaseApplicationImpl;
 import cc.ioctl.nfcncihost.util.NativeUtils;
 import cc.ioctl.nfcncihost.util.RootShell;
+import cc.ioctl.nfcncihost.util.ThreadManager;
 
 public class IpcNativeHandler {
 
@@ -23,6 +25,8 @@ public class IpcNativeHandler {
     private static volatile String sDirPath = null;
     static NciHostDaemonProxy mProxy = null;
     static Thread sEventHandlerThread = null;
+    static final HashSet<IpcConnectionListener> sConnectionListeners = new HashSet<>();
+    static boolean sIsConnected = false;
 
     static class RemoteEventHandler implements Runnable {
         @Override
@@ -33,7 +37,28 @@ public class IpcNativeHandler {
                     if (packet != null) {
                         mProxy.dispatchRemoteEvent(packet);
                     } else {
-                        throw new IOException("waitForEvent() returned null");
+                        // null packet means a daemon connected or disconnected event
+                        HashSet<IpcConnectionListener> listeners = null;
+                        final boolean isConnected = ntPeekConnection();
+                        synchronized (sConnectionListeners) {
+                            if (isConnected != sIsConnected) {
+                                sIsConnected = isConnected;
+                                // notify the listeners
+                                listeners = new HashSet<>(sConnectionListeners);
+                            }
+                        }
+                        if (listeners != null) {
+                            HashSet<IpcConnectionListener> finalListeners = listeners;
+                            ThreadManager.async(() -> {
+                                for (IpcConnectionListener listener : finalListeners) {
+                                    if (isConnected) {
+                                        listener.onConnect(mProxy);
+                                    } else {
+                                        listener.onDisconnect(mProxy);
+                                    }
+                                }
+                            });
+                        }
                     }
                 }
             } catch (IOException e) {
@@ -221,8 +246,20 @@ public class IpcNativeHandler {
     }
 
     public interface IpcConnectionListener {
-        void onConnect(IpcNativeHandler h);
+        void onConnect(INciHostDaemon daemon);
 
-        void onDisconnect(IpcNativeHandler h);
+        void onDisconnect(INciHostDaemon daemon);
+    }
+
+    public static void registerConnectionListener(IpcConnectionListener listener) {
+        synchronized (sConnectionListeners) {
+            sConnectionListeners.add(listener);
+        }
+    }
+
+    public static boolean unregisterConnectionListener(IpcConnectionListener listener) {
+        synchronized (sConnectionListeners) {
+            return sConnectionListeners.remove(listener);
+        }
     }
 }

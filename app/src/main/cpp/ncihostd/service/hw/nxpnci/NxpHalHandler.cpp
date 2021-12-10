@@ -131,3 +131,36 @@ HwServiceStatus NxpHalHandler::getHwServiceStatus() {
     status.valid = false;
     return status;
 }
+
+std::shared_ptr<IBaseService> NxpHalHandler::getWeakInstance() {
+    return sWpInstance.lock();
+}
+
+INciHostDaemon::HistoryIoOperationEventList NxpHalHandler::getHistoryIoOperationEvents(uint32_t start, uint32_t count) {
+    INciHostDaemon::HistoryIoOperationEventList result;
+    std::scoped_lock lock(mEventMutex);
+    if (mHistoryIoEvents.empty()) {
+        result.totalStartIndex = 0;
+        result.totalCount = 0;
+        return result;
+    }
+    // history event list is not empty
+    result.totalStartIndex = std::get<0>(mHistoryIoEvents.front()).sequence;
+    result.totalCount = uint32_t(mHistoryIoEvents.size());
+    // iterate the history events
+    auto it = mHistoryIoEvents.cbegin();
+    while (it != mHistoryIoEvents.cend()) {
+        auto &[event, payload] = *it;
+        if (event.sequence >= start) {
+            // found the start index
+            if (result.events.size() >= count) {
+                break;
+            }
+            // add the event to the result list
+            result.events.emplace_back(event);
+            result.payloads.emplace_back(payload);
+        }
+        it++;
+    }
+    return result;
+}

@@ -16,6 +16,7 @@
 #include "IpcConnector.h"
 #include "../rpcprotocol/log/Log.h"
 #include "NciClientImpl.h"
+#include "rpcprotocol/INciHostDaemon.h"
 
 #define LOG_TAG "ipc_handle_jni"
 
@@ -304,6 +305,36 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getBuildUuid
 
 /*
  * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    getSelfPid
+ * Signature: ()I
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getSelfPid
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->getSelfPid();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            int r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
  * Method:    exitProcess
  * Signature: ()V
  */
@@ -488,10 +519,10 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
         int deathEvent = g_RemoteDeathVec.back();
         g_RemoteDeathVec.pop_back();
         jmethodID ctor = env->GetMethodID(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RemoteDeathPacket"),
+                env->FindClass("cc/ioctl/nfcncihost/daemon/INciHostDaemon$RemoteDeathPacket"),
                 "<init>", "(I)V");
         jobject packet = env->NewObject(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RemoteDeathPacket"),
+                env->FindClass("cc/ioctl/nfcncihost/daemon/INciHostDaemon$RemoteDeathPacket"),
                 ctor, deathEvent);
         return packet;
     }
@@ -547,4 +578,58 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getIpcPidFileFD
         (JNIEnv *, jclass) {
     const IpcConnector &connector = IpcConnector::getInstance();
     return int(connector.getIpcFileFlagFd());
+}
+
+/*
+ * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Method:    ntGetHistoryIoEvents
+ * Signature: (II)Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/RawHistoryIoEventList;
+ */
+extern "C" [[maybe_unused]] JNIEXPORT  jobject JNICALL
+Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
+        (JNIEnv *env, jobject, jint reqStartIndex, jint reqCount) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->getHistoryIoOperations(uint32_t(reqStartIndex), uint32_t(reqCount));
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            INciHostDaemon::HistoryIoOperationEventList r;
+            if (lpcResult.getResult(&r)) {
+                uint32_t totalStart = r.totalStartIndex;
+                uint32_t totalCount = r.totalCount;
+                jclass clRawEventList = env->FindClass(
+                        "cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawHistoryIoEventList");
+                jclass clRawEvent = env->FindClass(
+                        "cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket");
+                jmethodID ctorEvent = env->GetMethodID(clRawEvent, "<init>", "([B[B)V");
+                jmethodID ctorList = env->GetMethodID(clRawEventList, "<init>",
+                                                      "(II[Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket;)V");
+                size_t resultSize = r.events.size();
+                jobjectArray array = env->NewObjectArray(resultSize, clRawEvent, nullptr);
+                for (size_t i = 0; i < resultSize; ++i) {
+                    jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
+                    env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent),
+                                            (jbyte *) &r.events[i]);
+                    jbyteArray buffer2 = nullptr;
+                    if (!r.payloads[i].empty()) {
+                        buffer2 = env->NewByteArray(r.payloads[i].size());
+                        env->SetByteArrayRegion(buffer2, 0, r.payloads[i].size(),
+                                                (jbyte *) r.payloads[i].data());
+                    }
+                    jobject event = env->NewObject(clRawEvent, ctorEvent, buffer1, buffer2);
+                    env->SetObjectArrayElement(array, i, event);
+                }
+                return env->NewObject(clRawEventList, ctorList, jint(totalStart), jint(totalCount), array);
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
 }

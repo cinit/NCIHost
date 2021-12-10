@@ -10,7 +10,6 @@
 #include "ncihostd/service/hw/nxpnci/NxpHalHandler.h"
 #include "ncihostd/inject/SysServicePatch.h"
 #include "ncihostd/service/ServiceManager.h"
-#include "../../ipc/IpcStateController.h"
 #include "rpcprotocol/utils/TextUtils.h"
 #include "rpcprotocol/utils/auto_close_fd.h"
 #include "rpcprotocol/log/Log.h"
@@ -38,6 +37,10 @@ TypedLpcResult<int> NciHostDaemonImpl::getVersionCode() {
 
 TypedLpcResult<std::string> NciHostDaemonImpl::getBuildUuid() {
     return {"NOT_AVAILABLE"};
+}
+
+TypedLpcResult<int> NciHostDaemonImpl::getSelfPid() {
+    return {int(getpid())};
 }
 
 TypedLpcResult<void> NciHostDaemonImpl::exitProcess() {
@@ -82,6 +85,16 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
             }));
             return true;
         }
+        case Ids::getSelfPid: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->getSelfPid(); }));
+            return true;
+        }
+        case Ids::getHistoryIoOperations: {
+            result = R::invoke(this, args, R::is(+[](T *p, uint32_t start, uint32_t length) {
+                return p->getHistoryIoOperations(start, length);
+            }));
+            return true;
+        }
         default:
             return false;
     }
@@ -100,6 +113,17 @@ TypedLpcResult<bool> NciHostDaemonImpl::isDeviceSupported() {
 TypedLpcResult<bool> NciHostDaemonImpl::isHwServiceConnected() {
     HwServiceStatus status = NxpHalHandler::getHwServiceStatus();
     return !status.currentAdapter.expired();
+}
+
+TypedLpcResult<ipcprotocol::INciHostDaemon::HistoryIoOperationEventList>
+NciHostDaemonImpl::getHistoryIoOperations(uint32_t start, uint32_t length) {
+    HistoryIoOperationEventList list;
+    auto sp = NxpHalHandler::getWeakInstance();
+    NxpHalHandler *handler;
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast< NxpHalHandler *> (p))) {
+        list = handler->getHistoryIoOperationEvents(start, length);
+    }
+    return {list};
 }
 
 TypedLpcResult<bool> NciHostDaemonImpl::initHwServiceConnection(const std::string &soPath) {
