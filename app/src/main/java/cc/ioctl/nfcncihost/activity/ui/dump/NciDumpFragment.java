@@ -151,7 +151,7 @@ public class NciDumpFragment extends Fragment {
                 Toast.makeText(getActivity(), sb.toString(), Toast.LENGTH_SHORT).show();
             }
             if (daemon.isHwServiceConnected()) {
-                daemon.setRemoteEventListener(new INciHostDaemon.OnRemoteEventListener() {
+                daemon.registerRemoteEventListener(new INciHostDaemon.OnRemoteEventListener() {
                     @Override
                     public void onIoEvent(NciHostDaemonProxy.IoEventPacket event) {
                         appendIoEvent(event);

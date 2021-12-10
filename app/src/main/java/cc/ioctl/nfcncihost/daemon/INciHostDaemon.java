@@ -1,5 +1,7 @@
 package cc.ioctl.nfcncihost.daemon;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
 
 import cc.ioctl.nfcncihost.daemon.internal.NciHostDaemonProxy;
@@ -32,9 +34,9 @@ public interface INciHostDaemon {
         void onRemoteDeath(RemoteDeathPacket event);
     }
 
-    OnRemoteEventListener getRemoteEventListener();
+    void registerRemoteEventListener(@NonNull OnRemoteEventListener listener);
 
-    void setRemoteEventListener(OnRemoteEventListener listener);
+    boolean unregisterRemoteEventListener(@NonNull OnRemoteEventListener listener);
 
     class IoEventPacket implements NciHostDaemonProxy.NativeEventPacket {
         public enum IoOperationType {

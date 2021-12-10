@@ -1,6 +1,12 @@
 package cc.ioctl.nfcncihost.daemon.internal;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 import cc.ioctl.nfcncihost.daemon.INciHostDaemon;
 
@@ -40,26 +46,29 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public void dispatchRemoteEvent(NativeEventPacket event) {
         if (event instanceof RawIoEventPacket) {
             IoEventPacket ioEvent = new IoEventPacket((RawIoEventPacket) event);
-            if (mListener != null) {
-                mListener.onIoEvent(ioEvent);
+            for (OnRemoteEventListener listener : mListeners) {
+                listener.onIoEvent(ioEvent);
             }
         } else if (event instanceof RemoteDeathPacket) {
-            if (mListener != null) {
-                mListener.onRemoteDeath((RemoteDeathPacket) event);
+            RemoteDeathPacket death = (RemoteDeathPacket) event;
+            for (OnRemoteEventListener listener : mListeners) {
+                listener.onRemoteDeath(death);
             }
         }
     }
 
-    private OnRemoteEventListener mListener = null;
+    private final Set<OnRemoteEventListener> mListeners = Collections.synchronizedSet(new HashSet<>());
 
     @Override
-    public OnRemoteEventListener getRemoteEventListener() {
-        return mListener;
+    public void registerRemoteEventListener(@NonNull OnRemoteEventListener listener) {
+        Objects.requireNonNull(listener);
+        mListeners.add(listener);
     }
 
     @Override
-    public void setRemoteEventListener(OnRemoteEventListener listener) {
-        mListener = listener;
+    public boolean unregisterRemoteEventListener(@NonNull OnRemoteEventListener listener) {
+        Objects.requireNonNull(listener);
+        return mListeners.remove(listener);
     }
 
     @Override
