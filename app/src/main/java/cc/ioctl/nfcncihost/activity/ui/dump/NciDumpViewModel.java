@@ -10,7 +10,7 @@ public class NciDumpViewModel extends ViewModel {
 
     public NciDumpViewModel() {
         mText = new MutableLiveData<>();
-        mText.setValue("This is gallery fragment");
+        mText.setValue("This is dump fragment");
     }
 
     public LiveData<String> getText() {

@@ -4,16 +4,35 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class HomeViewModel extends ViewModel {
+import cc.ioctl.nfcncihost.daemon.INciHostDaemon;
+import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
 
-    private MutableLiveData<String> mText;
+public class HomeViewModel extends ViewModel implements IpcNativeHandler.IpcConnectionListener {
+
+    private final MutableLiveData<Boolean> nciHostDaemonConnected = new MutableLiveData<>();
 
     public HomeViewModel() {
-        mText = new MutableLiveData<>();
-        mText.setValue("This is home fragment");
+        IpcNativeHandler.registerConnectionListener(this);
+        nciHostDaemonConnected.setValue(IpcNativeHandler.peekConnection() != null);
     }
 
-    public LiveData<String> getText() {
-        return mText;
+    public LiveData<Boolean> isNciHostDaemonConnected() {
+        return nciHostDaemonConnected;
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        IpcNativeHandler.unregisterConnectionListener(this);
+    }
+
+    @Override
+    public void onConnect(INciHostDaemon daemon) {
+        nciHostDaemonConnected.postValue(true);
+    }
+
+    @Override
+    public void onDisconnect(INciHostDaemon daemon) {
+        nciHostDaemonConnected.postValue(false);
     }
 }
