@@ -298,7 +298,7 @@ bool IpcConnector::isConnected() {
 
 void IpcConnector::registerIpcStatusListener(IpcConnector::IpcStatusListener listener) {
     std::scoped_lock<std::mutex> _(mLock);
-    if (std::find(mStatusListeners.begin(), mStatusListeners.end(), listener) != mStatusListeners.end()) {
+    if (std::find(mStatusListeners.begin(), mStatusListeners.end(), listener) == mStatusListeners.end()) {
         mStatusListeners.push_back(listener);
     }
 }
