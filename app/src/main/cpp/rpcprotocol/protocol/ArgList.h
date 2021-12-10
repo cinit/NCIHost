@@ -43,9 +43,11 @@ public:
      *          [0] reserved, always 0
      *          Note that the string is not null-terminated.
      *          Currently, only UTF-8 is supported.
-     *      [4] 1: raw buffer or POD structure data
-     *          [3] 0: raw buffer data
-     *              1: POD structure data, sizeof(T) is stored in [10 ... 0]{uint8_t[1], uint8_t[0][2 ... 0]},
+     *      [4] 1: raw buffer, serialized buffer or POD structure data
+     *          [3] 0: raw/serialized buffer data
+     *              [2] 0: raw buffer data
+     *                  1: serialized buffer data
+     *          [3] 1: POD structure data, sizeof(T) is stored in [10 ... 0]{uint8_t[1], uint8_t[0][2 ... 0]},
      *                  11 bits, max struct size is 2047 bytes
      * *** complex types:
      * 0: not a complex type
@@ -77,6 +79,27 @@ public:
      */
     class Types {
     private:
+        template<typename T>
+        struct is_serializable {
+        private:
+            using yes = std::true_type;
+            using no = std::false_type;
+
+            template<typename U>
+            static auto test(int) -> decltype(std::declval<U>().fromByteVector(std::vector<uint8_t>())
+                                              && std::vector<uint8_t>(std::declval<U>().toByteVector()).empty(), yes());
+
+            template<typename>
+            static no test(...);
+
+        public:
+            static constexpr bool value = std::is_same_v<decltype(test<T>(0)), yes>;
+        };
+
+    public:
+        template<typename T>
+        constexpr static bool is_serializable_v = is_serializable<T>::value;
+    private:
         constexpr static uint32_t F_VALID = 1u << 6u;
         constexpr static uint32_t F_IMMEDIATE = F_VALID | 0u << 5u;
         constexpr static uint32_t F_BUFFER_POOL = F_VALID | 1u << 5u;
@@ -94,6 +117,7 @@ public:
         constexpr static uint32_t T_STRING_BASE = F_BUFFER_POOL | 0u << 4u;
         constexpr static uint32_t F_STRING_UTF8 = 0u << 2u; // UTF-8
         constexpr static uint32_t T_RAW_BUFFER = F_BUFFER_POOL | 1u << 4u;
+        constexpr static uint32_t T_SERIALIZED_BUFFER = F_BUFFER_POOL | 1u << 4u | 1u << 2u;
         constexpr static uint32_t T_STRUCTURE_BASE = F_BUFFER_POOL | 1u << 4u | 1u << 3u;
         constexpr static uint32_t SHIFT_MAJOR = 0u;
         constexpr static uint32_t SHIFT_AUX = 8u;
@@ -105,6 +129,7 @@ public:
         constexpr static uint32_t TYPE_DOUBLE = T_DOUBLE;
         constexpr static uint32_t TYPE_STRING = T_STRING_BASE | F_STRING_UTF8;
         constexpr static uint32_t TYPE_BYTE_BUFFER = T_RAW_BUFFER;
+        constexpr static uint32_t TYPE_SERIALIZED_BUFFER = T_SERIALIZED_BUFFER;
         constexpr static uint32_t TYPE_INVALID = 0u;
 
         template<typename T>
@@ -128,6 +153,9 @@ public:
             } else if constexpr(std::is_same_v<T, std::vector<uint8_t>> || std::is_same_v<T, SharedBuffer>) {
                 // byte buffer
                 return TYPE_BYTE_BUFFER;
+            } else if constexpr (std::is_class_v<T> && std::is_default_constructible_v<T> && is_serializable_v<T>) {
+                // class and POD structure may use its own serialization
+                return TYPE_SERIALIZED_BUFFER;
             } else if constexpr(std::is_pod_v<T> && !std::is_array_v<T> && sizeof(T) < 2048) {
                 // POD structure buffer, max size 2047 bytes
                 constexpr size_t structSize = sizeof(T);
@@ -179,9 +207,14 @@ public:
             return type == TYPE_BYTE_BUFFER;
         }
 
+        constexpr static bool isSerializedBuffer(uint32_t type) {
+            return type == TYPE_SERIALIZED_BUFFER;
+        }
+
         constexpr static bool isStructure(uint32_t type) {
-            return isPrimitiveType(type) &&
-                   ((type & (T_STRUCTURE_BASE | TYPE_BYTE_BUFFER | T_STRING_BASE)) == T_STRUCTURE_BASE);
+            return isPrimitiveType(type) && (
+                    (type & (T_STRUCTURE_BASE | TYPE_BYTE_BUFFER | T_SERIALIZED_BUFFER
+                             | T_STRING_BASE)) == T_STRUCTURE_BASE);
         }
 
         constexpr static bool isImmediateValue(uint32_t type) {
@@ -236,14 +269,26 @@ public:
         ArgList::Builder &push(const char *value);
 
         template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
-                Types::isImmediateValue(TypeId) || Types::isStructure(TypeId), T>>
+                Types::isImmediateValue(TypeId), T>>
         ArgList::Builder &push(T value) {
-            if constexpr(Types::isImmediateValue(TypeId)) {
-                // immediate value
-                pushRawInline(TypeId, value);
-            } else {
+            // immediate value
+            pushRawInline(TypeId, value);
+            return *this;
+        }
+
+        template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+                Types::isStructure(TypeId) || Types::isSerializedBuffer(TypeId), T>>
+        ArgList::Builder &push(const T &value) {
+            if constexpr(Types::isStructure(TypeId)) {
                 // structure data
                 pushRawBuffer(TypeId, &value, sizeof(T));
+            } else if constexpr(Types::isSerializedBuffer(TypeId)) {
+                // serialized buffer
+                std::vector<uint8_t> buffer = value.toByteVector();
+                pushRawBuffer(TypeId, buffer.data(), buffer.size());
+            } else {
+                // should not happen
+                abort();
             }
             return *this;
         }
@@ -320,7 +365,7 @@ public:
      * @return true if success, false if failed
      */
     template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
-            Types::isImmediateValue(TypeId) || Types::isStructure(TypeId), T>>
+            Types::isImmediateValue(TypeId) || Types::isStructure(TypeId) || Types::isSerializedBuffer(TypeId), T>>
     [[nodiscard]] inline bool get(T *out, int index) const {
         uint64_t reg = 0;
         if (!readRawInlineValue(&reg, index)) {
@@ -332,7 +377,7 @@ public:
         if constexpr(Types::isImmediateValue(TypeId)) {
             *out = *reinterpret_cast<T *>(&reg);
         } else {
-            // structure data
+            // buffer types
             struct BufferEntry {
                 uint32_t offset;
                 uint32_t length;// in bytes
@@ -344,7 +389,18 @@ public:
             if (offset + len > mLength) {
                 return false;
             }
-            *out = *reinterpret_cast<const T *>(reinterpret_cast<const char *>(mBuffer) + offset);
+            if constexpr(Types::isStructure(TypeId)) {
+                // structure
+                *out = *reinterpret_cast<const T *>(reinterpret_cast<const char *>(mBuffer) + offset);
+            } else if constexpr(Types::isSerializedBuffer(TypeId)) {
+                // serialized buffer
+                std::vector<uint8_t> buffer = {reinterpret_cast<const uint8_t *>(mBuffer) + offset,
+                                               reinterpret_cast<const uint8_t *>(mBuffer) + offset + len};
+                return out->fromByteVector(buffer);
+            } else {
+                // should not happen
+                abort();
+            }
         }
         return true;
     }

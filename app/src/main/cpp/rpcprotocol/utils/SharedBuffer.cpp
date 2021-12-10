@@ -161,3 +161,13 @@ void SharedBuffer::reset() noexcept {
         p->reset();
     }
 }
+
+std::vector<uint8_t> SharedBuffer::toVector() const {
+    const SharedBufferImpl *p = pImpl.get();
+    if (p != nullptr && p->get() != nullptr) {
+        return {reinterpret_cast<const uint8_t *>(p->get()),
+                reinterpret_cast<const uint8_t *>(p->get()) + p->size()};
+    } else {
+        return {};
+    }
+}

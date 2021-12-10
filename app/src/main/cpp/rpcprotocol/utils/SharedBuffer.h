@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <atomic>
 #include <memory>
+#include <cstdint>
+#include <vector>
 
 class SharedBufferImpl;
 
@@ -55,6 +57,8 @@ public:
             throw std::bad_alloc();
         }
     }
+
+    [[nodiscard]] std::vector<uint8_t> toVector() const;
 
     [[nodiscard]] bool resetSize(size_t size, bool keepContent = true) noexcept;
 

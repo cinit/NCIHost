@@ -117,6 +117,17 @@ public:
         return false;
     }
 
+    [[nodiscard]] inline const SharedBuffer &getRawResultBuffer() const noexcept {
+        return mArgsBuffer;
+    }
+
+    inline void setRawResultBuffer(const SharedBuffer &buffer) noexcept {
+        mArgsBuffer = buffer;
+        mHasException = false;
+        mErrorCode = 0;
+        mIsValid = true;
+    }
+
     inline void reset() noexcept {
         mIsValid = false;
         mHasException = false;
@@ -148,6 +159,14 @@ public:
     ~TypedLpcResult() = default;
 
     inline TypedLpcResult(const LpcResult &result) : mResult(result) {
+    }
+
+    [[nodiscard]] inline const LpcResult &getRawResult() const noexcept {
+        return mResult;
+    }
+
+    [[nodiscard]] inline LpcResult &getRawResult() noexcept {
+        return mResult;
     }
 
     [[nodiscard]] inline bool isValid() const noexcept {
@@ -222,6 +241,14 @@ public:
     explicit TypedLpcResult(const LpcResult &result) : mResult(result) {
     }
 
+    [[nodiscard]] inline const LpcResult &getRawResult() const noexcept {
+        return mResult;
+    }
+
+    [[nodiscard]] inline LpcResult &getRawResult() noexcept {
+        return mResult;
+    }
+
     [[nodiscard]] inline bool isValid() const noexcept {
         return mResult.isValid();
     }
@@ -244,7 +271,7 @@ public:
 
     static TypedLpcResult<void> throwException(const RemoteException &exception) {
         TypedLpcResult<void> result;
-        result.throwException(exception);
+        result.setException(exception);
         return result;
     }
 
