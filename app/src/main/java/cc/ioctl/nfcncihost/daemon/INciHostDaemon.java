@@ -56,6 +56,25 @@ public interface INciHostDaemon {
             public int getValue() {
                 return value;
             }
+
+            public static IoOperationType fromValue(int v) {
+                switch (v) {
+                    case 1:
+                        return OPEN;
+                    case 2:
+                        return CLOSE;
+                    case 3:
+                        return READ;
+                    case 4:
+                        return WRITE;
+                    case 5:
+                        return IOCTL;
+                    case 6:
+                        return SELECT;
+                    default:
+                        throw new IllegalArgumentException("Invalid value: " + v);
+                }
+            }
         }
 
         public int sequence;
@@ -91,14 +110,17 @@ public interface INciHostDaemon {
             // rfu ignored
             timestamp = ByteUtils.readInt64(raw.event, 8);
             int op = ByteUtils.readInt32(raw.event, 16);
-            opType = IoOperationType.values()[op - 1]; // 1-based
+            opType = IoOperationType.fromValue(op);
             fd = ByteUtils.readInt32(raw.event, 20);
             retValue = ByteUtils.readInt64(raw.event, 24);
             directArg1 = ByteUtils.readInt64(raw.event, 32);
             directArg2 = ByteUtils.readInt64(raw.event, 40);
+            int bufferLength = ByteUtils.readInt32(raw.event, 48);
             buffer = raw.payload;
+            if (bufferLength != (buffer == null ? 0 : buffer.length)) {
+                throw new IllegalArgumentException("buffer length mismatch");
+            }
         }
-
     }
 
     class RemoteDeathPacket implements NciHostDaemonProxy.NativeEventPacket {

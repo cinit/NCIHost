@@ -1,5 +1,6 @@
 package cc.ioctl.nfcncihost.activity.ui.dump;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
@@ -67,10 +71,9 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                 typeText = "IOCTL";
                 NciDumpViewModel.IoctlTransactionEvent ev = (NciDumpViewModel.IoctlTransactionEvent) event;
                 dataText.append("request: 0x").append(Integer.toHexString(ev.request));
-                dataText.append("\n");
-                dataText.append("arg: 0x").append(Long.toHexString(ev.arg));
+                dataText.append(" arg: 0x").append(Long.toHexString(ev.arg));
             } else if (event instanceof NciDumpViewModel.RawTransactionEvent) {
-                typeText = "RAW";
+                typeText = "???";
                 NciDumpViewModel.RawTransactionEvent ev = (NciDumpViewModel.RawTransactionEvent) event;
                 dataText.append(ev.direction);
                 dataText.append("\n");
@@ -81,7 +84,7 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                     case NCI_DATA: {
                         NciPacketDecoder.NciDataPacket pk = (NciPacketDecoder.NciDataPacket) ev.packet;
                         typeText = "DAT";
-                        dataText.append("conn: ").append(pk.connId).append(' ').append("credits: ").append(pk.credits);
+                        dataText.append("conn: ").append(pk.connId).append("  ").append("credits: ").append(pk.credits);
                         dataText.append("\npayload(").append(pk.data.length).append("): \n");
                         dataText.append(ByteUtils.bytesToHexString(pk.data));
                         break;
@@ -92,10 +95,9 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                         NciPacketDecoder.NciControlPacket pk = (NciPacketDecoder.NciControlPacket) ev.packet;
                         typeText = (pk.type == NciPacketDecoder.Type.NCI_CMD) ? "CMD"
                                 : ((pk.type == NciPacketDecoder.Type.NCI_NTF) ? "NTF" : "RSP");
-                        dataText.append(String.format(Locale.ROOT, "GID: 0x%02X", pk.groupId));
-                        dataText.append(' ');
-                        dataText.append(String.format(Locale.ROOT, "OID: 0x%02X", pk.opcodeId));
-                        dataText.append('\n');
+                        dataText.append(String.format(Locale.ROOT, "GID:0x%02X", pk.groupId));
+                        dataText.append("  ");
+                        dataText.append(String.format(Locale.ROOT, "OID:0x%02X", pk.opcodeId));
                         dataText.append("\npayload(").append(pk.data.length).append("): \n");
                         dataText.append(ByteUtils.bytesToHexString(pk.data));
                         break;
@@ -128,10 +130,17 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
+        Context context = inflater.getContext();
         mNciDumpViewModel = new ViewModelProvider(this).get(NciDumpViewModel.class);
         mBinding = FragmentMainDumpBinding.inflate(inflater, container, false);
-        mBinding.recyclerViewMainFragmentDumpList.setAdapter(mDumpAdapter);
         mNciDumpViewModel.getTransactionEvents().observe(getViewLifecycleOwner(), this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(context);
+        RecyclerView recyclerView = mBinding.recyclerViewMainFragmentDumpList;
+        recyclerView.setLayoutManager(layoutManager);
+        layoutManager.setOrientation(RecyclerView.VERTICAL);
+        recyclerView.addItemDecoration(new DividerItemDecoration(context, DividerItemDecoration.VERTICAL));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+        mBinding.recyclerViewMainFragmentDumpList.setAdapter(mDumpAdapter);
         return mBinding.getRoot();
     }
 

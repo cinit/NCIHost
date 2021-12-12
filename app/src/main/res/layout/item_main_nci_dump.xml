@@ -14,7 +14,8 @@
             android:id="@+id/textView_itemNciDump_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true" />
+            android:layout_alignParentStart="true"
+            android:textSize="11sp" />
 
         <TextView
             android:id="@+id/textView_itemNciDump_type"
@@ -28,7 +29,9 @@
         android:id="@+id/textView_itemNciDump_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="3dp"
+        android:textColor="?android:textColorPrimary"
+        android:textIsSelectable="true"
         android:typeface="monospace" />
 
 </LinearLayout>

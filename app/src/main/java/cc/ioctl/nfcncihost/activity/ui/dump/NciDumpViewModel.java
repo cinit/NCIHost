@@ -124,6 +124,7 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                     for (INciHostDaemon.IoEventPacket packet : historyList.events) {
                         mRawIoEventPackets.put(packet.sequence, packet);
                     }
+                    mLastRawEventSequence = historyList.events[historyList.events.length - 1].sequence;
                     start = historyList.events[historyList.events.length - 1].sequence + 1;
                 }
                 // if we got less than maxCountPerRequest, we have reached the end
@@ -203,6 +204,14 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
             // translate the events
             INciHostDaemon.IoEventPacket eventPacket = mRawIoEventPackets.get(mLastUpdateTransactionSequence + 1);
             if (eventPacket != null) {
+                boolean isFailedReadOrWrite = (eventPacket.opType == INciHostDaemon.IoEventPacket.IoOperationType.READ
+                        || eventPacket.opType == INciHostDaemon.IoEventPacket.IoOperationType.WRITE)
+                        && eventPacket.retValue < 0;
+                if (isFailedReadOrWrite) {
+                    // failed read or write, ignore
+                    mLastUpdateTransactionSequence++;
+                    continue;
+                }
                 NxpHalV2IoEventHandler.BaseEvent baseEvent = mNxpHalIoEventHandler.update(eventPacket);
                 if (baseEvent != null) {
                     if (baseEvent instanceof NxpHalV2IoEventHandler.WriteEvent
@@ -210,8 +219,14 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                         // NCI packet
                         Direction direction = (baseEvent instanceof NxpHalV2IoEventHandler.ReadEvent) ?
                                 Direction.DEVICE_TO_HOST : Direction.HOST_TO_DEVICE;
+                        byte[] data = (baseEvent instanceof NxpHalV2IoEventHandler.ReadEvent) ?
+                                ((NxpHalV2IoEventHandler.ReadEvent) baseEvent).data
+                                : ((NxpHalV2IoEventHandler.WriteEvent) baseEvent).data;
                         try {
-                            NciPacketDecoder.NciPacket packet = mNciPacketDecoder.decode(eventPacket.buffer);
+                            if (data == null) {
+                                throw new NciPacketDecoder.InvalidNciPacketException("buffer is null");
+                            }
+                            NciPacketDecoder.NciPacket packet = mNciPacketDecoder.decode(data);
                             if (packet != null) {
                                 NciTransactionEvent result = new NciTransactionEvent(eventPacket.sequence,
                                         eventPacket.timestamp, packet.type, direction, packet);
@@ -220,7 +235,7 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                         } catch (NciPacketDecoder.InvalidNciPacketException e) {
                             // decode failed, push as a raw event
                             RawTransactionEvent result = new RawTransactionEvent(eventPacket.sequence,
-                                    eventPacket.timestamp, direction, eventPacket.buffer);
+                                    eventPacket.timestamp, direction, data);
                             transactionEvents.add(result);
                         }
                     } else if (baseEvent instanceof NxpHalV2IoEventHandler.IoctlEvent) {
