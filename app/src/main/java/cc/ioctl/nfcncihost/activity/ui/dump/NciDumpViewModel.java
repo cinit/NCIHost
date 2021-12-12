@@ -127,7 +127,7 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                     start = historyList.events[historyList.events.length - 1].sequence + 1;
                 }
                 // if we got less than maxCountPerRequest, we have reached the end
-            } while (historyList.events.length == maxCountPerRequest);
+            } while (historyList.events.length >= maxCountPerRequest);
             if (updated) {
                 // notify the observer
                 translateIoEvents();
@@ -163,7 +163,7 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                 start = historyList.events[historyList.events.length - 1].sequence + 1;
             }
             // if we got less than maxCountPerRequest, we have reached the end
-        } while (historyList.events.length == maxCountPerRequest);
+        } while (historyList.events.length >= maxCountPerRequest);
         // translate events to transactions
         translateIoEvents();
     }

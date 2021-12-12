@@ -47,10 +47,11 @@ private:
 
     template<int ...S, class ...Ts>
     static inline bool extract_arg_list(seq<S...>, const ArgList &args, std::tuple<Ts...> &vs) {
-        if ((true && ... && extract_arg<S, Ts...>(args, vs))) {
+        if constexpr (sizeof...(Ts) == 0) {
             return true;
+        } else {
+            return (extract_arg<S, Ts...>(args, vs) && ...);
         }
-        return false;
     }
 
 public:
@@ -82,8 +83,8 @@ public:
     static LpcResult invoke(Subject *that, const ArgList &args,
                             const std::function<TypedLpcResult<R>(Subject *, Ts...)> &func) {
         std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...> vs;
-        std::tuple<Ts...> vs_ref = vs;
         if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
+            std::tuple<Ts...> vs_ref = vs;
             return LpcResult(invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs_ref));
         } else {
             LpcResult result;
@@ -95,8 +96,8 @@ public:
     template<class R=void, class ...Ts>
     static void invoke(Subject *that, const ArgList &args, const std::function<void(Subject *, Ts...)> &func) {
         std::tuple<std::remove_cv_t<std::remove_reference_t<Ts>>...> vs;
-        std::tuple<Ts...> vs_ref = vs;
         if (extract_arg_list(typename gens<sizeof...(Ts)>::type(), args, vs)) {
+            std::tuple<Ts...> vs_ref = vs;
             invoke_forward(func, that, typename gens<sizeof...(Ts)>::type(), vs_ref);
         }
     }
