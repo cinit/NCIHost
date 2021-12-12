@@ -1,135 +1,138 @@
 package cc.ioctl.nfcncihost.activity.ui.dump;
 
-import android.content.res.Resources;
-import android.content.res.TypedArray;
-import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ScrollView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Locale;
 
 import cc.ioctl.nfcncihost.NativeInterface;
 import cc.ioctl.nfcncihost.daemon.INciHostDaemon;
 import cc.ioctl.nfcncihost.daemon.IpcNativeHandler;
-import cc.ioctl.nfcncihost.daemon.internal.NciHostDaemonProxy;
+import cc.ioctl.nfcncihost.databinding.FragmentMainDumpBinding;
+import cc.ioctl.nfcncihost.databinding.ItemMainNciDumpBinding;
+import cc.ioctl.nfcncihost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcncihost.util.ByteUtils;
-import cc.ioctl.nfcncihost.util.ThreadManager;
 
-public class NciDumpFragment extends Fragment {
+public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciDumpViewModel.TransactionEvent>> {
 
+    private NciDumpViewModel mNciDumpViewModel;
+    private FragmentMainDumpBinding mBinding;
+    private int mLastNciTransactionCount = 0;
 
-    TextView textView;
-    HashSet<Integer> plainTextFds = new HashSet<>();
-    HashMap<Integer, String> fileNames = new HashMap<>();
+    static class NciDumpViewHolder extends RecyclerView.ViewHolder {
+        public enum ViewType {
+            TRANSACTION,
+            IOCTL
+        }
 
-    private void appendIoEvent(NciHostDaemonProxy.IoEventPacket event) {
-        ThreadManager.runOnUiThread(() -> {
-            // date format HH:mm:ss.SSS
-            Date date = new Date(event.timestamp);
-            String time = String.format("%tT.%tL", date, date);
-            String operationName = ("" + event.opType).toLowerCase(Locale.ROOT);
-            String shortFileName = fileNames.get(event.fd);
-            switch (event.opType) {
-                case OPEN: {
-                    String fileName = new String(event.buffer, 0, event.buffer.length);
-                    if (!fileName.startsWith("/dev/")) {
-                        plainTextFds.add(event.fd);
+        public ViewType type;
+        public ItemMainNciDumpBinding binding;
+
+        public NciDumpViewHolder(ItemMainNciDumpBinding binding, ViewType type) {
+            super(binding.getRoot());
+            this.type = type;
+            this.binding = binding;
+        }
+    }
+
+    class NciDumpAdapter extends RecyclerView.Adapter<NciDumpViewHolder> {
+        @NonNull
+        @Override
+        public NciDumpViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            ItemMainNciDumpBinding binding = ItemMainNciDumpBinding.inflate(LayoutInflater.from(parent.getContext()),
+                    parent, false);
+            return new NciDumpViewHolder(binding, NciDumpViewHolder.ViewType.TRANSACTION);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
+            NciDumpViewModel.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
+            String seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+                    + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+            String typeText = "<INVALID>";
+            StringBuilder dataText = new StringBuilder();
+            if (event instanceof NciDumpViewModel.IoctlTransactionEvent) {
+                typeText = "IOCTL";
+                NciDumpViewModel.IoctlTransactionEvent ev = (NciDumpViewModel.IoctlTransactionEvent) event;
+                dataText.append("request: 0x").append(Integer.toHexString(ev.request));
+                dataText.append("\n");
+                dataText.append("arg: 0x").append(Long.toHexString(ev.arg));
+            } else if (event instanceof NciDumpViewModel.RawTransactionEvent) {
+                typeText = "RAW";
+                NciDumpViewModel.RawTransactionEvent ev = (NciDumpViewModel.RawTransactionEvent) event;
+                dataText.append(ev.direction);
+                dataText.append("\n");
+                dataText.append(ByteUtils.bytesToHexString(ev.data));
+            } else if (event instanceof NciDumpViewModel.NciTransactionEvent) {
+                NciDumpViewModel.NciTransactionEvent ev = (NciDumpViewModel.NciTransactionEvent) event;
+                switch (ev.type) {
+                    case NCI_DATA: {
+                        NciPacketDecoder.NciDataPacket pk = (NciPacketDecoder.NciDataPacket) ev.packet;
+                        typeText = "DAT";
+                        dataText.append("conn: ").append(pk.connId).append(' ').append("credits: ").append(pk.credits);
+                        dataText.append("\npayload(").append(pk.data.length).append("): \n");
+                        dataText.append(ByteUtils.bytesToHexString(pk.data));
+                        break;
                     }
-                    String shortFileName2 = fileName.split("/")[fileName.split("/").length - 1];
-                    fileNames.put(event.fd, shortFileName2);
-                    textView.append(time + ": " + operationName
-                            + "(" + (shortFileName == null ? event.fd : shortFileName) + "): " + fileName);
-                    break;
-                }
-                case CLOSE: {
-                    plainTextFds.remove(event.fd);
-                    textView.append(time + ": " + operationName + "("
-                            + event.fd + ")" + (shortFileName == null ? "" : ": " + shortFileName));
-                    break;
-                }
-                case READ:
-                case WRITE: {
-                    if (plainTextFds.contains(event.fd)) {
-                        String data = new String(event.buffer, 0, event.buffer.length);
-                        textView.append(time + ": " + operationName
-                                + "(" + (shortFileName == null ? event.fd : shortFileName) + "): \"" + data + "\"");
-                    } else {
-                        // hex
-                        String data = ByteUtils.bytesToHexString(event.buffer);
-                        textView.append(time + ": " + operationName
-                                + "(" + (shortFileName == null ? event.fd : shortFileName) + "): " + data + "");
+                    case NCI_NTF:
+                    case NCI_RSP:
+                    case NCI_CMD: {
+                        NciPacketDecoder.NciControlPacket pk = (NciPacketDecoder.NciControlPacket) ev.packet;
+                        typeText = (pk.type == NciPacketDecoder.Type.NCI_CMD) ? "CMD"
+                                : ((pk.type == NciPacketDecoder.Type.NCI_NTF) ? "NTF" : "RSP");
+                        dataText.append(String.format(Locale.ROOT, "GID: 0x%02X", pk.groupId));
+                        dataText.append(' ');
+                        dataText.append(String.format(Locale.ROOT, "OID: 0x%02X", pk.opcodeId));
+                        dataText.append('\n');
+                        dataText.append("\npayload(").append(pk.data.length).append("): \n");
+                        dataText.append(ByteUtils.bytesToHexString(pk.data));
+                        break;
                     }
-                    break;
-                }
-                case IOCTL: {
-                    int request = (int) event.directArg1;
-                    long arg = event.directArg2;
-                    textView.append(time + ": " + operationName
-                            + "(" + (shortFileName == null ? event.fd : shortFileName) + "): request="
-                            + Integer.toHexString(request) + ", arg=" + Long.toHexString(arg)
-                            + ", ret=" + Long.toHexString(event.retValue));
-                    break;
-                }
-                case SELECT: {
-                    textView.append(time + ": " + operationName + "(...)");
-                    break;
-                }
-                default: {
-                    textView.append(time + ": " + operationName + "(" + event.fd + ")");
+                    default: {
+                        typeText = "<UNKNOWN>";
+                        dataText.append(ev.packet.toString());
+                    }
                 }
             }
-            textView.append("\n");
-        });
+            holder.binding.textViewItemNciDumpTime.setText(seqTime);
+            holder.binding.textViewItemNciDumpType.setText(typeText);
+            holder.binding.textViewItemNciDumpMessage.setText(dataText.toString());
+        }
+
+        @Override
+        public int getItemCount() {
+            return mNciDumpViewModel.getTransactionEvents().getValue().size();
+        }
     }
 
-    private void appendDeathEvent(NciHostDaemonProxy.RemoteDeathPacket event) {
-        getActivity().runOnUiThread(() -> {
-            textView.append("*** REMOTE DEATH PID:" + event.pid + " ***");
-        });
+    @Override
+    public void onChanged(ArrayList<NciDumpViewModel.TransactionEvent> transactionEvents) {
+        mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
+        mLastNciTransactionCount = transactionEvents.size();
     }
+
+    private final NciDumpAdapter mDumpAdapter = new NciDumpAdapter();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-//        homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
-//        View root = inflater.inflate(R.layout.fragment_home, container, false);
-//        final TextView textView = root.findViewById(R.id.text_home);
-//        homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
-////        Activity activity = getActivity();
-//        return root;
-        textView = new TextView(getActivity());
-        textView.setText("");
-        textView.setTextSize(12);
-        // Get the primary text color of the theme
-        TypedValue typedValue = new TypedValue();
-        Resources.Theme theme = getActivity().getTheme();
-        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
-        TypedArray arr = getActivity().obtainStyledAttributes(typedValue.data, new int[]{
-                android.R.attr.textColorPrimary});
-        int primaryColor = arr.getColor(0, -1);
-        textView.setTextColor(primaryColor);
-        arr.recycle();
-        textView.setTypeface(Typeface.MONOSPACE);
-        textView.setTextIsSelectable(true);
-        // wrap in scroll view
-        ScrollView scrollView = new ScrollView(getActivity());
-        scrollView.addView(textView, new ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        return scrollView;
+        mNciDumpViewModel = new ViewModelProvider(this).get(NciDumpViewModel.class);
+        mBinding = FragmentMainDumpBinding.inflate(inflater, container, false);
+        mBinding.recyclerViewMainFragmentDumpList.setAdapter(mDumpAdapter);
+        mNciDumpViewModel.getTransactionEvents().observe(getViewLifecycleOwner(), this);
+        return mBinding.getRoot();
     }
 
     @Override
@@ -140,29 +143,18 @@ public class NciDumpFragment extends Fragment {
             if (!daemon.isHwServiceConnected()) {
                 StringBuilder sb = new StringBuilder();
                 try {
+                    // TODO: 2021-12-11 dynamically detect the architecture of the HW service
                     File patchFile = NativeInterface.getNfcHalServicePatchFile(
                             NativeInterface.NfcHalServicePatch.NXP_PATCH,
                             NativeInterface.ABI.ABI_ARM_64);
                     boolean isNfcConn = daemon.initHwServiceConnection(patchFile.getAbsolutePath());
                     sb.append("isNfcConn: ").append(isNfcConn).append("\n");
                 } catch (RuntimeException | IOException re) {
-                    sb.append("initHwServiceConnection failed: ").append(re.toString());
+                    sb.append("initHwServiceConnection failed: ").append(re);
                 }
                 Toast.makeText(getActivity(), sb.toString(), Toast.LENGTH_SHORT).show();
             }
-            if (daemon.isHwServiceConnected()) {
-                daemon.registerRemoteEventListener(new INciHostDaemon.OnRemoteEventListener() {
-                    @Override
-                    public void onIoEvent(NciHostDaemonProxy.IoEventPacket event) {
-                        appendIoEvent(event);
-                    }
-
-                    @Override
-                    public void onRemoteDeath(NciHostDaemonProxy.RemoteDeathPacket event) {
-                        appendDeathEvent(event);
-                    }
-                });
-            }
+            mNciDumpViewModel.synchronizeIoEvents();
         } else {
             Toast.makeText(getActivity(), "failed to connect to daemon", Toast.LENGTH_SHORT).show();
         }

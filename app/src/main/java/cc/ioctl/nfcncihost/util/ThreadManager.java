@@ -8,10 +8,12 @@ import androidx.annotation.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ThreadManager {
-    private static final ExecutorService sExecutor = Executors.newCachedThreadPool();
+    private static final ExecutorService sExecutor = new ThreadPoolExecutor(2, 64, 60, TimeUnit.SECONDS, new SynchronousQueue<>());
 
     /**
      * Executes the given runnable on a background thread.

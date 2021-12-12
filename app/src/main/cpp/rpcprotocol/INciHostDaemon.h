@@ -21,8 +21,8 @@ public:
 
     class HistoryIoOperationEventList {
     public:
-        uint32_t totalStartIndex;
-        uint32_t totalCount;
+        uint32_t totalStartIndex = 0;
+        uint32_t totalCount = 0;
         std::vector<halpatch::IoOperationEvent> events; // contains index and length
         std::vector<std::vector<uint8_t>> payloads;
 

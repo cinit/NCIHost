@@ -268,7 +268,7 @@ public:
 
         ArgList::Builder &push(const char *value);
 
-        template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+        template<class T, uint32_t TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
                 Types::isImmediateValue(TypeId), T>>
         ArgList::Builder &push(T value) {
             // immediate value
@@ -276,7 +276,7 @@ public:
             return *this;
         }
 
-        template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+        template<class T, uint32_t TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
                 Types::isStructure(TypeId) || Types::isSerializedBuffer(TypeId), T>>
         ArgList::Builder &push(const T &value) {
             if constexpr(Types::isStructure(TypeId)) {
@@ -364,7 +364,7 @@ public:
      * @param index the argument index
      * @return true if success, false if failed
      */
-    template<class T, int TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
+    template<class T, uint32_t TypeId = Types::getTypeId<T>(), typename CheckType=std::enable_if_t<
             Types::isImmediateValue(TypeId) || Types::isStructure(TypeId) || Types::isSerializedBuffer(TypeId), T>>
     [[nodiscard]] inline bool get(T *out, int index) const {
         uint64_t reg = 0;

@@ -120,7 +120,7 @@ NciHostDaemonImpl::getHistoryIoOperations(uint32_t start, uint32_t length) {
     HistoryIoOperationEventList list;
     auto sp = NxpHalHandler::getWeakInstance();
     NxpHalHandler *handler;
-    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast< NxpHalHandler *> (p))) {
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *> (p))) {
         list = handler->getHistoryIoOperationEvents(start, length);
     }
     return {list};
