@@ -170,6 +170,14 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDae
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    clearHistoryIoEvents
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_clearHistoryIoEvents
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    waitForEvent
  * Signature: ()Lcc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
  */

@@ -95,6 +95,10 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
             }));
             return true;
         }
+        case Ids::clearHistoryIoEvents: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->clearHistoryIoEvents(); }));
+            return true;
+        }
         default:
             return false;
     }
@@ -206,4 +210,14 @@ TypedLpcResult<bool> NciHostDaemonImpl::initHwServiceConnection(const std::strin
         }
     }
     return true;
+}
+
+TypedLpcResult<bool> NciHostDaemonImpl::clearHistoryIoEvents() {
+    auto sp = NxpHalHandler::getWeakInstance();
+    NxpHalHandler *handler;
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *>(p))) {
+        handler->clearHistoryIoOperationEvents();
+        return {true};
+    }
+    return {false};
 }

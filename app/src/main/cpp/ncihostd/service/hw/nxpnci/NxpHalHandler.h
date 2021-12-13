@@ -23,7 +23,7 @@ public:
     static constexpr const char *TARGET_SO_NAME = "nfc_nci.nqx.default.hw.so";
     static constexpr const char *INIT_SYMBOL = "nxp_hal_patch_inject_init";
     static constexpr const char *DEV_PATH = "/dev/nq-nci";
-    static constexpr ssize_t MAX_HISTORY_EVENT_SIZE = 500;
+    static constexpr ssize_t MAX_HISTORY_EVENT_SIZE = 2000;
 
     using StartupInfo = BaseHwHalHandler::StartupInfo;
 
@@ -49,6 +49,8 @@ public:
 
     [[nodiscard]] ipcprotocol::INciHostDaemon::HistoryIoOperationEventList
     getHistoryIoOperationEvents(uint32_t start, uint32_t count);
+
+    void clearHistoryIoOperationEvents();
 
     [[nodiscard]] static HwServiceStatus getHwServiceStatus();
 

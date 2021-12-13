@@ -59,7 +59,10 @@ public:
     virtual TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) = 0;
 
     [[nodiscard]]
-    virtual TypedLpcResult <HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) = 0;
+    virtual TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> clearHistoryIoEvents() = 0;
 
     class TransactionIds {
     public:
@@ -72,6 +75,7 @@ public:
         static constexpr uint32_t initHwServiceConnection = 12;
         static constexpr uint32_t getSelfPid = 13;
         static constexpr uint32_t getHistoryIoOperations = 14;
+        static constexpr uint32_t clearHistoryIoEvents = 15;
     };
 };
 

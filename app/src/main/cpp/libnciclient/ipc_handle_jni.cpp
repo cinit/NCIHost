@@ -61,6 +61,9 @@ bool jniThrowLpcResultErrorOrException(JNIEnv *env, const TypedLpcResult<T> &res
             case LpcErrorCode::ERR_TIMEOUT_IN_CRITICAL_CONTEXT:
                 msg = "ERR_TIMEOUT_IN_CRITICAL_CONTEXT";
                 break;
+            case LpcErrorCode::ERR_UNKNOWN_REQUEST:
+                msg = "ERR_UNKNOWN_REQUEST";
+                break;
             default:
                 msg = std::string("unknown error: ") + std::to_string(err);
         }
@@ -585,7 +588,7 @@ Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_getIpcPidFileFD
  * Method:    ntGetHistoryIoEvents
  * Signature: (II)Lcc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy/RawHistoryIoEventList;
  */
-extern "C" [[maybe_unused]] JNIEXPORT  jobject JNICALL
+extern "C" [[maybe_unused]] JNIEXPORT jobject JNICALL
 Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
         (JNIEnv *env, jobject, jint reqStartIndex, jint reqCount) {
     IpcConnector &connector = IpcConnector::getInstance();
@@ -593,7 +596,7 @@ Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEve
     if (proxy == nullptr) {
         env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
                       "attempt to transact while proxy object not available");
-        return 0;
+        return nullptr;
     } else {
         if (auto lpcResult = proxy->getHistoryIoOperations(uint32_t(reqStartIndex), uint32_t(reqCount));
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
@@ -624,6 +627,36 @@ Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEve
                     env->SetObjectArrayElement(array, i, event);
                 }
                 return env->NewObject(clRawEventList, ctorList, jint(totalStart), jint(totalCount), array);
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return nullptr;
+            }
+        }
+        return nullptr;
+    }
+}
+
+/*
+* Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+* Method:    clearHistoryIoEvents
+* Signature: ()Z
+*/
+extern "C" [[maybe_unused]]  JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_clearHistoryIoEvents
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->clearHistoryIoEvents();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
+            if (lpcResult.getResult(&r)) {
+                return r;
             } else {
                 env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
                               "error while read data from LpcResult");

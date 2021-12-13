@@ -2,22 +2,34 @@ package cc.ioctl.nfcdevicehost.activity.ui.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentHomeBinding;
+import cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc;
 
 public class HomeFragment extends Fragment {
 
     private HomeViewModel mHomeViewModel;
     private FragmentHomeBinding mHomeBinding;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -47,5 +59,26 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         updateUiState();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_fragment_home, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_tmp_start: {
+                NfcCardEmuFgSvc.requestStartEmulation(requireActivity(), "0");
+                return true;
+            }
+            case R.id.action_tmp_stop: {
+                NfcCardEmuFgSvc.requestStopEmulation(requireActivity());
+                return true;
+            }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

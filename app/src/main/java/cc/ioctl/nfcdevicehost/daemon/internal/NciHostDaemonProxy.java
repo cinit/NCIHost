@@ -113,5 +113,8 @@ public class NciHostDaemonProxy implements INciHostDaemon {
         return list;
     }
 
+    @Override
+    public native boolean clearHistoryIoEvents();
+
     public native NativeEventPacket waitForEvent() throws IOException;
 }

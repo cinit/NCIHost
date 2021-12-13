@@ -261,4 +261,20 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
         return mTransactionEvents;
     }
 
+    public void clearTransactionEvents() {
+        INciHostDaemon daemon = IpcNativeHandler.peekConnection();
+        if (daemon != null) {
+            daemon.clearHistoryIoEvents();
+        }
+        mLastRawEventSequence = 0;
+        mLastUpdateTransactionSequence = 0;
+        mLastSuccessTransactionSequence = 0;
+        mRawIoEventPackets.clear();
+        ArrayList<TransactionEvent> transactionEvents = mTransactionEvents.getValue();
+        if (transactionEvents != null) {
+            transactionEvents.clear();
+            mTransactionEvents.postValue(transactionEvents);
+        }
+    }
+
 }

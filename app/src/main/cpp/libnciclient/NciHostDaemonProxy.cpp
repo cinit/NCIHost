@@ -49,3 +49,7 @@ NciHostDaemonProxy::getHistoryIoOperations(uint32_t start, uint32_t length) {
     return invokeRemoteProcedure<INciHostDaemon::HistoryIoOperationEventList, const uint32_t &, const uint32_t &>(
             Ids::getHistoryIoOperations, start, length);
 }
+
+TypedLpcResult<bool> NciHostDaemonProxy::clearHistoryIoEvents() {
+    return invokeRemoteProcedure<bool>(Ids::clearHistoryIoEvents);
+}

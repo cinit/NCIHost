@@ -46,6 +46,8 @@ public:
     TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) override;
 
     TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) override;
+
+    TypedLpcResult<bool> clearHistoryIoEvents() override;
 };
 
 }

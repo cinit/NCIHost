@@ -46,4 +46,6 @@ By using this application, you accept all responsibility using it and agree that
     <string name="name_nfc_emu_svc">NFC Card Emulation Service</string>
     <string name="action_start">Start</string>
     <string name="action_exit">Exit</string>
+    <string name="action_clear_history_events">Clear</string>
+    <string name="action_save_as">Save as file</string>
 </resources>

@@ -110,7 +110,6 @@ public class MainUiFragmentActivity extends BaseActivity {
                 .show();
         // try request root permission
         ThreadManager.execute(() -> {
-            requestDialog.dismiss();
             String errMsg;
             try {
                 INciHostDaemon daemon = IpcNativeHandler.startDaemonWithRootShell();
@@ -127,13 +126,15 @@ public class MainUiFragmentActivity extends BaseActivity {
                             .setPositiveButton(android.R.string.ok, null).show();
                 });
             }
+            requestDialog.dismiss();
         });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.dashboard, menu);
+        getMenuInflater().inflate(R.menu.menu_activity_main_ui_common, menu);
         return true;
     }
 
@@ -150,14 +151,6 @@ public class MainUiFragmentActivity extends BaseActivity {
         switch (item.getItemId()) {
             case R.id.action_settings: {
                 startActivity(new Intent(this, SettingsActivity.class));
-                return true;
-            }
-            case R.id.action_tmp_start: {
-                NfcCardEmuFgSvc.requestStartEmulation(this, "0");
-                return true;
-            }
-            case R.id.action_tmp_stop: {
-                NfcCardEmuFgSvc.requestStopEmulation(this);
                 return true;
             }
             case R.id.action_exit: {

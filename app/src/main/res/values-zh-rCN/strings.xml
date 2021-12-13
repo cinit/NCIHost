@@ -18,5 +18,7 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ntf_title_nfc_emu">NFC模拟</string>
     <string name="ntf_text_req_perm">正在请求权限…</string>
     <string name="action_exit">退出</string>
+    <string name="action_clear_history_events">清空</string>
+    <string name="action_save_as">保存…</string>
 
 </resources>

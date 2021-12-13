@@ -164,3 +164,8 @@ INciHostDaemon::HistoryIoOperationEventList NxpHalHandler::getHistoryIoOperation
     }
     return result;
 }
+
+void NxpHalHandler::clearHistoryIoOperationEvents() {
+    std::scoped_lock lock(mEventMutex);
+    mHistoryIoEvents.clear();
+}

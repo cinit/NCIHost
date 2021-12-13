@@ -1,13 +1,19 @@
 package cc.ioctl.nfcdevicehost.activity.ui.dump;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -22,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import cc.ioctl.nfcdevicehost.NativeInterface;
+import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
@@ -105,10 +112,11 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                             name += " " + String.format(Locale.ROOT, "GID:0x%02X", pk.groupId)
                                     + " " + String.format(Locale.ROOT, "OID:0x%02X", pk.opcodeId);
                         } else {
-                            name += "(" + Integer.toHexString(pk.groupId) + ":" + Integer.toHexString(pk.opcodeId) + ")";
+                            name += " (" + String.format(Locale.ROOT, "0x%02X", pk.groupId)
+                                    + "/" + String.format(Locale.ROOT, "0x%02X", pk.opcodeId) + ")";
                         }
-                        dataText.append(name).append('\n');
-                        dataText.append("\npayload(").append(pk.data.length).append("): \n");
+                        dataText.append(name);
+                        dataText.append("\npayload(").append(pk.data.length).append(")\n");
                         dataText.append(ByteUtils.bytesToHexString(pk.data));
                         break;
                     }
@@ -129,13 +137,26 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onChanged(ArrayList<NciDumpViewModel.TransactionEvent> transactionEvents) {
-        mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
+        int delta = transactionEvents.size() - mLastNciTransactionCount;
+        if (delta > 0) {
+            mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
+        } else {
+            // remove items, should be empty now
+            mDumpAdapter.notifyDataSetChanged();
+        }
         mLastNciTransactionCount = transactionEvents.size();
     }
 
     private final NciDumpAdapter mDumpAdapter = new NciDumpAdapter();
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -176,6 +197,32 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
             mNciDumpViewModel.synchronizeIoEvents();
         } else {
             Toast.makeText(getActivity(), "failed to connect to daemon", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        requireActivity().getMenuInflater().inflate(R.menu.menu_main_fragment_dump, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_clear: {
+                mNciDumpViewModel.clearTransactionEvents();
+                return true;
+            }
+            case R.id.action_save: {
+                // TODO: save as file
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Save")
+                        .setMessage("Not implemented yet")
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show();
+                return true;
+            }
+            default:
+                return super.onContextItemSelected(item);
         }
     }
 }

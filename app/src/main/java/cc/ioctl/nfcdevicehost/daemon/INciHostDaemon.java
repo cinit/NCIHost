@@ -26,6 +26,8 @@ public interface INciHostDaemon {
 
     HistoryIoEventList getHistoryIoEvents(int startIndex, int count);
 
+    boolean clearHistoryIoEvents();
+
     boolean initHwServiceConnection(String soPath) throws IOException;
 
     interface OnRemoteEventListener {
