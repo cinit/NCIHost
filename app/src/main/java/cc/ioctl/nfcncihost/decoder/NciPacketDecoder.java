@@ -53,6 +53,21 @@ public class NciPacketDecoder {
                     return UNKNOWN;
             }
         }
+
+        public int getInt() {
+            switch (this) {
+                case NCI_DATA:
+                    return 0x00;
+                case NCI_CMD:
+                    return 0x01;
+                case NCI_RSP:
+                    return 0x02;
+                case NCI_NTF:
+                    return 0x03;
+                default:
+                    return -1;
+            }
+        }
     }
 
     public static class NciPacket {
@@ -243,5 +258,181 @@ public class NciPacketDecoder {
                 return null;
             }
         }
+    }
+
+    /**
+     * Get the operation name of a control packet.
+     *
+     * @param type message type, maybe 1, 2 or 3
+     * @param gid  group id
+     * @param oid  opcode id
+     * @return the operation name if found, null otherwise
+     */
+    public static String getNciOperationName(int type, int gid, int oid) {
+        String suffix;
+        switch (type) {
+            case 1:
+                suffix = "_CMD";
+                break;
+            case 2:
+                suffix = "_RSP";
+                break;
+            case 3:
+                suffix = "_NTF";
+                break;
+            default:
+                // unknown message type
+                return null;
+        }
+        String prefix;
+        if (gid == 0x00) {
+            // NCI core group
+            switch (oid) {
+                case 0b000000:
+                    prefix = "CORE_RESET";
+                    break;
+                case 0b000001:
+                    prefix = "CORE_INIT";
+                    break;
+                case 0b000010:
+                    prefix = "CORE_SET_CONFIG";
+                    break;
+                case 0b000011:
+                    prefix = "CORE_GET_CONFIG";
+                    break;
+                case 0b000100:
+                    prefix = "CORE_CONN_CREATE";
+                    break;
+                case 0b000101:
+                    prefix = "CORE_CONN_CLOSE";
+                    break;
+                case 0b000110:
+                    prefix = "CORE_CONN_CREDITS";
+                    break;
+                case 0b000111:
+                    prefix = "CORE_GENERIC_ERROR";
+                    break;
+                case 0b001000:
+                    prefix = "CORE_INTERFACE_ERROR";
+                    break;
+                case 0b001001:
+                    prefix = "CORE_SET_POWER_SUB_STATE";
+                    break;
+                default:
+                    // unknown core opcode
+                    return null;
+            }
+        } else if (gid == 0x01) {
+            // RF Management
+            switch (oid) {
+                case 0b000000:
+                    prefix = "RF_DISCOVER_MAP";
+                    break;
+                case 0b000001:
+                    prefix = "RF_SET_LISTEN_MODE_ROUTING";
+                    break;
+                case 0b000010:
+                    prefix = "RF_GET_LISTEN_MODE_ROUTING";
+                    break;
+                case 0b000011:
+                    prefix = "RF_DISCOVER";
+                    break;
+                case 0b000100:
+                    prefix = "RF_DISCOVER_SELECT";
+                    break;
+                case 0b000101:
+                    prefix = "RF_INTF_ACTIVATED";
+                    break;
+                case 0b000110:
+                    prefix = "RF_DEACTIVATE";
+                    break;
+                case 0b000111:
+                    prefix = "RF_FIELD_INFO";
+                    break;
+                case 0b001000:
+                    prefix = "RF_T3T_POLLING";
+                    break;
+                case 0b001001:
+                    prefix = "RF_NFCEE_ACTION";
+                    break;
+                case 0b001010:
+                    prefix = "RF_NFCEE_DISCOVERY_REQ";
+                    break;
+                case 0b001011:
+                    prefix = "RF_PARAMETER_UPDATE";
+                    break;
+                case 0b001100:
+                    prefix = "RF_INTF_EXT_START";
+                    break;
+                case 0b001101:
+                    prefix = "RF_INTF_EXT_STOP";
+                    break;
+                case 0b001110:
+                    prefix = "RF_EXT_AGG_ABORT";
+                    break;
+                case 0b001111:
+                    prefix = "RF_NDEF_ABORT";
+                    break;
+                case 0b010000:
+                    prefix = "RF_ISO_DEP_NAK_PRESENCE";
+                    break;
+                case 0b010001:
+                    prefix = "RF_SET_FORCED_NFCEE_ROUTING";
+                    break;
+                default:
+                    // unknown RF opcode
+                    return null;
+            }
+        } else if (gid == 0x02) {
+            // NFCEE Management group
+            //NFCEE_DISCOVER_CMD
+            //NFCEE_DISCOVER_RSP
+            //NFCEE_DISCOVER_NTF
+            //NFCEE_MODE_SET_CMD
+            //NFCEE_MODE_SET_RSP
+            //NFCEE_MODE_SET_NTF
+            //NFCEE_STATUS_NTF
+            //NFCEE_POWER_AND_LINK_CNTRL_CMD
+            //NFCEE_POWER_AND_LINK_CNTRL_RSP
+            switch (oid) {
+                case 0b000000:
+                    prefix = "NFCEE_DISCOVER";
+                    break;
+                case 0b000001:
+                    prefix = "NFCEE_MODE_SET";
+                    break;
+                case 0b000010:
+                    prefix = "NFCEE_STATUS";
+                    break;
+                case 0b000011:
+                    prefix = "NFCEE_POWER_AND_LINK_CNTRL";
+                    break;
+                default:
+                    // unknown NFCEE opcode
+                    return null;
+            }
+        } else {
+            // unknown group
+            return null;
+        }
+        if (prefix != null && suffix != null) {
+            return prefix + suffix;
+        } else {
+            return null;
+        }
+    }
+
+    public static boolean isNciOperationProprietary(int type, int gid, int oid) {
+        if (gid == 0b0011) {
+            // 100000b-111111b
+            return (oid & 0b111111) == 0b100000;
+        } else if (gid == 0b0100) {
+            // 100000b-111111b
+            return (oid & 0b111111) == 0b100000;
+        } else if (gid == 0b1111) {
+            // Proprietary group
+            return true;
+        }
+        return false;
     }
 }

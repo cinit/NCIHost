@@ -95,9 +95,19 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                         NciPacketDecoder.NciControlPacket pk = (NciPacketDecoder.NciControlPacket) ev.packet;
                         typeText = (pk.type == NciPacketDecoder.Type.NCI_CMD) ? "CMD"
                                 : ((pk.type == NciPacketDecoder.Type.NCI_NTF) ? "NTF" : "RSP");
-                        dataText.append(String.format(Locale.ROOT, "GID:0x%02X", pk.groupId));
-                        dataText.append("  ");
-                        dataText.append(String.format(Locale.ROOT, "OID:0x%02X", pk.opcodeId));
+                        int msgType = pk.type.getInt();
+                        String name = NciPacketDecoder.getNciOperationName(msgType, pk.groupId, pk.opcodeId);
+                        if (name == null) {
+                            name = "Unknown";
+                            if (NciPacketDecoder.isNciOperationProprietary(msgType, pk.groupId, pk.opcodeId)) {
+                                name += " Proprietary";
+                            }
+                            name += " " + String.format(Locale.ROOT, "GID:0x%02X", pk.groupId)
+                                    + " " + String.format(Locale.ROOT, "OID:0x%02X", pk.opcodeId);
+                        } else {
+                            name += "(" + Integer.toHexString(pk.groupId) + ":" + Integer.toHexString(pk.opcodeId) + ")";
+                        }
+                        dataText.append(name).append('\n');
                         dataText.append("\npayload(").append(pk.data.length).append("): \n");
                         dataText.append(ByteUtils.bytesToHexString(pk.data));
                         break;
