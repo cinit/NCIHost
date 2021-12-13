@@ -129,7 +129,7 @@ extern "C" [[maybe_unused]] JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntInitForSocketDir
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_ntInitForSocketDir
         (JNIEnv *env, jclass clazz, jstring name) {
     char buf[256];
     int len = env->GetStringLength(name);
@@ -141,7 +141,7 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntInitForSocketDir
     if (dirPath == nullptr) {
         return;// with exception
     }
-    jclass cUtils = env->FindClass("cc/ioctl/nfcncihost/util/Utils");
+    jclass cUtils = env->FindClass("cc/ioctl/nfcdevicehost/util/Utils");
     jstring uuid = (jstring) env->
             CallStaticObjectMethod(cUtils, env->
             GetStaticMethodID(cUtils, "generateUuid", "()Ljava/lang/String;"));
@@ -159,14 +159,14 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntInitForSocketDir
 
 
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntPeekConnection
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_ntPeekConnection
         (JNIEnv *env, jclass clazz) {
     IpcConnector &connector = IpcConnector::getInstance();
     return connector.isConnected();
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntRequestConnection
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_ntRequestConnection
         (JNIEnv *env, jclass) {
     IpcConnector &connector = IpcConnector::getInstance();
     if (connector.isInitialized()) {
@@ -190,7 +190,7 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntRequestConnection
 }
 
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntWaitForConnection
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_ntWaitForConnection
         (JNIEnv *env, jclass, jint timeout) {
     IpcConnector &connector = IpcConnector::getInstance();
     if (connector.isInitialized()) {
@@ -202,24 +202,24 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_ntWaitForConnection
     }
 }
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    isConnected
  * Signature: ()Z
  */
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isConnected
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_isConnected
         (JNIEnv *, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     return connector.isConnected();
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    getVersionName
  * Signature: ()Ljava/lang/String;
  */
 extern "C" [[maybe_unused]] JNIEXPORT jstring JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getVersionName
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getVersionName
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -244,12 +244,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getVersionName
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    getVersionCode
  * Signature: ()I
  */
 extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getVersionCode
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getVersionCode
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -274,12 +274,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getVersionCode
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    getBuildUuid
  * Signature: ()Ljava/lang/String;
  */
 extern "C" [[maybe_unused]] JNIEXPORT jstring JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getBuildUuid
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getBuildUuid
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -304,12 +304,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getBuildUuid
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    getSelfPid
  * Signature: ()I
  */
 extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getSelfPid
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getSelfPid
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -334,12 +334,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_getSelfPid
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    exitProcess
  * Signature: ()V
  */
 extern "C" [[maybe_unused]] JNIEXPORT void JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_exitProcess
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_exitProcess
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -360,12 +360,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_exitProcess
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    isDeviceSupported
  * Signature: ()Z
  */
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isDeviceSupported
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_isDeviceSupported
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -390,12 +390,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isDeviceSupported
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    isHwServiceConnected
  * Signature: ()Z
  */
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -420,12 +420,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    initHwServiceConnection
  * Signature: (Ljava/lang/String;)Z
  */
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
         (JNIEnv *env, jobject, jstring jstrSoPath) {
     if (jstrSoPath == nullptr) {
         env->ThrowNew(env->FindClass("java/lang/NullPointerException"),
@@ -497,12 +497,12 @@ void IpcNativeCallback_IpcStatusChangeListener(IpcConnector::IpcStatusEvent even
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    waitForEvent
- * Signature: ()Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
+ * Signature: ()Lcc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy/NativeEventPacket;
  */
 extern "C" [[maybe_unused]] JNIEXPORT jobject JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_waitForEvent
         (JNIEnv *env, jobject) {
     std::unique_lock<std::mutex> lock(g_EventMutex);
     while (g_IoEventVec.empty() && g_RemoteDeathVec.empty()) {
@@ -519,10 +519,10 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
         int deathEvent = g_RemoteDeathVec.back();
         g_RemoteDeathVec.pop_back();
         jmethodID ctor = env->GetMethodID(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/INciHostDaemon$RemoteDeathPacket"),
+                env->FindClass("cc/ioctl/nfcdevicehost/daemon/INciHostDaemon$RemoteDeathPacket"),
                 "<init>", "(I)V");
         jobject packet = env->NewObject(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/INciHostDaemon$RemoteDeathPacket"),
+                env->FindClass("cc/ioctl/nfcdevicehost/daemon/INciHostDaemon$RemoteDeathPacket"),
                 ctor, deathEvent);
         return packet;
     }
@@ -532,7 +532,7 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
         std::vector<uint8_t> payload = std::get<1>(g_IoEventVec.back());
         g_IoEventVec.pop_back();
         jmethodID ctor = env->GetMethodID(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
+                env->FindClass("cc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
                 "<init>", "([B[B)V");
         jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
         env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent), (jbyte *) &event);
@@ -542,7 +542,7 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
             env->SetByteArrayRegion(buffer2, 0, payload.size(), (jbyte *) payload.data());
         }
         jobject packet = env->NewObject(
-                env->FindClass("cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
+                env->FindClass("cc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
                 ctor, buffer1, buffer2);
         return packet;
     }
@@ -552,12 +552,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_waitForEvent
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Class:     cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler
  * Method:    getKernelArchitecture
  * Signature: ()Ljava/lang/String;
  */
 extern "C" [[maybe_unused]] JNIEXPORT jstring JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getKernelArchitecture
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_getKernelArchitecture
         (JNIEnv *env, jclass) {
     struct utsname uts = {};
     if (uname(&uts) != 0) {
@@ -569,24 +569,24 @@ Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getKernelArchitecture
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_IpcNativeHandler
+ * Class:     cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler
  * Method:    getIpcPidFileFD
  * Signature: ()I
  */
 extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
-Java_cc_ioctl_nfcncihost_daemon_IpcNativeHandler_getIpcPidFileFD
+Java_cc_ioctl_nfcdevicehost_daemon_IpcNativeHandler_getIpcPidFileFD
         (JNIEnv *, jclass) {
     const IpcConnector &connector = IpcConnector::getInstance();
     return int(connector.getIpcFileFlagFd());
 }
 
 /*
- * Class:     cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    ntGetHistoryIoEvents
- * Signature: (II)Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy/RawHistoryIoEventList;
+ * Signature: (II)Lcc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy/RawHistoryIoEventList;
  */
 extern "C" [[maybe_unused]] JNIEXPORT  jobject JNICALL
-Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
         (JNIEnv *env, jobject, jint reqStartIndex, jint reqCount) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
@@ -602,12 +602,12 @@ Java_cc_ioctl_nfcncihost_daemon_internal_NciHostDaemonProxy_ntGetHistoryIoEvents
                 uint32_t totalStart = r.totalStartIndex;
                 uint32_t totalCount = r.totalCount;
                 jclass clRawEventList = env->FindClass(
-                        "cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawHistoryIoEventList");
+                        "cc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy$RawHistoryIoEventList");
                 jclass clRawEvent = env->FindClass(
-                        "cc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket");
+                        "cc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket");
                 jmethodID ctorEvent = env->GetMethodID(clRawEvent, "<init>", "([B[B)V");
                 jmethodID ctorList = env->GetMethodID(clRawEventList, "<init>",
-                                                      "(II[Lcc/ioctl/nfcncihost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket;)V");
+                                                      "(II[Lcc/ioctl/nfcdevicehost/daemon/internal/NciHostDaemonProxy$RawIoEventPacket;)V");
                 size_t resultSize = r.events.size();
                 jobjectArray array = env->NewObjectArray(resultSize, clRawEvent, nullptr);
                 for (size_t i = 0; i < resultSize; ++i) {

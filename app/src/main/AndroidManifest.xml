@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="cc.ioctl.nfcncihost"
+    package="cc.ioctl.nfcdevicehost"
     android:installLocation="internalOnly"
     tools:ignore="ProtectedPermissions,ScopedStorage">
 
@@ -45,7 +45,7 @@
         android:required="false" />
 
     <application
-        android:name=".procedure.BaseApplicationDelegate"
+        android:name="cc.ioctl.nfcdevicehost.procedure.BaseApplicationDelegate"
         android:allowBackup="true"
         android:appCategory="productivity"
         android:directBootAware="false"
@@ -63,12 +63,12 @@
         tools:targetApi="s">
 
         <activity
-            android:name=".activity.SettingsActivity"
+            android:name="cc.ioctl.nfcdevicehost.activity.SettingsActivity"
             android:exported="true"
             android:label="@string/title_activity_settings" />
 
         <activity
-            android:name=".activity.MainUiFragmentActivity"
+            android:name="cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity"
             android:exported="true"
             android:theme="@style/Theme.AppDefault.NoActionBar">
             <intent-filter>
@@ -80,16 +80,16 @@
         </activity>
 
         <activity
-            android:name=".activity.ui.startup.TransientInitActivity"
+            android:name="cc.ioctl.nfcdevicehost.activity.ui.startup.TransientInitActivity"
             android:exported="false"
             android:launchMode="singleTop" />
 
         <activity
-            android:name=".activity.MipmapGenActivity"
+            android:name="cc.ioctl.nfcdevicehost.activity.MipmapGenActivity"
             android:exported="true" />
 
         <service
-            android:name=".service.CardEmuCtrlSvc"
+            android:name="cc.ioctl.nfcdevicehost.service.CardEmuCtrlSvc"
             android:exported="true"
             android:label="@string/name_emu_pwm_ctrl_svc"
             android:permission="android.permission.BIND_CONTROLS">
@@ -99,20 +99,20 @@
         </service>
 
         <service
-            android:name=".service.NfcControllerManagerService"
+            android:name="cc.ioctl.nfcdevicehost.service.NfcControllerManagerService"
             android:exported="false" />
 
         <service
-            android:name=".service.NfcCoreService"
+            android:name="cc.ioctl.nfcdevicehost.service.NfcCoreService"
             android:exported="false" />
 
         <service
-            android:name=".service.NfcCardEmuFgSvc"
+            android:name="cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc"
             android:exported="false"
             android:label="@string/name_nfc_emu_svc" />
 
         <receiver
-            android:name=".service.BootCompleteReceiver"
+            android:name="cc.ioctl.nfcdevicehost.service.BootCompleteReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

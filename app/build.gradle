@@ -10,7 +10,7 @@ android {
     buildToolsVersion "31.0.0"
 
     defaultConfig {
-        applicationId "cc.ioctl.nfcncihost"
+        applicationId "cc.ioctl.nfcdevicehost"
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 1
