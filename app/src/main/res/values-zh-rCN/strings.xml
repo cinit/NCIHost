@@ -20,5 +20,28 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="action_exit">退出</string>
     <string name="action_clear_history_events">清空</string>
     <string name="action_save_as">保存…</string>
+    <string name="usage_help">帮助</string>
+    <string name="detail_info">信息</string>
+    <string name="status">状态</string>
+    <string name="operations">操作</string>
+    <string name="action_start_daemon">启动服务(root)</string>
+    <string name="attach_to_hal_service">附加到 HAL 服务</string>
+    <string name="action_refresh">刷新</string>
+    <string name="status_daemon_not_running">后台服务未启动</string>
+    <string name="status_general_not_running">未启动</string>
+    <string name="ui_device_arch_v0s">设备 ABI: %s</string>
+    <string name="ui_home_need_start_daemon">需要启动后台服务</string>
+    <string name="ui_home_root_is_required">需要 root 权限</string>
+    <string name="status_general_running_ok">已启动</string>
+    <string name="status_hal_service_attached">已附加到 HAL 服务</string>
+    <string name="status_hal_service_not_attached">没有附加到 HAL 服务</string>
+    <string name="status_general_not_attached">未连接</string>
+    <string name="ui_home_hal_service_not_found">找不到 HAL 服务</string>
+    <string name="ui_home_maybe_service_not_running">HAL 服务可能没有运行或者不支持</string>
+    <string name="ui_home_attach_hal_service_to_work">请先附加到 HAL 服务再使用其他功能</string>
+    <string name="ui_click_to_attach_hal_service">点击按钮即可附加到 HAL 服务</string>
+    <string name="ui_home_no_operation_needed">无需操作</string>
+    <string name="ui_home_restart_hal_service_if_needed">如果系统 NFC 功能出错，你可以重启 NFC 服务</string>
+    <string name="action_restart_hal_service">重启 HAL 服务</string>
 
 </resources>

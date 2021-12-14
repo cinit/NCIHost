@@ -48,4 +48,28 @@ By using this application, you accept all responsibility using it and agree that
     <string name="action_exit">Exit</string>
     <string name="action_clear_history_events">Clear</string>
     <string name="action_save_as">Save as file</string>
+    <string name="github" translatable="false">GitHub</string>
+    <string name="usage_help">Usage Help</string>
+    <string name="detail_info">Detail Information</string>
+    <string name="status">Status</string>
+    <string name="operations">Operations</string>
+    <string name="action_start_daemon">Start Daemon(root)</string>
+    <string name="attach_to_hal_service">Attach to HAL Service</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="status_daemon_not_running">Daemon Not Running</string>
+    <string name="status_general_not_running">Not Running</string>
+    <string name="ui_device_arch_v0s">Device ABI: %s</string>
+    <string name="ui_home_need_start_daemon">Start the daemon process to enable any function.</string>
+    <string name="ui_home_root_is_required">Root access is required.</string>
+    <string name="status_general_running_ok">Running</string>
+    <string name="status_hal_service_attached">HAL Service Attached</string>
+    <string name="status_hal_service_not_attached">HAL Service Not Attached</string>
+    <string name="status_general_not_attached">Not Attached</string>
+    <string name="ui_home_hal_service_not_found">Unable to find HAL service.</string>
+    <string name="ui_home_maybe_service_not_running">Maybe it\'s not running?</string>
+    <string name="ui_home_attach_hal_service_to_work">You musr attach to HAL service before you can use any function.</string>
+    <string name="ui_click_to_attach_hal_service">Click to attach to HAL service.</string>
+    <string name="ui_home_no_operation_needed">No operation required</string>
+    <string name="ui_home_restart_hal_service_if_needed">If the system NFC is not working correctly, you can restart the HAL service.</string>
+    <string name="action_restart_hal_service">Restart HAL Service</string>
 </resources>
