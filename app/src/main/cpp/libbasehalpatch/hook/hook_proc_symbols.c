@@ -214,7 +214,7 @@ EXPORT int hook_proc_ioctl(int fd, unsigned long int request, unsigned long arg)
     }
     int result = pf_orig_ioctl(fd, request, arg);
     int err = errno;
-    invokeIoctlResultCallback(result < 0 ? -err : result, fd, result, arg);
+    invokeIoctlResultCallback(result < 0 ? -err : result, fd, request, arg);
     errno = err;
     return result;
 }
