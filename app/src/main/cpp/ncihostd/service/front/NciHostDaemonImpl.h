@@ -48,6 +48,8 @@ public:
     TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) override;
 
     TypedLpcResult<bool> clearHistoryIoEvents() override;
+
+    TypedLpcResult<DaemonStatus> getDaemonStatus() override;
 };
 
 }

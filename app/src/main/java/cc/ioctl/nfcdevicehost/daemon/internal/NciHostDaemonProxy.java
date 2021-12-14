@@ -100,6 +100,10 @@ public class NciHostDaemonProxy implements INciHostDaemon {
 
     private native RawHistoryIoEventList ntGetHistoryIoEvents(int startIndex, int count);
 
+    @NonNull
+    @Override
+    public native DaemonStatus getDaemonStatus();
+
     @Override
     public HistoryIoEventList getHistoryIoEvents(int startIndex, int count) {
         RawHistoryIoEventList raw = ntGetHistoryIoEvents(startIndex, count);

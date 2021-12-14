@@ -56,9 +56,11 @@ bool INciHostDaemon::DaemonStatus::deserializeFromByteVector(const vector<uint8_
     }
     ArgList args(src.data(), src.size());
     if (!(args.get(&processId, 0) && args.get(&versionName, 1)
-          && args.get(&abiArch, 2) && args.get(&isHalServiceAttached, 3)
-          && args.get(&halServicePid, 4) && args.get(&halServiceUid, 5)
-          && args.get(&halServiceExePath, 6) && args.get(&halServiceArch, 7))) {
+          && args.get(&abiArch, 2) && args.get(&daemonProcessSecurityContext, 3)
+          && args.get(&isHalServiceAttached, 4) && args.get(&halServicePid, 5)
+          && args.get(&halServiceUid, 6) && args.get(&halServiceExePath, 7)
+          && args.get(&halServiceArch, 8) && args.get(&halServiceProcessSecurityContext, 9)
+          && args.get(&halServiceExecutableSecurityLabel, 10))) {
         return false;
     }
     return true;
@@ -69,10 +71,13 @@ std::vector<uint8_t> INciHostDaemon::DaemonStatus::serializeToByteVector() const
     builder.push(processId);
     builder.push(versionName);
     builder.push(abiArch);
+    builder.push(daemonProcessSecurityContext);
     builder.push(isHalServiceAttached);
     builder.push(halServicePid);
     builder.push(halServiceUid);
     builder.push(halServiceExePath);
     builder.push(halServiceArch);
+    builder.push(halServiceProcessSecurityContext);
+    builder.push(halServiceExecutableSecurityLabel);
     return builder.build().toVector();
 }

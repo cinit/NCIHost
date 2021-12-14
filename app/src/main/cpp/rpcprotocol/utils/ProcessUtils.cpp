@@ -73,6 +73,43 @@ std::vector<ProcessInfo> getRunningProcessInfo() {
     return runningProcesses;
 }
 
+bool getProcessInfo(int pid, ProcessInfo &info) {
+    std::string procPath = "/proc/";
+    std::string pidStr = std::to_string(pid);
+    // get process uid
+    int uid = -1;
+    std::string procStatusPath = procPath + pidStr + "/status";
+    std::ifstream procStatusFile(procStatusPath);
+    if (procStatusFile.is_open()) {
+        std::string line;
+        while (std::getline(procStatusFile, line)) {
+            if (line.find("Uid:") == 0) {
+                std::string uidStr = line.substr(5);
+                uid = std::stoi(uidStr);
+                break;
+            }
+        }
+        procStatusFile.close();
+    } else {
+        return false;
+    }
+    info.pid = pid;
+    info.uid = uid;
+    // get process exe path
+    std::string procExePath = procPath + pidStr + "/exe";
+    char exe[256];
+    ssize_t len = readlink(procExePath.c_str(), exe, sizeof(exe) - 1);
+    if (len < 0) {
+        return false;
+    }
+    exe[len] = '\0';
+    info.exe = exe;
+    if (!info.exe.empty()) {
+        info.name = info.exe.substr(info.exe.find_last_of('/') + 1);
+    }
+    return true;
+}
+
 int getKernelArchitecture() noexcept {
     struct utsname uts = {};
     if (uname(&uts) != 0) {
@@ -88,6 +125,20 @@ int getKernelArchitecture() noexcept {
         return Architecture::ARCH_AARCH64;
     }
     return -ENOTSUP;
+}
+
+int getCurrentProcessArchitecture() noexcept {
+#if defined(__aarch64__) || defined(__arm64__) || defined (_M_ARM64)
+    return Architecture::ARCH_AARCH64;
+#elif defined(__arm__) || defined(_M_ARM)
+    return Architecture::ARCH_ARM;
+#elif defined(__x86_64__) || defined(__amd64__)
+    return Architecture::ARCH_X86_64;
+#elif defined(__x86__) || defined(__i386__) || defined(_M_IX86)
+    return Architecture::ARCH_X86;
+#else
+#error "Unsupported architecture"
+#endif
 }
 
 }

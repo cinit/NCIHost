@@ -22,8 +22,13 @@ public class NativeUtils {
         Objects.requireNonNull(arch, "arch cannot be null");
         switch (arch) {
             case "x86":
+            case "i386":
+            case "i486":
+            case "i586":
+            case "i686":
                 return ARCH_X86;
             case "x86_64":
+            case "amd64":
                 return ARCH_X86_64;
             case "arm":
             case "armhf":
@@ -33,9 +38,10 @@ public class NativeUtils {
             case "aarch64":
             case "arm64":
             case "arm64-v8a":
+            case "armv8l":
                 return ARCH_AARCH64;
             default:
-                throw new IllegalArgumentException("arch is not supported");
+                throw new IllegalArgumentException("unsupported arch: " + arch);
         }
     }
 
@@ -51,7 +57,7 @@ public class NativeUtils {
             case ARCH_AARCH64:
                 return "arm64-v8a";
             default:
-                throw new IllegalArgumentException("arch is not supported");
+                throw new IllegalArgumentException("unsupported arch: " + arch);
         }
     }
 

@@ -20,6 +20,14 @@ struct ProcessInfo {
 // get all running process info
 std::vector<ProcessInfo> getRunningProcessInfo();
 
+/**
+ * Get the process info of the specified process.
+ * @param pid the pid of the process.
+ * @param info the process info.
+ * @return true if the process info is found, false otherwise.
+ */
+bool getProcessInfo(int pid, ProcessInfo &info);
+
 class Architecture {
 public:
     static constexpr int ARCH_X86 = 3;
@@ -37,6 +45,8 @@ public:
  * @return positive on success, -errno on failure.
  */
 int getKernelArchitecture() noexcept;
+
+int getCurrentProcessArchitecture() noexcept;
 
 }
 

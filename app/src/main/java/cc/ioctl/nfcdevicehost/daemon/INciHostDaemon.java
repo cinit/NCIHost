@@ -1,6 +1,7 @@
 package cc.ioctl.nfcdevicehost.daemon;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.IOException;
 
@@ -39,6 +40,62 @@ public interface INciHostDaemon {
     void registerRemoteEventListener(@NonNull OnRemoteEventListener listener);
 
     boolean unregisterRemoteEventListener(@NonNull OnRemoteEventListener listener);
+
+    class DaemonStatus {
+        public int processId;
+        @NonNull
+        public String versionName;
+        public int abiArch;
+        @Nullable
+        public String daemonProcessSecurityContext;
+        public boolean isHalServiceAttached;
+        public int halServicePid;
+        public int halServiceUid;
+        @Nullable
+        public String halServiceExePath;
+        public int halServiceArch;
+        @Nullable
+        public String halServiceProcessSecurityContext;
+        @Nullable
+        public String halServiceExecutableSecurityLabel;
+
+        public DaemonStatus(int processId, @NonNull String versionName, int abiArch, @Nullable String daemonProcessSecurityContext,
+                            boolean isHalServiceAttached, int halServicePid, int halServiceUid,
+                            @Nullable String halServiceExePath, int halServiceArch,
+                            @Nullable String halServiceProcessSecurityContext, @Nullable String halServiceExecutableSecurityLabel) {
+            this.processId = processId;
+            this.versionName = versionName;
+            this.abiArch = abiArch;
+            this.daemonProcessSecurityContext = daemonProcessSecurityContext;
+            this.isHalServiceAttached = isHalServiceAttached;
+            this.halServicePid = halServicePid;
+            this.halServiceUid = halServiceUid;
+            this.halServiceExePath = halServiceExePath;
+            this.halServiceArch = halServiceArch;
+            this.halServiceProcessSecurityContext = halServiceProcessSecurityContext;
+            this.halServiceExecutableSecurityLabel = halServiceExecutableSecurityLabel;
+        }
+
+        @Override
+        public String toString() {
+            return "DaemonStatus{" +
+                    "processId=" + processId +
+                    ", versionName='" + versionName + '\'' +
+                    ", abiArch=" + abiArch +
+                    ", daemonProcessSecurityContext='" + daemonProcessSecurityContext + '\'' +
+                    ", isHalServiceAttached=" + isHalServiceAttached +
+                    ", halServicePid=" + halServicePid +
+                    ", halServiceUid=" + halServiceUid +
+                    ", halServiceExePath='" + halServiceExePath + '\'' +
+                    ", halServiceArch=" + halServiceArch +
+                    ", halServiceProcessSecurityContext='" + halServiceProcessSecurityContext + '\'' +
+                    ", halServiceExecutableSecurityLabel='" + halServiceExecutableSecurityLabel + '\'' +
+                    '}';
+        }
+    }
+
+    @NonNull
+    DaemonStatus getDaemonStatus();
 
     class IoEventPacket implements NciHostDaemonProxy.NativeEventPacket {
         public enum IoOperationType {

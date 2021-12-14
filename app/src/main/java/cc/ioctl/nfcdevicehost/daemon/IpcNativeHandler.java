@@ -94,9 +94,12 @@ public class IpcNativeHandler {
     }
 
     public static void initForSocketDir() {
+        if (!sInit) {
+            throw new IllegalStateException("IpcNativeHandler is not initialized");
+        }
         checkProcess();
-        ntInitForSocketDir(sDirPath);
         startEventHandler();
+        ntInitForSocketDir(sDirPath);
     }
 
     private static void checkProcess() {

@@ -170,6 +170,14 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDae
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    getDaemonStatus
+ * Signature: ()Lcc/ioctl/nfcdevicehost/daemon/INciHostDaemon/DaemonStatus;
+ */
+JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getDaemonStatus
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    clearHistoryIoEvents
  * Signature: ()Z
  */

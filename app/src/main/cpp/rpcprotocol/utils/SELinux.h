@@ -53,6 +53,14 @@ public:
      * @return 0 on success, -errno on error.
      */
     static int setFileSEContext(const char *path, std::string_view context);
+
+    /**
+     * Get the security context of the process.
+     * @param pid the process id.
+     * @param context the security context.
+     * @return 0 on success, -errno on error.
+     */
+    static int getProcessSecurityContext(int pid, std::string *context);
 };
 
 #endif //NCI_HOST_NATIVES_SELINUX_H

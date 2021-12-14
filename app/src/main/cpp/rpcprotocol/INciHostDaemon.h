@@ -36,11 +36,14 @@ public:
         int processId;
         std::string versionName;
         int abiArch;
+        std::string daemonProcessSecurityContext;
         bool isHalServiceAttached;
         int halServicePid;
         int halServiceUid;
         std::string halServiceExePath;
         int halServiceArch;
+        std::string halServiceProcessSecurityContext;
+        std::string halServiceExecutableSecurityLabel;
 
         [[nodiscard]] bool deserializeFromByteVector(const std::vector<uint8_t> &src);
 
@@ -80,6 +83,9 @@ public:
     [[nodiscard]]
     virtual TypedLpcResult<bool> clearHistoryIoEvents() = 0;
 
+    [[nodiscard]]
+    virtual TypedLpcResult<DaemonStatus> getDaemonStatus() = 0;
+
     class TransactionIds {
     public:
         static constexpr uint32_t getVersionName = 1;
@@ -92,6 +98,7 @@ public:
         static constexpr uint32_t getSelfPid = 13;
         static constexpr uint32_t getHistoryIoOperations = 14;
         static constexpr uint32_t clearHistoryIoEvents = 15;
+        static constexpr uint32_t getDaemonStatus = 16;
     };
 };
 

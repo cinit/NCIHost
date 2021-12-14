@@ -29,21 +29,21 @@ bool SELinux::isEnforcing() {
 
 int SELinux::getFileSEContext(int fd, std::string *context) {
     char buf[128] = {};
-    if (fgetxattr(fd, "security.selinux", buf, 128) == 0) {
+    if (fgetxattr(fd, "security.selinux", buf, 128) < 0) {
+        return -errno;
+    } else {
         *context = buf;
         return 0;
-    } else {
-        return -errno;
     }
 }
 
 int SELinux::getFileSEContext(const char *path, std::string *context) {
     char buf[128] = {};
-    if (getxattr(path, "security.selinux", buf, 128) == 0) {
+    if (getxattr(path, "security.selinux", buf, 128) < 0) {
+        return -errno;
+    } else {
         *context = buf;
         return 0;
-    } else {
-        return -errno;
     }
 }
 
@@ -78,5 +78,23 @@ int SELinux::setFileSEContext(const char *path, std::string_view context) {
         }
     } else {
         return 0;
+    }
+}
+
+int SELinux::getProcessSecurityContext(int pid, std::string *context) {
+    std::string attrPath = "/proc/" + std::to_string(pid) + "/attr/current";
+    int fd = open(attrPath.c_str(), O_RDONLY | O_CLOEXEC);
+    char buf[128] = {};
+    if (fd < 0) {
+        return -errno;
+    } else {
+        if (read(fd, buf, 128) > 0) {
+            *context = buf;
+            close(fd);
+            return 0;
+        } else {
+            close(fd);
+            return -errno;
+        }
     }
 }

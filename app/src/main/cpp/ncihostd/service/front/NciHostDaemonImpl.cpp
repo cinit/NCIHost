@@ -12,8 +12,10 @@
 #include "ncihostd/service/ServiceManager.h"
 #include "rpcprotocol/utils/TextUtils.h"
 #include "rpcprotocol/utils/auto_close_fd.h"
+#include "rpcprotocol/utils/SELinux.h"
 #include "rpcprotocol/log/Log.h"
 #include "rpcprotocol/protocol/LpcArgListExtractor.h"
+#include "rpcprotocol/utils/ProcessUtils.h"
 
 #include "NciHostDaemonImpl.h"
 
@@ -97,6 +99,10 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
         }
         case Ids::clearHistoryIoEvents: {
             result = R::invoke(this, args, R::is(+[](T *p) { return p->clearHistoryIoEvents(); }));
+            return true;
+        }
+        case Ids::getDaemonStatus: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->getDaemonStatus(); }));
             return true;
         }
         default:
@@ -220,4 +226,66 @@ TypedLpcResult<bool> NciHostDaemonImpl::clearHistoryIoEvents() {
         return {true};
     }
     return {false};
+}
+
+TypedLpcResult<INciHostDaemon::DaemonStatus> NciHostDaemonImpl::getDaemonStatus() {
+    DaemonStatus status;
+    status.processId = getpid();
+    status.versionName = NCI_HOST_VERSION;
+    std::string selfProcSecurityContext;
+    if (int err = SELinux::getProcessSecurityContext(getpid(), &status.daemonProcessSecurityContext); err != 0) {
+        status.daemonProcessSecurityContext = "";
+        LOGE("failed to get self process security context: %d", err);
+    }
+    status.abiArch = utils::getCurrentProcessArchitecture();
+    auto sp = NxpHalHandler::getWeakInstance();
+    const NxpHalHandler *handler;
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *>(p)) && handler->isConnected()) {
+        // HAL service is attached
+        status.isHalServiceAttached = true;
+        status.halServicePid = handler->getRemotePid();
+    } else {
+        status.isHalServiceAttached = false;
+        auto unHwStatus = NxpHalHandler::getHwServiceStatus();
+        status.halServicePid = unHwStatus.serviceProcessId;
+    }
+    if (status.halServicePid > 0) {
+        if (utils::ProcessInfo procInfo = {}; utils::getProcessInfo(status.halServicePid, procInfo)) {
+            status.halServiceUid = procInfo.uid;
+            status.halServiceExePath = procInfo.exe;
+        } else {
+            LOGE("failed to get process info for pid: %d", status.halServicePid);
+            status.halServiceUid = -1;
+            status.halServiceExePath = "";
+        }
+        elfsym::ProcessView procView;
+        if (int err = procView.readProcess(status.halServicePid); err == 0) {
+            status.halServiceArch = procView.getArchitecture();
+        } else {
+            LOGE("failed to read process info for pid: %d, error: %d", status.halServicePid, err);
+            status.halServiceArch = -1;
+        }
+        if (int err = SELinux::getProcessSecurityContext(status.halServicePid,
+                                                         &status.halServiceProcessSecurityContext); err != 0) {
+            LOGE("failed to get process security context for pid: %d, error: %d", status.halServicePid, err);
+            status.halServiceProcessSecurityContext = "";
+        }
+        if (!status.halServiceExePath.empty()) {
+            std::string label;
+            if (int err = SELinux::getFileSEContext(status.halServiceExePath.c_str(), &label); err == 0) {
+                status.halServiceExecutableSecurityLabel = label;
+            } else {
+                LOGE("failed to get file security context for path: %s, error: %d",
+                     status.halServiceExePath.c_str(), err);
+                status.halServiceExecutableSecurityLabel = "";
+            }
+        } else {
+            status.halServiceExecutableSecurityLabel = "";
+        }
+    } else {
+        status.halServiceUid = -1;
+        status.halServiceExePath = "";
+        status.halServiceArch = -1;
+    }
+    return {status};
 }

@@ -27,12 +27,20 @@ static std::mutex g_EventMutex;
 static std::condition_variable g_EventWaitCondition;
 static std::vector<std::tuple<halpatch::IoOperationEvent, std::vector<uint8_t>>> g_IoEventVec;
 static std::vector<int> g_RemoteDeathVec;
-static bool g_isNciHostDaemonConnected = false;
+static bool g_isNciHostDaemonConnectedPrevious = false;
 
 extern "C" void __android_log_print(int level, const char *tag, const char *fmt, ...);
 
 static void android_log_handler(Log::Level level, const char *tag, const char *msg) {
     __android_log_print(static_cast<int>(level), tag, "%s", msg);
+}
+
+static inline jstring getJString(JNIEnv *env, const std::string &str) {
+    return env->NewStringUTF(str.c_str());
+}
+
+static inline jstring getJStringOrNull(JNIEnv *env, const std::string &str) {
+    return str.empty() ? nullptr : getJString(env, str);
 }
 
 template<class T>
@@ -486,14 +494,13 @@ void NciClientImpl_forwardRemoteDeathEvent(int pid) {
 
 void IpcNativeCallback_IpcStatusChangeListener(IpcConnector::IpcStatusEvent event, IpcTransactor *obj) {
     std::unique_lock lock(g_EventMutex);
+    // don't change g_isNciHostDaemonConnectedPrevious here, this value is a 'dirty' detection
     if (event == IpcConnector::IpcStatusEvent::IPC_CONNECTED) {
-        if (!g_isNciHostDaemonConnected) {
-            g_isNciHostDaemonConnected = true;
+        if (!g_isNciHostDaemonConnectedPrevious) {
             g_EventWaitCondition.notify_all();
         }
     } else if (event == IpcConnector::IpcStatusEvent::IPC_DISCONNECTED) {
-        if (g_isNciHostDaemonConnected) {
-            g_isNciHostDaemonConnected = false;
+        if (g_isNciHostDaemonConnectedPrevious) {
             g_EventWaitCondition.notify_all();
         }
     }
@@ -508,12 +515,12 @@ extern "C" [[maybe_unused]] JNIEXPORT jobject JNICALL
 Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_waitForEvent
         (JNIEnv *env, jobject) {
     std::unique_lock<std::mutex> lock(g_EventMutex);
-    while (g_IoEventVec.empty() && g_RemoteDeathVec.empty()) {
+    if (g_IoEventVec.empty() && g_RemoteDeathVec.empty()) {
         g_EventWaitCondition.wait(lock);
     }
     // check for connection loss
-    if (bool conn = IpcConnector::getInstance().isConnected(); conn != g_isNciHostDaemonConnected) {
-        g_isNciHostDaemonConnected = conn;
+    if (bool conn = IpcConnector::getInstance().isConnected(); conn != g_isNciHostDaemonConnectedPrevious) {
+        g_isNciHostDaemonConnectedPrevious = conn;
         // send a null event to notify the upper layer that the connection state has changed
         return nullptr;
     }
@@ -664,5 +671,48 @@ Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_clearHistoryIoEve
             }
         }
         return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    getDaemonStatus
+ * Signature: ()Lcc/ioctl/nfcdevicehost/daemon/INciHostDaemon/DaemonStatus;
+ */
+extern "C" [[maybe_unused]]  JNIEXPORT jobject JNICALL
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getDaemonStatus
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return nullptr;
+    } else {
+        if (auto lpcResult = proxy->getDaemonStatus();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            INciHostDaemon::DaemonStatus r;
+            if (lpcResult.getResult(&r)) {
+                jclass klass = env->FindClass("cc/ioctl/nfcdevicehost/daemon/INciHostDaemon$DaemonStatus");
+                jmethodID ctor = env->GetMethodID(klass, "<init>",
+                                                  "(ILjava/lang/String;ILjava/lang/String;ZIILjava/lang/String;ILjava/lang/String;Ljava/lang/String;)V");
+                jstring jversionName = env->NewStringUTF(r.versionName.c_str());
+                jstring jdaemonProcessSecurityContext = getJStringOrNull(env, r.daemonProcessSecurityContext);
+                jstring jhalServiceExePath = getJStringOrNull(env, r.halServiceExePath);
+                jstring jhalServiceProcessSecurityContext = getJStringOrNull(env, r.halServiceProcessSecurityContext);
+                jstring jhalServiceExecutableSecurityLabel = getJStringOrNull(env, r.halServiceExecutableSecurityLabel);
+                jobject status = env->NewObject(klass, ctor, jint(r.processId), jversionName, jint(r.abiArch),
+                                                jdaemonProcessSecurityContext, jboolean(r.isHalServiceAttached),
+                                                jint(r.halServicePid), jint(r.halServiceUid), jhalServiceExePath,
+                                                jint(r.halServiceArch), jhalServiceProcessSecurityContext,
+                                                jhalServiceExecutableSecurityLabel);
+                return status;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return nullptr;
+            }
+        }
+        return nullptr;
     }
 }
