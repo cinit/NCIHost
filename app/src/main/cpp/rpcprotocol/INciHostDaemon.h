@@ -26,9 +26,25 @@ public:
         std::vector<halpatch::IoOperationEvent> events; // contains index and length
         std::vector<std::vector<uint8_t>> payloads;
 
-        [[nodiscard]] bool fromByteVector(const std::vector<uint8_t> &src);
+        [[nodiscard]] bool deserializeFromByteVector(const std::vector<uint8_t> &src);
 
-        [[nodiscard]] std::vector<uint8_t> toByteVector() const;
+        [[nodiscard]] std::vector<uint8_t> serializeToByteVector() const;
+    };
+
+    class DaemonStatus {
+    public:
+        int processId;
+        std::string versionName;
+        int abiArch;
+        bool isHalServiceAttached;
+        int halServicePid;
+        int halServiceUid;
+        std::string halServiceExePath;
+        int halServiceArch;
+
+        [[nodiscard]] bool deserializeFromByteVector(const std::vector<uint8_t> &src);
+
+        [[nodiscard]] std::vector<uint8_t> serializeToByteVector() const;
     };
 
     INciHostDaemon() = default;

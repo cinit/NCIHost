@@ -86,8 +86,9 @@ public:
             using no = std::false_type;
 
             template<typename U>
-            static auto test(int) -> decltype(std::declval<U>().fromByteVector(std::vector<uint8_t>())
-                                              && std::vector<uint8_t>(std::declval<U>().toByteVector()).empty(), yes());
+            static auto test(int) -> decltype(std::declval<U>().deserializeFromByteVector(std::vector<uint8_t>())
+                                              && std::vector<uint8_t>(std::declval<U>().serializeToByteVector())
+                                                      .empty(), yes());
 
             template<typename>
             static no test(...);
@@ -284,7 +285,7 @@ public:
                 pushRawBuffer(TypeId, &value, sizeof(T));
             } else if constexpr(Types::isSerializedBuffer(TypeId)) {
                 // serialized buffer
-                std::vector<uint8_t> buffer = value.toByteVector();
+                std::vector<uint8_t> buffer = value.serializeToByteVector();
                 pushRawBuffer(TypeId, buffer.data(), buffer.size());
             } else {
                 // should not happen
@@ -396,7 +397,7 @@ public:
                 // serialized buffer
                 std::vector<uint8_t> buffer = {reinterpret_cast<const uint8_t *>(mBuffer) + offset,
                                                reinterpret_cast<const uint8_t *>(mBuffer) + offset + len};
-                return out->fromByteVector(buffer);
+                return out->deserializeFromByteVector(buffer);
             } else {
                 // should not happen
                 abort();
