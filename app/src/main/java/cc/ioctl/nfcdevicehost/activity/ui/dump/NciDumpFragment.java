@@ -10,6 +10,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +27,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -37,6 +41,7 @@ import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.databinding.ItemMainNciDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcdevicehost.util.ByteUtils;
+import cc.ioctl.nfcdevicehost.util.SafUtils;
 
 public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciDumpViewModel.TransactionEvent>> {
 
@@ -218,12 +223,28 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                 return true;
             }
             case R.id.action_save: {
-                // TODO: save as file
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Save")
-                        .setMessage("Not implemented yet")
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show();
+                if (mNciDumpViewModel.getTransactionEvents().getValue().isEmpty()) {
+                    Snackbar.make(mBinding.getRoot(), R.string.ui_toast_no_data_to_save, Snackbar.LENGTH_SHORT).show();
+                }
+                String shortFileName = "nci_dump_" + System.currentTimeMillis() + ".txt";
+                SafUtils.requestSaveFile(requireActivity()).setDefaultFileName(shortFileName).onResult(uri -> {
+                    try {
+                        StringBuilder data = mNciDumpViewModel.exportRawEventsAsCsv();
+                        OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
+                        os.write(data.toString().getBytes(StandardCharsets.UTF_8));
+                        os.flush();
+                        os.close();
+                        Snackbar.make(mBinding.getRoot(), R.string.ui_toast_data_saved, Snackbar.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
+                                .setTitle(R.string.ui_dialog_error_title)
+                                .setMessage(e.getMessage())
+                                .setPositiveButton(android.R.string.ok, null);
+                        builder.create().show();
+                    }
+                }).onCancel(() -> {
+                    Toast.makeText(requireContext(), "canceled", Toast.LENGTH_SHORT).show();
+                }).commit();
                 return true;
             }
             default:

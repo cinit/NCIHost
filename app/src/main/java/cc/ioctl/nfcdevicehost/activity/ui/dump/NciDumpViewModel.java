@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
@@ -255,6 +256,21 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
             // notify the observers
             mTransactionEvents.postValue(transactionEvents);
         }
+    }
+
+    public StringBuilder exportRawEventsAsCsv() {
+        StringBuilder sb = new StringBuilder();
+        for (INciHostDaemon.IoEventPacket eventPacket : mRawIoEventPackets.values()) {
+            sb.append(eventPacket.sequence).append(",");
+            sb.append(eventPacket.timestamp).append(",");
+            sb.append(eventPacket.fd).append(",");
+            sb.append(eventPacket.opType.getValue()).append(",");
+            sb.append(eventPacket.retValue).append(",");
+            sb.append(eventPacket.directArg1).append(",");
+            sb.append(eventPacket.directArg2).append(",");
+            sb.append(Arrays.toString(eventPacket.buffer).replace(" ", "")).append("\n");
+        }
+        return sb;
     }
 
     public LiveData<ArrayList<TransactionEvent>> getTransactionEvents() {

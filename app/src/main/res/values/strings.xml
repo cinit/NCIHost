@@ -82,4 +82,6 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_toast_hal_service_not_attached">HAL service is not attached.</string>
     <string name="ui_snackbar_action_view_or_jump">View</string>
     <string name="ui_dialog_error_title">Error</string>
+    <string name="ui_toast_no_data_to_save">No data to save</string>
+    <string name="ui_toast_data_saved">Data saved</string>
 </resources>

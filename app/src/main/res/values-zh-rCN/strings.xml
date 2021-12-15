@@ -53,5 +53,7 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_toast_hal_service_not_attached">后台服务没有附加到 HAL 服务</string>
     <string name="ui_snackbar_action_view_or_jump">跳转</string>
     <string name="ui_dialog_error_title">错误</string>
+    <string name="ui_toast_no_data_to_save">无数据…</string>
+    <string name="ui_toast_data_saved">已保存</string>
 
 </resources>
