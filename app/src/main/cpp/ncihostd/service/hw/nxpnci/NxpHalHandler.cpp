@@ -107,7 +107,42 @@ HwServiceStatus NxpHalHandler::getHwServiceStatus() {
         return status;
     }
     for (const auto &p: processList) {
-        if (p.name == EXEC_NAME && p.uid < 10000) {
+        if (!p.name.empty() && p.uid > 1000 && p.uid < 10000) {
+            bool nameMatch = false;
+            std::vector<std::string> availableVersions = {"2.0", "2.1", "1.2", "1.1", "1.0"};
+            for (const auto &v: availableVersions) {
+                if (p.name == (std::string(EXEC_NAME_BASE) + v + std::string(EXEC_NAME_SUFFIX))) {
+                    nameMatch = true;
+                    break;
+                }
+            }
+            if (!nameMatch) {
+                continue;
+            }
+            // check executable path, everything is OK except the user writable path
+            std::vector<std::string> allowedPathPrefixes = {
+                    "/system/",
+                    "/system_ext/",
+                    "/vendor/",
+                    "/oem/",
+                    "/odm/",
+                    "/dev/", // wtf?
+                    "/product/",
+                    "/apex/",
+                    "/bin/",
+                    "/xbin/",
+                    "/sbin/"
+            };
+            bool pathMatch = false;
+            for (const auto &prefix: allowedPathPrefixes) {
+                if (p.exe.find(prefix) == 0) {
+                    pathMatch = true;
+                    break;
+                }
+            }
+            if (!pathMatch) {
+                continue;
+            }
             // found hal driver service
             status.valid = true;
             status.serviceName = p.name;
