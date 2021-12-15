@@ -54,6 +54,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/cfg_network_security"
+        android:requestLegacyExternalStorage="true"
         android:requestRawExternalStorageAccess="true"
         android:resizeableActivity="true"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -83,6 +84,11 @@
             android:name="cc.ioctl.nfcdevicehost.activity.ui.startup.TransientInitActivity"
             android:exported="false"
             android:launchMode="singleTop" />
+
+        <activity
+            android:name="cc.ioctl.nfcdevicehost.activity.ShadowSafTransientActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppDefault.Translucent" />
 
         <activity
             android:name="cc.ioctl.nfcdevicehost.activity.MipmapGenActivity"

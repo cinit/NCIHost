@@ -81,4 +81,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_toast_daemon_is_not_running">Daemon is not running.</string>
     <string name="ui_toast_hal_service_not_attached">HAL service is not attached.</string>
     <string name="ui_snackbar_action_view_or_jump">View</string>
+    <string name="ui_dialog_error_title">Error</string>
 </resources>
