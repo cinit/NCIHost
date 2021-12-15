@@ -72,4 +72,13 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_home_no_operation_needed">No operation required</string>
     <string name="ui_home_restart_hal_service_if_needed">If the system NFC is not working correctly, you can restart the HAL service.</string>
     <string name="action_restart_hal_service">Restart HAL Service</string>
+    <string name="ui_home_dialog_title_attach_hal_service">Attach to HAL Service</string>
+    <string name="ui_home_dialog_msg_attach_hal_service">Trying attaching to HAL service, please wait…</string>
+    <string name="ui_home_toast_attach_hal_service_success">Attached to HAL service</string>
+    <string name="ui_home_dialog_msg_attach_hal_service_fail">Failed to attach to HAL service.</string>
+    <string name="ui_toast_not_implemented">Coming soon…</string>
+    <string name="ui_home_hal_service_unknown">HAL service status: unknown</string>
+    <string name="ui_toast_daemon_is_not_running">Daemon is not running.</string>
+    <string name="ui_toast_hal_service_not_attached">HAL service is not attached.</string>
+    <string name="ui_snackbar_action_view_or_jump">View</string>
 </resources>

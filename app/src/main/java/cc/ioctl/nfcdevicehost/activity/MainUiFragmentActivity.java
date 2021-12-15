@@ -1,15 +1,11 @@
 package cc.ioctl.nfcdevicehost.activity;
 
 import android.app.AlertDialog;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.RemoteException;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
@@ -22,16 +18,14 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
 
+import java.io.File;
 import java.io.IOException;
 
+import cc.ioctl.nfcdevicehost.NativeInterface;
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
-import cc.ioctl.nfcdevicehost.ipc.NfcControllerManager;
-import cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc;
-import cc.ioctl.nfcdevicehost.service.NfcControllerManagerService;
 import cc.ioctl.nfcdevicehost.util.RootShell;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
@@ -41,45 +35,14 @@ import cc.ioctl.nfcdevicehost.util.ThreadManager;
 public class MainUiFragmentActivity extends BaseActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
-    volatile NfcControllerManager nfcMgr;
-    private Intent mSvcIntent;
-    final ServiceConnection mNfcMgrConn = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            try {
-                nfcMgr = new NfcControllerManager(service);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            nfcMgr = null;
-            if (!isFinishing()) {
-                ThreadManager.post(() -> Toast.makeText(MainUiFragmentActivity.this,
-                        "onServiceDisconnected", Toast.LENGTH_SHORT).show());
-            }
-        }
-    };
+    private NavController mNavController;
 
     @Override
     protected boolean doOnCreate(Bundle savedInstanceState) {
         super.doOnCreate(savedInstanceState);
-        mSvcIntent = new Intent(this, NfcControllerManagerService.class);
-        if (!bindService(mSvcIntent, mNfcMgrConn, BIND_AUTO_CREATE)) {
-            mSvcIntent = null;
-            new AlertDialog.Builder(this).setTitle("Error").setMessage("bind error")
-                    .setCancelable(false).setPositiveButton(android.R.string.ok, (dialog, which) -> {
-                        finish();
-                    }).show();
-        }
         setContentView(R.layout.activity_dashboard);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show());
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
@@ -88,21 +51,34 @@ public class MainUiFragmentActivity extends BaseActivity {
                 R.id.nav_main_home, R.id.nav_main_dump, R.id.nav_main_cards)
                 .setDrawerLayout(drawer)
                 .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-        NavigationUI.setupWithNavController(navigationView, navController);
+        mNavController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        NavigationUI.setupActionBarWithNavController(this, mNavController, mAppBarConfiguration);
+        NavigationUI.setupWithNavController(navigationView, mNavController);
         ThreadManager.execute(() -> {
             // try to connect to the NCI daemon
             INciHostDaemon daemon = IpcNativeHandler.connect(200);
-            if (daemon == null) {
-                ThreadManager.post(this::requestRootToStartDaemon);
-            }
         });
         return true;
     }
 
     @UiThread
-    private void requestRootToStartDaemon() {
+    public FloatingActionButton showFloatingActionButton() {
+        FloatingActionButton fab = findViewById(R.id.fab);
+        findViewById(R.id.fab).setVisibility(View.VISIBLE);
+        return fab;
+    }
+
+    @UiThread
+    public void hideFloatingActionButton() {
+        findViewById(R.id.fab).setVisibility(View.GONE);
+    }
+
+    public NavController getNavController() {
+        return mNavController;
+    }
+
+    @UiThread
+    public void requestRootToStartDaemon() {
         // show a dialog while we are waiting for root
         final AlertDialog requestDialog = new AlertDialog.Builder(this)
                 .setTitle("Requesting root")
@@ -120,14 +96,40 @@ public class MainUiFragmentActivity extends BaseActivity {
                         .setPositiveButton(android.R.string.ok, null).show());
             } catch (RootShell.NoRootShellException e) {
                 errMsg = e.getMessage();
-                ThreadManager.post(() -> {
-                    new AlertDialog.Builder(this).setTitle("Unable to get root")
-                            .setMessage("Unable to request root permission, is your device rooted?\n" + errMsg)
-                            .setPositiveButton(android.R.string.ok, null).show();
-                });
+                ThreadManager.post(() -> new AlertDialog.Builder(this).setTitle("Unable to get root")
+                        .setMessage("Unable to request root permission, is your device rooted?\n" + errMsg)
+                        .setPositiveButton(android.R.string.ok, null).show());
             }
             requestDialog.dismiss();
         });
+    }
+
+    /**
+     * Attach to the HAL service
+     * Do not call this method on the UI thread
+     *
+     * @return true if the HAL service is attached
+     * @throws IOException if error occurs
+     */
+    public boolean attachToHalService() throws IOException {
+        INciHostDaemon daemon = IpcNativeHandler.peekConnection();
+        if (daemon != null) {
+            if (!daemon.isHwServiceConnected()) {
+                INciHostDaemon.DaemonStatus status = daemon.getDaemonStatus();
+                if (status.halServiceArch > 0) {
+                    File patchFile = NativeInterface.getNfcHalServicePatchFile(
+                            NativeInterface.NfcHalServicePatch.NXP_PATCH,
+                            status.halServiceArch);
+                    return daemon.initHwServiceConnection(patchFile.getAbsolutePath());
+                } else {
+                    throw new IOException("Device is not running NFC HAL service, or device is not supported");
+                }
+            } else {
+                return true;
+            }
+        } else {
+            throw new IOException("No daemon connection");
+        }
     }
 
     @Override
@@ -165,9 +167,5 @@ public class MainUiFragmentActivity extends BaseActivity {
     @Override
     protected void doOnDestroy() {
         super.doOnDestroy();
-        if (mSvcIntent != null) {
-            unbindService(mNfcMgrConn);
-        }
     }
-
 }

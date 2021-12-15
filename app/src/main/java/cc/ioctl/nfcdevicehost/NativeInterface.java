@@ -8,15 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import cc.ioctl.nfcdevicehost.procedure.BaseApplicationImpl;
+import cc.ioctl.nfcdevicehost.util.NativeUtils;
 
 public class NativeInterface {
-
-    public enum ABI {
-        ABI_ARM_32,
-        ABI_ARM_64,
-        ABI_X86,
-        ABI_X86_64,
-    }
 
     public enum NfcHalServicePatch {
         NXP_PATCH,
@@ -92,7 +86,7 @@ public class NativeInterface {
         return patchFile;
     }
 
-    public static File getNfcHalServicePatchFile(NfcHalServicePatch patch, ABI abi) {
+    public static File getNfcHalServicePatchFile(NfcHalServicePatch patch, int abi) {
         String patchFileName;
         switch (patch) {
             case NXP_PATCH:
@@ -104,23 +98,7 @@ public class NativeInterface {
             default:
                 throw new IllegalArgumentException("Unknown patch type");
         }
-        String abiName;
-        switch (abi) {
-            case ABI_ARM_32:
-                abiName = "armeabi-v7a";
-                break;
-            case ABI_ARM_64:
-                abiName = "arm64-v8a";
-                break;
-            case ABI_X86:
-                abiName = "x86";
-                break;
-            case ABI_X86_64:
-                abiName = "x86_64";
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown ABI type");
-        }
+        String abiName = NativeUtils.archIntToAndroidLibArch(abi);
         return extractNativeLibFromApk(patchFileName, abiName, "hal_patch", false);
     }
 

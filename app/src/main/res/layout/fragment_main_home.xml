@@ -200,10 +200,10 @@
                     android:id="@+id/home_linearLayoutOperationA"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
                     android:background="@drawable/bg_ripple_round_rect"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp">
@@ -222,8 +222,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
                         android:text="@string/action_start_daemon"
                         android:textColor="@color/themeColor"
                         android:textSize="16sp" />
@@ -234,10 +234,10 @@
                     android:id="@+id/home_linearLayoutOperationB"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
                     android:background="@drawable/bg_ripple_round_rect"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp">
@@ -256,8 +256,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
                         android:text="@string/attach_to_hal_service"
                         android:textColor="@color/themeColor"
                         android:textSize="16sp" />
@@ -268,10 +268,10 @@
                     android:id="@+id/home_linearLayoutOperationC"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
                     android:background="@drawable/bg_ripple_round_rect"
                     android:clickable="true"
                     android:focusable="true"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingTop="8dp"
                     android:paddingBottom="8dp">
@@ -290,8 +290,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:paddingTop="2dp"
-                        android:paddingBottom="2dp"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
                         android:text="@string/action_restart_hal_service"
                         android:textColor="@color/themeColor"
                         android:textSize="16sp" />
@@ -303,7 +303,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/mainV2_githubRepo"
+            android:id="@+id/home_layoutGithubRepo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
@@ -345,7 +345,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/mainV2_help"
+            android:id="@+id/home_layoutHelp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"

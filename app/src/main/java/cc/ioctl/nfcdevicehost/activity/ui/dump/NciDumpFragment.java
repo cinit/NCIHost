@@ -1,6 +1,7 @@
 package cc.ioctl.nfcdevicehost.activity.ui.dump;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -9,10 +10,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
@@ -22,13 +23,14 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.io.File;
-import java.io.IOException;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.ArrayList;
 import java.util.Locale;
 
-import cc.ioctl.nfcdevicehost.NativeInterface;
 import cc.ioctl.nfcdevicehost.R;
+import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
@@ -140,14 +142,16 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
     @SuppressLint("NotifyDataSetChanged")
     @Override
     public void onChanged(ArrayList<NciDumpViewModel.TransactionEvent> transactionEvents) {
-        int delta = transactionEvents.size() - mLastNciTransactionCount;
-        if (delta > 0) {
-            mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
-        } else {
-            // remove items, should be empty now
-            mDumpAdapter.notifyDataSetChanged();
-        }
-        mLastNciTransactionCount = transactionEvents.size();
+//        int delta = transactionEvents.size() - mLastNciTransactionCount;
+//        if (delta > 0) {
+//            mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
+//        } else {
+//            // remove items, should be empty now
+        // I have no idea why this is would crash the app
+        // Inconsistency detected. Invalid view holder adapter positionNciDumpViewHolder
+        mDumpAdapter.notifyDataSetChanged();
+//        }
+//        mLastNciTransactionCount = transactionEvents.size();
     }
 
     private final NciDumpAdapter mDumpAdapter = new NciDumpAdapter();
@@ -178,26 +182,27 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
     @Override
     public void onResume() {
         super.onResume();
-        INciHostDaemon daemon = IpcNativeHandler.peekConnection();
-        if (daemon != null) {
-            if (!daemon.isHwServiceConnected()) {
-                StringBuilder sb = new StringBuilder();
-                try {
-                    // TODO: 2021-12-11 dynamically detect the architecture of the HW service
-                    File patchFile = NativeInterface.getNfcHalServicePatchFile(
-                            NativeInterface.NfcHalServicePatch.NXP_PATCH,
-                            NativeInterface.ABI.ABI_ARM_64);
-                    boolean isNfcConn = daemon.initHwServiceConnection(patchFile.getAbsolutePath());
-                    sb.append("isNfcConn: ").append(isNfcConn).append("\n");
-                } catch (RuntimeException | IOException re) {
-                    sb.append("initHwServiceConnection failed: ").append(re);
-                }
-                Toast.makeText(getActivity(), sb.toString(), Toast.LENGTH_SHORT).show();
-            }
-            mNciDumpViewModel.synchronizeIoEvents();
-        } else {
-            Toast.makeText(getActivity(), "failed to connect to daemon", Toast.LENGTH_SHORT).show();
+        Activity activity = getActivity();
+        if (activity instanceof MainUiFragmentActivity) {
+            FloatingActionButton fab = ((MainUiFragmentActivity) activity).showFloatingActionButton();
+            fab.setOnClickListener(v -> Snackbar.make(v, R.string.ui_toast_not_implemented, Snackbar.LENGTH_SHORT).show());
         }
+        INciHostDaemon daemon = IpcNativeHandler.peekConnection();
+        if (daemon == null) {
+            Snackbar.make(mBinding.getRoot(), R.string.ui_toast_daemon_is_not_running, Snackbar.LENGTH_LONG)
+                    .setAction(R.string.ui_snackbar_action_view_or_jump, v -> jumpToHomeFragment()).show();
+        } else {
+            if (!daemon.isHwServiceConnected()) {
+                Snackbar.make(mBinding.getRoot(), R.string.ui_toast_hal_service_not_attached, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.ui_snackbar_action_view_or_jump, v -> jumpToHomeFragment()).show();
+            }
+        }
+    }
+
+    @UiThread
+    public void jumpToHomeFragment() {
+        MainUiFragmentActivity activity = (MainUiFragmentActivity) requireActivity();
+        activity.getNavController().navigate(R.id.nav_main_home);
     }
 
     @Override

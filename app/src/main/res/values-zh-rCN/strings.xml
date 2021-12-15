@@ -43,5 +43,14 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_home_no_operation_needed">无需操作</string>
     <string name="ui_home_restart_hal_service_if_needed">如果系统 NFC 功能出错，你可以重启 NFC 服务</string>
     <string name="action_restart_hal_service">重启 HAL 服务</string>
+    <string name="ui_home_dialog_title_attach_hal_service">附加到 HAL 服务</string>
+    <string name="ui_home_dialog_msg_attach_hal_service">正在尝试附加到 HAL 服务…</string>
+    <string name="ui_home_toast_attach_hal_service_success">附加到 HAL 服务成功</string>
+    <string name="ui_home_dialog_msg_attach_hal_service_fail">附加到 HAL 服务时发生错误</string>
+    <string name="ui_toast_not_implemented">对不起，此功能暂不开放…</string>
+    <string name="ui_home_hal_service_unknown">HAL 服务状态: 未知</string>
+    <string name="ui_toast_daemon_is_not_running">后台服务未运行</string>
+    <string name="ui_toast_hal_service_not_attached">后台服务没有附加到 HAL 服务</string>
+    <string name="ui_snackbar_action_view_or_jump">跳转</string>
 
 </resources>
