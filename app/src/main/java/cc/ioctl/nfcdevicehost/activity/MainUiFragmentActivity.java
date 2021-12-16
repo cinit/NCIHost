@@ -40,7 +40,7 @@ public class MainUiFragmentActivity extends BaseActivity {
     @Override
     protected boolean doOnCreate(Bundle savedInstanceState) {
         super.doOnCreate(savedInstanceState);
-        setContentView(R.layout.activity_dashboard);
+        setContentView(R.layout.activity_main_ui_host);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
@@ -81,8 +81,8 @@ public class MainUiFragmentActivity extends BaseActivity {
     public void requestRootToStartDaemon() {
         // show a dialog while we are waiting for root
         final AlertDialog requestDialog = new AlertDialog.Builder(this)
-                .setTitle("Requesting root")
-                .setMessage("Please grant root permission")
+                .setTitle(R.string.ui_dialog_title_requesting_root)
+                .setMessage(R.string.ui_dialog_msg_body_requesting_root)
                 .show();
         // try request root permission
         ThreadManager.execute(() -> {

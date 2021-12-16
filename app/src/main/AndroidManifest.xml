@@ -92,7 +92,29 @@
 
         <activity
             android:name="cc.ioctl.nfcdevicehost.activity.MipmapGenActivity"
-            android:exported="true" />
+            android:exported="true"
+            android:launchMode="singleTop" />
+
+        <activity
+            android:name="cc.ioctl.nfcdevicehost.activity.JumpEntryActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppDefault.Translucent">
+            <intent-filter android:label="@string/intent_label_view_hal_dump">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/*" />
+                <data android:pathPattern=".*.haldump" />
+                <data android:pathPattern=".*.HALDUMP" />
+                <data android:pathPattern=".*..*.haldump" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="cc.ioctl.nfcdevicehost.activity.SidebandHostActivity"
+            android:exported="false" />
 
         <service
             android:name="cc.ioctl.nfcdevicehost.service.CardEmuCtrlSvc"

@@ -85,4 +85,10 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_toast_no_data_to_save">No data to save</string>
     <string name="ui_toast_data_saved">Data saved</string>
     <string name="ui_toast_operation_canceled">Canceled.</string>
+    <string name="intent_label_view_hal_dump">View HAL Dump</string>
+    <string name="ui_dialog_unable_to_open_file_v0s">Unable to open file: %s</string>
+    <string name="ui_title_main_dump">HAL Dump</string>
+    <string name="action_view_dump_file">View dump file</string>
+    <string name="ui_dialog_title_requesting_root">Requesting root</string>
+    <string name="ui_dialog_msg_body_requesting_root">Please grant root permission</string>
 </resources>

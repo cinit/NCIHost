@@ -56,5 +56,11 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_toast_no_data_to_save">无数据…</string>
     <string name="ui_toast_data_saved">已保存</string>
     <string name="ui_toast_operation_canceled">Canceled.</string>
+    <string name="intent_label_view_hal_dump">查看 HAL 转储</string>
+    <string name="ui_dialog_unable_to_open_file_v0s">无法打开文件: %s</string>
+    <string name="ui_title_main_dump">HAL Dump</string>
+    <string name="action_view_dump_file">浏览转储文件</string>
+    <string name="ui_dialog_title_requesting_root">请求 root 权限</string>
+    <string name="ui_dialog_msg_body_requesting_root">正在请求 root 权限，请授予本应用 root 权限</string>
 
 </resources>

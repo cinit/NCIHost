@@ -64,6 +64,12 @@ public class SafUtils {
         public void commit() {
             Objects.requireNonNull(activity);
             Objects.requireNonNull(resultCallback);
+            if (mineType == null && defaultFileName != null) {
+                mineType = MimeTypeUtils.guessMimeTypeBySuffix(defaultFileName);
+                if (mineType == null) {
+                    mineType = "application/octet-stream";
+                }
+            }
             ShadowSafTransientActivity.startActivityForRequest(activity,
                     ShadowSafTransientActivity.TARGET_ACTION_CREATE_AND_WRITE,
                     mineType, defaultFileName, uri -> {

@@ -15,4 +15,10 @@
         android:orderInCategory="102"
         android:title="@string/action_save_as"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_view_dump_file"
+        android:menuCategory="secondary"
+        android:orderInCategory="101"
+        android:title="@string/action_view_dump_file"
+        app:showAsAction="never" />
 </menu>

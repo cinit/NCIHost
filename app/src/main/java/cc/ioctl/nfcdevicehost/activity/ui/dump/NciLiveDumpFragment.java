@@ -2,7 +2,9 @@ package cc.ioctl.nfcdevicehost.activity.ui.dump;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,7 +18,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AlertDialog;
-import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -31,133 +32,33 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Objects;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
+import cc.ioctl.nfcdevicehost.activity.SidebandHostActivity;
 import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
-import cc.ioctl.nfcdevicehost.databinding.ItemMainNciDumpBinding;
-import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
-import cc.ioctl.nfcdevicehost.util.ByteUtils;
 import cc.ioctl.nfcdevicehost.util.SafUtils;
 
-public class NciDumpFragment extends Fragment implements Observer<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> {
+public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> {
 
-    private NciDumpViewModel mNciDumpViewModel;
     private FragmentMainDumpBinding mBinding;
-    private int mLastNciTransactionCount = 0;
-
-    static class NciDumpViewHolder extends RecyclerView.ViewHolder {
-        public enum ViewType {
-            TRANSACTION,
-            IOCTL
-        }
-
-        public ViewType type;
-        public ItemMainNciDumpBinding binding;
-
-        public NciDumpViewHolder(ItemMainNciDumpBinding binding, ViewType type) {
-            super(binding.getRoot());
-            this.type = type;
-            this.binding = binding;
-        }
-    }
-
-    class NciDumpAdapter extends RecyclerView.Adapter<NciDumpViewHolder> {
-        @NonNull
-        @Override
-        public NciDumpViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            ItemMainNciDumpBinding binding = ItemMainNciDumpBinding.inflate(LayoutInflater.from(parent.getContext()),
-                    parent, false);
-            return new NciDumpViewHolder(binding, NciDumpViewHolder.ViewType.TRANSACTION);
-        }
-
+    private NciDumpViewModel mNciDumpViewModel;
+    private final AbsNciDumpAdapter mDumpAdapter = new AbsNciDumpAdapter() {
         @Override
         public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
             NxpHalV2EventTranslator.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
-            long timestamp = event.timestamp;
-            String seqTime;
-            Date now = new Date();
-            Date seqTimeDate = new Date(timestamp);
-            if (now.getYear() == seqTimeDate.getYear() && now.getMonth() == seqTimeDate.getMonth()
-                    && now.getDate() == seqTimeDate.getDate()) {
-                // the same day, HH:mm:ss.SSS
-                seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
-                        + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
-            } else {
-                // not the same day, yyyy-MM-dd HH:mm:ss.SSS
-                seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
-                        + String.format(Locale.ROOT, "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
-            }
-            String typeText = "<INVALID>";
-            StringBuilder dataText = new StringBuilder();
-            if (event instanceof NxpHalV2EventTranslator.IoctlTransactionEvent) {
-                typeText = "IOCTL";
-                NxpHalV2EventTranslator.IoctlTransactionEvent ev = (NxpHalV2EventTranslator.IoctlTransactionEvent) event;
-                dataText.append("request: 0x").append(Integer.toHexString(ev.request));
-                dataText.append(" arg: 0x").append(Long.toHexString(ev.arg));
-            } else if (event instanceof NxpHalV2EventTranslator.RawTransactionEvent) {
-                typeText = "???";
-                NxpHalV2EventTranslator.RawTransactionEvent ev = (NxpHalV2EventTranslator.RawTransactionEvent) event;
-                dataText.append(ev.direction);
-                dataText.append("\n");
-                dataText.append(ByteUtils.bytesToHexString(ev.data));
-            } else if (event instanceof NxpHalV2EventTranslator.NciTransactionEvent) {
-                NxpHalV2EventTranslator.NciTransactionEvent ev = (NxpHalV2EventTranslator.NciTransactionEvent) event;
-                switch (ev.type) {
-                    case NCI_DATA: {
-                        NciPacketDecoder.NciDataPacket pk = (NciPacketDecoder.NciDataPacket) ev.packet;
-                        typeText = "DAT";
-                        dataText.append("conn: ").append(pk.connId).append("  ").append("credits: ").append(pk.credits);
-                        dataText.append("\npayload(").append(pk.data.length).append("): \n");
-                        dataText.append(ByteUtils.bytesToHexString(pk.data));
-                        break;
-                    }
-                    case NCI_NTF:
-                    case NCI_RSP:
-                    case NCI_CMD: {
-                        NciPacketDecoder.NciControlPacket pk = (NciPacketDecoder.NciControlPacket) ev.packet;
-                        typeText = (pk.type == NciPacketDecoder.Type.NCI_CMD) ? "CMD"
-                                : ((pk.type == NciPacketDecoder.Type.NCI_NTF) ? "NTF" : "RSP");
-                        int msgType = pk.type.getInt();
-                        String name = NciPacketDecoder.getNciOperationName(msgType, pk.groupId, pk.opcodeId);
-                        if (name == null) {
-                            name = "Unknown";
-                            if (NciPacketDecoder.isNciOperationProprietary(msgType, pk.groupId, pk.opcodeId)) {
-                                name += " Proprietary";
-                            }
-                            name += " " + String.format(Locale.ROOT, "GID:0x%02X", pk.groupId)
-                                    + " " + String.format(Locale.ROOT, "OID:0x%02X", pk.opcodeId);
-                        } else {
-                            name += " (" + String.format(Locale.ROOT, "0x%02X", pk.groupId)
-                                    + "/" + String.format(Locale.ROOT, "0x%02X", pk.opcodeId) + ")";
-                        }
-                        dataText.append(name);
-                        dataText.append("\npayload(").append(pk.data.length).append(")\n");
-                        dataText.append(ByteUtils.bytesToHexString(pk.data));
-                        break;
-                    }
-                    default: {
-                        typeText = "<UNKNOWN>";
-                        dataText.append(ev.packet.toString());
-                    }
-                }
-            }
-            holder.binding.textViewItemNciDumpTime.setText(seqTime);
-            holder.binding.textViewItemNciDumpType.setText(typeText);
-            holder.binding.textViewItemNciDumpMessage.setText(dataText.toString());
+            updateListViewItem(holder, event);
         }
 
         @Override
         public int getItemCount() {
             return mNciDumpViewModel.getTransactionEvents().getValue().size();
         }
-    }
+    };
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
@@ -173,8 +74,6 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NxpH
 //        }
 //        mLastNciTransactionCount = transactionEvents.size();
     }
-
-    private final NciDumpAdapter mDumpAdapter = new NciDumpAdapter();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -242,7 +141,7 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NxpH
                     Snackbar.make(mBinding.getRoot(), R.string.ui_toast_no_data_to_save, Snackbar.LENGTH_SHORT).show();
                     return true;
                 }
-                String shortFileName = "nfc_hal_dump_" + System.currentTimeMillis() + ".txt";
+                String shortFileName = "nfc_hal_dump_" + System.currentTimeMillis() + ".haldump";
                 SafUtils.requestSaveFile(requireActivity()).setDefaultFileName(shortFileName).onResult(uri -> {
                     try {
                         StringBuilder data = mNciDumpViewModel.getTranslator().exportRawEventsAsCsv();
@@ -260,6 +159,14 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NxpH
                     }
                 }).onCancel(() -> Toast.makeText(requireContext(), R.string.ui_toast_operation_canceled, Toast.LENGTH_SHORT).show()).commit();
                 return true;
+            }
+            case R.id.action_view_dump_file: {
+                SafUtils.requestOpenFile(requireActivity()).setMimeType("application/*").onResult(uri -> {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setComponent(new ComponentName(requireContext(), SidebandHostActivity.class));
+                    intent.setData(uri);
+                    startActivity(intent);
+                }).commit();
             }
             default:
                 return super.onContextItemSelected(item);

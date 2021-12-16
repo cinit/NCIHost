@@ -152,6 +152,40 @@ public class NxpHalV2EventTranslator {
         return sb;
     }
 
+    public static ArrayList<INciHostDaemon.IoEventPacket> loadIoEventPacketsFromString(@NonNull String source) {
+        ArrayList<INciHostDaemon.IoEventPacket> result = new ArrayList<>();
+        String[] lines = source.split("\n");
+        for (String line : lines) {
+            line = line.replace(" ", "");
+            if (line.isEmpty()) {
+                continue;
+            }
+            int index = Math.max(line.indexOf('['), line.indexOf("null"));
+            String part1 = line.substring(0, index);
+            String[] items = part1.split(",");
+            INciHostDaemon.IoEventPacket packet = new INciHostDaemon.IoEventPacket();
+            packet.sequence = Integer.parseInt(items[0]);
+            packet.timestamp = Long.parseLong(items[1]);
+            packet.fd = Integer.parseInt(items[2]);
+            packet.opType = INciHostDaemon.IoEventPacket.IoOperationType.fromValue(Integer.parseInt(items[3]));
+            packet.retValue = Long.parseLong(items[4]);
+            packet.directArg1 = Long.parseLong(items[5]);
+            packet.directArg2 = Long.parseLong(items[6]);
+            String[] bufferStrArray = line.substring(index).replace("[", "").replace("]", "").split(",");
+            if ("null".equals(bufferStrArray[0])) {
+                packet.buffer = null;
+            } else {
+                byte[] buffer = new byte[bufferStrArray.length];
+                for (int i = 0; i < bufferStrArray.length; i++) {
+                    buffer[i] = Byte.parseByte(bufferStrArray[i]);
+                }
+                packet.buffer = buffer;
+            }
+            result.add(packet);
+        }
+        return result;
+    }
+
     /**
      * Add a raw event to the list end. This event sequence must exactly match the last event sequence in the list.
      * That is @{code eventPacket.sequence == mLastRawEventSequence + 1}.
