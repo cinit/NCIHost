@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
@@ -40,10 +42,11 @@ import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.databinding.ItemMainNciDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
+import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.util.ByteUtils;
 import cc.ioctl.nfcdevicehost.util.SafUtils;
 
-public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciDumpViewModel.TransactionEvent>> {
+public class NciDumpFragment extends Fragment implements Observer<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> {
 
     private NciDumpViewModel mNciDumpViewModel;
     private FragmentMainDumpBinding mBinding;
@@ -76,24 +79,36 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
 
         @Override
         public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
-            NciDumpViewModel.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
-            String seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
-                    + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+            NxpHalV2EventTranslator.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
+            long timestamp = event.timestamp;
+            String seqTime;
+            Date now = new Date();
+            Date seqTimeDate = new Date(timestamp);
+            if (now.getYear() == seqTimeDate.getYear() && now.getMonth() == seqTimeDate.getMonth()
+                    && now.getDate() == seqTimeDate.getDate()) {
+                // the same day, HH:mm:ss.SSS
+                seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+                        + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+            } else {
+                // not the same day, yyyy-MM-dd HH:mm:ss.SSS
+                seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+                        + String.format(Locale.ROOT, "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+            }
             String typeText = "<INVALID>";
             StringBuilder dataText = new StringBuilder();
-            if (event instanceof NciDumpViewModel.IoctlTransactionEvent) {
+            if (event instanceof NxpHalV2EventTranslator.IoctlTransactionEvent) {
                 typeText = "IOCTL";
-                NciDumpViewModel.IoctlTransactionEvent ev = (NciDumpViewModel.IoctlTransactionEvent) event;
+                NxpHalV2EventTranslator.IoctlTransactionEvent ev = (NxpHalV2EventTranslator.IoctlTransactionEvent) event;
                 dataText.append("request: 0x").append(Integer.toHexString(ev.request));
                 dataText.append(" arg: 0x").append(Long.toHexString(ev.arg));
-            } else if (event instanceof NciDumpViewModel.RawTransactionEvent) {
+            } else if (event instanceof NxpHalV2EventTranslator.RawTransactionEvent) {
                 typeText = "???";
-                NciDumpViewModel.RawTransactionEvent ev = (NciDumpViewModel.RawTransactionEvent) event;
+                NxpHalV2EventTranslator.RawTransactionEvent ev = (NxpHalV2EventTranslator.RawTransactionEvent) event;
                 dataText.append(ev.direction);
                 dataText.append("\n");
                 dataText.append(ByteUtils.bytesToHexString(ev.data));
-            } else if (event instanceof NciDumpViewModel.NciTransactionEvent) {
-                NciDumpViewModel.NciTransactionEvent ev = (NciDumpViewModel.NciTransactionEvent) event;
+            } else if (event instanceof NxpHalV2EventTranslator.NciTransactionEvent) {
+                NxpHalV2EventTranslator.NciTransactionEvent ev = (NxpHalV2EventTranslator.NciTransactionEvent) event;
                 switch (ev.type) {
                     case NCI_DATA: {
                         NciPacketDecoder.NciDataPacket pk = (NciPacketDecoder.NciDataPacket) ev.packet;
@@ -146,7 +161,7 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
 
     @SuppressLint("NotifyDataSetChanged")
     @Override
-    public void onChanged(ArrayList<NciDumpViewModel.TransactionEvent> transactionEvents) {
+    public void onChanged(ArrayList<NxpHalV2EventTranslator.TransactionEvent> transactionEvents) {
 //        int delta = transactionEvents.size() - mLastNciTransactionCount;
 //        if (delta > 0) {
 //            mDumpAdapter.notifyItemRangeInserted(mLastNciTransactionCount, transactionEvents.size() - mLastNciTransactionCount);
@@ -223,13 +238,14 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                 return true;
             }
             case R.id.action_save: {
-                if (mNciDumpViewModel.getTransactionEvents().getValue().isEmpty()) {
+                if (Objects.requireNonNull(mNciDumpViewModel.getTransactionEvents().getValue()).isEmpty()) {
                     Snackbar.make(mBinding.getRoot(), R.string.ui_toast_no_data_to_save, Snackbar.LENGTH_SHORT).show();
+                    return true;
                 }
-                String shortFileName = "nci_dump_" + System.currentTimeMillis() + ".txt";
+                String shortFileName = "nfc_hal_dump_" + System.currentTimeMillis() + ".txt";
                 SafUtils.requestSaveFile(requireActivity()).setDefaultFileName(shortFileName).onResult(uri -> {
                     try {
-                        StringBuilder data = mNciDumpViewModel.exportRawEventsAsCsv();
+                        StringBuilder data = mNciDumpViewModel.getTranslator().exportRawEventsAsCsv();
                         OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
                         os.write(data.toString().getBytes(StandardCharsets.UTF_8));
                         os.flush();
@@ -242,9 +258,7 @@ public class NciDumpFragment extends Fragment implements Observer<ArrayList<NciD
                                 .setPositiveButton(android.R.string.ok, null);
                         builder.create().show();
                     }
-                }).onCancel(() -> {
-                    Toast.makeText(requireContext(), "canceled", Toast.LENGTH_SHORT).show();
-                }).commit();
+                }).onCancel(() -> Toast.makeText(requireContext(), R.string.ui_toast_operation_canceled, Toast.LENGTH_SHORT).show()).commit();
                 return true;
             }
             default:

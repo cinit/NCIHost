@@ -84,4 +84,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_dialog_error_title">Error</string>
     <string name="ui_toast_no_data_to_save">No data to save</string>
     <string name="ui_toast_data_saved">Data saved</string>
+    <string name="ui_toast_operation_canceled">Canceled.</string>
 </resources>
