@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string>
+#include <cerrno>
 #include <string_view>
 
 #include "ncihostd/service/hw/nxpnci/NxpHalHandler.h"
@@ -103,6 +104,18 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
         }
         case Ids::getDaemonStatus: {
             result = R::invoke(this, args, R::is(+[](T *p) { return p->getDaemonStatus(); }));
+            return true;
+        }
+        case Ids::deviceDriverWriteRawBuffer: {
+            result = R::invoke(this, args, R::is(+[](T *p, const std::vector<uint8_t> &buffer) {
+                return p->deviceDriverWriteRawBuffer(buffer);
+            }));
+            return true;
+        }
+        case Ids::deviceDriverIoctl0: {
+            result = R::invoke(this, args, R::is(+[](T *p, uint64_t req, uint64_t arg) {
+                return p->deviceDriverIoctl0(req, arg);
+            }));
             return true;
         }
         default:
@@ -288,4 +301,26 @@ TypedLpcResult<INciHostDaemon::DaemonStatus> NciHostDaemonImpl::getDaemonStatus(
         status.halServiceArch = -1;
     }
     return {status};
+}
+
+TypedLpcResult<int> NciHostDaemonImpl::deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) {
+    auto sp = NxpHalHandler::getWeakInstance();
+    NxpHalHandler *handler;
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *>(p))) {
+        int ret = handler->driverRawWrite(buffer);
+        return {ret};
+    } else {
+        return {-ENOSYS};
+    }
+}
+
+TypedLpcResult<int> NciHostDaemonImpl::deviceDriverIoctl0(uint64_t request, uint64_t arg) {
+    auto sp = NxpHalHandler::getWeakInstance();
+    NxpHalHandler *handler;
+    if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *>(p))) {
+        int ret = handler->driverRawIoctl0(request, arg);
+        return {ret};
+    } else {
+        return {-ENOSYS};
+    }
 }

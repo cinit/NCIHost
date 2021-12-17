@@ -57,3 +57,11 @@ TypedLpcResult<bool> NciHostDaemonProxy::clearHistoryIoEvents() {
 TypedLpcResult<INciHostDaemon::DaemonStatus> NciHostDaemonProxy::getDaemonStatus() {
     return invokeRemoteProcedure<INciHostDaemon::DaemonStatus>(Ids::getDaemonStatus);
 }
+
+TypedLpcResult<int> NciHostDaemonProxy::deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) {
+    return invokeRemoteProcedure<int, const std::vector<uint8_t> &>(Ids::deviceDriverWriteRawBuffer, buffer);
+}
+
+TypedLpcResult<int> NciHostDaemonProxy::deviceDriverIoctl0(uint64_t request, uint64_t arg) {
+    return invokeRemoteProcedure<int, const uint64_t &, const uint64_t &>(Ids::deviceDriverIoctl0, request, arg);
+}

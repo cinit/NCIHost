@@ -27,4 +27,4 @@ set_target_properties(basehalpatch PROPERTIES
         POSITION_INDEPENDENT_CODE ON
         )
 
-target_link_libraries(basehalpatch)
+target_link_libraries(basehalpatch dl)

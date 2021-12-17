@@ -86,6 +86,12 @@ public:
     [[nodiscard]]
     virtual TypedLpcResult<DaemonStatus> getDaemonStatus() = 0;
 
+    [[nodiscard]]
+    virtual TypedLpcResult<int> deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<int> deviceDriverIoctl0(uint64_t request, uint64_t arg) = 0;
+
     class TransactionIds {
     public:
         static constexpr uint32_t getVersionName = 1;
@@ -99,6 +105,8 @@ public:
         static constexpr uint32_t getHistoryIoOperations = 14;
         static constexpr uint32_t clearHistoryIoEvents = 15;
         static constexpr uint32_t getDaemonStatus = 16;
+        static constexpr uint32_t deviceDriverWriteRawBuffer = 17;
+        static constexpr uint32_t deviceDriverIoctl0 = 18;
     };
 };
 

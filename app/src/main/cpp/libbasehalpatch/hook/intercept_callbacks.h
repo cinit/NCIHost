@@ -19,7 +19,7 @@ void invokeCloseResultCallback(int result, int fd);
 
 void invokeIoctlResultCallback(int result, int fd, unsigned long int request, uint64_t arg);
 
-void invokeSelectResultCallback(int result);
+void invokeSelectResultCallback(int result, int nfds, void *readfds, void *writefds, void *exceptfds, void *timeout);
 
 #ifdef __cplusplus
 };

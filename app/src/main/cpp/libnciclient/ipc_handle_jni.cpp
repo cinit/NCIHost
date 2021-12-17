@@ -716,3 +716,71 @@ Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_getDaemonStatus
         return nullptr;
     }
 }
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    deviceDriverWriteRaw
+ * Signature: ([B)I
+ */
+extern "C" [[maybe_unused]]  JNIEXPORT  jint JNICALL
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_deviceDriverWriteRaw
+        (JNIEnv *env, jobject, jbyteArray jdata) {
+    if (jdata == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/NullPointerException"), "data is null");
+        return 0;
+    }
+    std::vector<uint8_t> data;
+    jsize len = env->GetArrayLength(jdata);
+    data.resize(len);
+    env->GetByteArrayRegion(jdata, 0, len, reinterpret_cast<jbyte *>(data.data()));
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->deviceDriverWriteRawBuffer(data);
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            int r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    deviceDriverIoctl0
+ * Signature: (JJ)I
+ */
+extern "C" [[maybe_unused]]  JNIEXPORT  jint JNICALL
+Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_deviceDriverIoctl0
+        (JNIEnv *env, jobject, jlong request, jlong arg) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->deviceDriverIoctl0(uint64_t(request), uint64_t(arg));
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            int r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}

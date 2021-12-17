@@ -100,6 +100,12 @@ public class NciHostDaemonProxy implements INciHostDaemon {
 
     private native RawHistoryIoEventList ntGetHistoryIoEvents(int startIndex, int count);
 
+    @Override
+    public native int deviceDriverWriteRaw(@NonNull byte[] data);
+
+    @Override
+    public native int deviceDriverIoctl0(long request, long arg);
+
     @NonNull
     @Override
     public native DaemonStatus getDaemonStatus();

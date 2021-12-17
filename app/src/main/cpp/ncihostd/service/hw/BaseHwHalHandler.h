@@ -51,6 +51,10 @@ public:
     std::tuple<int, halpatch::HalResponse, std::vector<uint8_t>> sendHalRequest(const halpatch::HalRequest &request,
                                                                                 const void *payload, int timeout_ms);
 
+    [[nodiscard]] virtual int driverRawWrite(const std::vector<uint8_t> &buffer) = 0;
+
+    [[nodiscard]] virtual int driverRawIoctl0(uint64_t request, uint64_t arg) = 0;
+
     void stopSelf();
 
 private:

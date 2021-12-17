@@ -31,6 +31,10 @@ public interface INciHostDaemon {
 
     boolean initHwServiceConnection(String soPath) throws IOException;
 
+    int deviceDriverWriteRaw(@NonNull byte[] data);
+
+    int deviceDriverIoctl0(long request, long arg);
+
     interface OnRemoteEventListener {
         void onIoEvent(IoEventPacket event);
 

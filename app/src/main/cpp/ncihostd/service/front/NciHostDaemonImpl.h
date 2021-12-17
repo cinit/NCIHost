@@ -50,6 +50,10 @@ public:
     TypedLpcResult<bool> clearHistoryIoEvents() override;
 
     TypedLpcResult<DaemonStatus> getDaemonStatus() override;
+
+    TypedLpcResult<int> deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) override;
+
+    TypedLpcResult<int> deviceDriverIoctl0(uint64_t request, uint64_t arg) override;
 };
 
 }

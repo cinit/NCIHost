@@ -214,7 +214,7 @@ EXPORT int hook_proc_ioctl(int fd, unsigned long int request, unsigned long arg)
     }
     int result = pf_orig_ioctl(fd, request, arg);
     int err = errno;
-    invokeIoctlResultCallback(result < 0 ? -err : result, fd, request, arg);
+    invokeIoctlResultCallback(result == -1 ? -err : result, fd, request, arg);
     errno = err;
     return result;
 }
@@ -225,7 +225,7 @@ EXPORT int hook_proc_select(int nfds, void *readfds, void *writefds, void *excep
     }
     int result = pf_orig_select(nfds, readfds, writefds, exceptfds, timeout);
     int err = errno;
-    invokeSelectResultCallback(result < 0 ? -err : result);
+    invokeSelectResultCallback(result < 0 ? -err : result, nfds, readfds, writefds, exceptfds, timeout);
     errno = err;
     return result;
 }

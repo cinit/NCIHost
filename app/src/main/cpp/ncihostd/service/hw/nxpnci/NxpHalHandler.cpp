@@ -204,3 +204,34 @@ void NxpHalHandler::clearHistoryIoOperationEvents() {
     std::scoped_lock lock(mEventMutex);
     mHistoryIoEvents.clear();
 }
+
+int NxpHalHandler::driverRawWrite(const std::vector<uint8_t> &buffer) {
+    HalRequest request = {};
+    request.requestCode = static_cast<uint32_t>(RequestId::DEVICE_OPERATION_WRITE);
+    std::vector<uint8_t> requestPayload;
+    requestPayload.resize(4 + buffer.size());
+    *reinterpret_cast<uint32_t *>(&requestPayload[0]) = uint32_t(buffer.size());
+    memcpy(&requestPayload[4], buffer.data(), buffer.size());
+    request.payloadSize = uint32_t(requestPayload.size());
+    auto[rc, response, payload] = sendHalRequest(request, requestPayload.data(), 1000);
+    if (rc < 0) {
+        LOGE("Failed to send request, rc=%d", rc);
+        return -std::abs(rc);
+    }
+    return int(response.result);
+}
+
+int NxpHalHandler::driverRawIoctl0(uint64_t request, uint64_t arg) {
+    HalRequest requestPacket = {};
+    requestPacket.requestCode = static_cast<uint32_t>(RequestId::DEVICE_OPERATION_IOCTL0);
+    DeviceIoctl0Request requestPayload = {};
+    requestPayload.request = request;
+    requestPayload.arg = arg;
+    requestPacket.payloadSize = uint32_t(sizeof(DeviceIoctl0Request));
+    auto[rc, response, payload] = sendHalRequest(requestPacket, &requestPayload, 1000);
+    if (rc < 0) {
+        LOGE("Failed to send request, rc=%d", rc);
+        return -std::abs(rc);
+    }
+    return int(response.result);
+}

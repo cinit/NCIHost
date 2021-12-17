@@ -170,6 +170,22 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDae
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    deviceDriverWriteRaw
+ * Signature: ([B)I
+ */
+JNIEXPORT jint JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_deviceDriverWriteRaw
+  (JNIEnv *, jobject, jbyteArray);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
+ * Method:    deviceDriverIoctl0
+ * Signature: (JJ)I
+ */
+JNIEXPORT jint JNICALL Java_cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy_deviceDriverIoctl0
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_daemon_internal_NciHostDaemonProxy
  * Method:    getDaemonStatus
  * Signature: ()Lcc/ioctl/nfcdevicehost/daemon/INciHostDaemon/DaemonStatus;
  */
