@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.daemon.internal;
+package cc.ioctl.nfcdevicehost.ipc.daemon.internal;
 
 import androidx.annotation.NonNull;
 
@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 
 public class NciHostDaemonProxy implements INciHostDaemon {
 

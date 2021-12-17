@@ -11,6 +11,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 
 import cc.ioctl.nfcdevicehost.R;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 import cc.ioctl.nfcdevicehost.activity.ui.dump.HalDumpFileViewFragment;
 
 /**

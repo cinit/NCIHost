@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.procedure;
+package cc.ioctl.nfcdevicehost.startup;
 
 import android.annotation.SuppressLint;
 import android.app.Application;

@@ -21,11 +21,11 @@ import java.util.Iterator;
 
 import cc.ioctl.nfcdevicehost.BuildConfig;
 import cc.ioctl.nfcdevicehost.R;
-import cc.ioctl.nfcdevicehost.activity.BaseActivity;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
-import cc.ioctl.nfcdevicehost.activity.config.ConfigManager;
-import cc.ioctl.nfcdevicehost.procedure.MainApplicationImpl;
-import cc.ioctl.nfcdevicehost.procedure.StartupDirector;
+import cc.ioctl.nfcdevicehost.util.config.ConfigManager;
+import cc.ioctl.nfcdevicehost.startup.MainApplicationImpl;
+import cc.ioctl.nfcdevicehost.startup.StartupDirector;
 
 /**
  * The start-up initialization Activity for

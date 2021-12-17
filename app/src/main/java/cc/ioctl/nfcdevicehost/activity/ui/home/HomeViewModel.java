@@ -6,8 +6,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 
 public class HomeViewModel extends ViewModel implements IpcNativeHandler.IpcConnectionListener {
 

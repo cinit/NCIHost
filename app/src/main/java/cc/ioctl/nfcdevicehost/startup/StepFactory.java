@@ -1,7 +1,7 @@
-package cc.ioctl.nfcdevicehost.procedure;
+package cc.ioctl.nfcdevicehost.startup;
 
-import cc.ioctl.nfcdevicehost.procedure.step.EmptyStep;
-import cc.ioctl.nfcdevicehost.procedure.step.EarlyInit;
+import cc.ioctl.nfcdevicehost.startup.step.EmptyStep;
+import cc.ioctl.nfcdevicehost.startup.step.EarlyInit;
 
 public class StepFactory {
 

@@ -6,6 +6,8 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
+
 /**
  * External file share/browser springboard entry point.
  * This activity is short-lived and only used to launch a target activity.

@@ -3,7 +3,7 @@ package cc.ioctl.nfcdevicehost.decoder;
 import java.util.HashMap;
 import java.util.Objects;
 
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 
 /**
  * I/O system call event handler for NXP HAL-Impl v2.

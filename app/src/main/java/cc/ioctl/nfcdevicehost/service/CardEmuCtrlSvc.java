@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.function.Consumer;
 
-import cc.ioctl.nfcdevicehost.procedure.BaseApplicationDelegate;
+import cc.ioctl.nfcdevicehost.startup.BaseApplicationDelegate;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
 @SuppressWarnings("Since15")

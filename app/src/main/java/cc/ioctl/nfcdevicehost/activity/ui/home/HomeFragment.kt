@@ -13,7 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import cc.ioctl.nfcdevicehost.R
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainHomeBinding
 import cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc
 import cc.ioctl.nfcdevicehost.util.NativeUtils

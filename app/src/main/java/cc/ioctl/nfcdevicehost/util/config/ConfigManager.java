@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.activity.config;
+package cc.ioctl.nfcdevicehost.util.config;
 
 import com.tencent.mmkv.MMKV;
 

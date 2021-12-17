@@ -7,6 +7,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.preference.PreferenceFragmentCompat;
 
 import cc.ioctl.nfcdevicehost.R;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 
 public class SettingsActivity extends BaseActivity {
 

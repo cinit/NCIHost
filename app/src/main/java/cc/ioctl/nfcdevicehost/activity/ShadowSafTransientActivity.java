@@ -12,6 +12,8 @@ import androidx.annotation.UiThread;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
+
 /**
  * Transparent and transient activity that is used to access the SAF API without overriding the
  * onActivityResult() method. This activity is used by {@link cc.ioctl.nfcdevicehost.util.SafUtils}.

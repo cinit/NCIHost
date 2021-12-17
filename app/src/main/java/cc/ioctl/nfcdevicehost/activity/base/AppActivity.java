@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.activity;
+package cc.ioctl.nfcdevicehost.activity.base;
 
 import android.content.res.TypedArray;
 import android.graphics.Color;

@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 
 public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcConnectionListener, INciHostDaemon.OnRemoteEventListener {

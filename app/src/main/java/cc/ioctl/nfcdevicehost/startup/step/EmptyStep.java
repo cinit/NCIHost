@@ -1,6 +1,6 @@
-package cc.ioctl.nfcdevicehost.procedure.step;
+package cc.ioctl.nfcdevicehost.startup.step;
 
-import cc.ioctl.nfcdevicehost.procedure.Step;
+import cc.ioctl.nfcdevicehost.startup.Step;
 
 public class EmptyStep extends Step {
     @Override

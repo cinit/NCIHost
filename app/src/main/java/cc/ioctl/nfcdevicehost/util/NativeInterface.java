@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost;
+package cc.ioctl.nfcdevicehost.util;
 
 import android.content.Context;
 
@@ -7,8 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import cc.ioctl.nfcdevicehost.procedure.BaseApplicationImpl;
-import cc.ioctl.nfcdevicehost.util.NativeUtils;
+import cc.ioctl.nfcdevicehost.BuildConfig;
+import cc.ioctl.nfcdevicehost.startup.BaseApplicationImpl;
 
 public class NativeInterface {
 

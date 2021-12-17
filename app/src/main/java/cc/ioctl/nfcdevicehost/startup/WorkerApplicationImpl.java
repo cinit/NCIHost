@@ -1,9 +1,9 @@
-package cc.ioctl.nfcdevicehost.procedure;
+package cc.ioctl.nfcdevicehost.startup;
 
 import android.app.Application;
 import android.util.Log;
 
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
 public class WorkerApplicationImpl extends BaseApplicationImpl {

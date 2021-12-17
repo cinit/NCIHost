@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.procedure.step;
+package cc.ioctl.nfcdevicehost.startup.step;
 
 import android.content.Context;
 
@@ -6,8 +6,8 @@ import com.tencent.mmkv.MMKV;
 
 import java.io.File;
 
-import cc.ioctl.nfcdevicehost.procedure.BaseApplicationImpl;
-import cc.ioctl.nfcdevicehost.procedure.Step;
+import cc.ioctl.nfcdevicehost.startup.BaseApplicationImpl;
+import cc.ioctl.nfcdevicehost.startup.Step;
 
 public class StartDaemonService extends Step {
     @Override

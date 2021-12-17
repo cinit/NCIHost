@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 import cc.ioctl.nfcdevicehost.R;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 
 @RequiresApi(api = Build.VERSION_CODES.O)
 public class MipmapGenActivity extends BaseActivity {

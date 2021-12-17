@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.procedure;
+package cc.ioctl.nfcdevicehost.startup;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -8,7 +8,7 @@ import androidx.annotation.UiThread;
 
 import java.util.HashSet;
 
-import cc.ioctl.nfcdevicehost.activity.BaseActivity;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 import cc.ioctl.nfcdevicehost.activity.ui.startup.TransientInitActivity;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 

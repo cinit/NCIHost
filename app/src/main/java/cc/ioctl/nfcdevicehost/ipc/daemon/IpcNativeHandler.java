@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.daemon;
+package cc.ioctl.nfcdevicehost.ipc.daemon;
 
 import android.content.Context;
 import android.util.Log;
@@ -11,9 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 
-import cc.ioctl.nfcdevicehost.NativeInterface;
-import cc.ioctl.nfcdevicehost.daemon.internal.NciHostDaemonProxy;
-import cc.ioctl.nfcdevicehost.procedure.BaseApplicationImpl;
+import cc.ioctl.nfcdevicehost.util.NativeInterface;
+import cc.ioctl.nfcdevicehost.ipc.daemon.internal.NciHostDaemonProxy;
+import cc.ioctl.nfcdevicehost.startup.BaseApplicationImpl;
 import cc.ioctl.nfcdevicehost.util.NativeUtils;
 import cc.ioctl.nfcdevicehost.util.RootShell;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;

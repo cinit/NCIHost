@@ -1,11 +1,11 @@
-package cc.ioctl.nfcdevicehost.daemon;
+package cc.ioctl.nfcdevicehost.ipc.daemon;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
 
-import cc.ioctl.nfcdevicehost.daemon.internal.NciHostDaemonProxy;
+import cc.ioctl.nfcdevicehost.ipc.daemon.internal.NciHostDaemonProxy;
 import cc.ioctl.nfcdevicehost.util.ByteUtils;
 
 public interface INciHostDaemon {

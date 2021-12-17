@@ -22,10 +22,11 @@ import com.google.android.material.navigation.NavigationView;
 import java.io.File;
 import java.io.IOException;
 
-import cc.ioctl.nfcdevicehost.NativeInterface;
+import cc.ioctl.nfcdevicehost.util.NativeInterface;
 import cc.ioctl.nfcdevicehost.R;
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.util.RootShell;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 

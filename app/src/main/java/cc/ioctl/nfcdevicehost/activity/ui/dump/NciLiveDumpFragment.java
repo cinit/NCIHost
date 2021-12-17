@@ -2,9 +2,7 @@ package cc.ioctl.nfcdevicehost.activity.ui.dump;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -36,9 +34,8 @@ import java.util.Objects;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
-import cc.ioctl.nfcdevicehost.activity.SidebandHostActivity;
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.util.SafUtils;

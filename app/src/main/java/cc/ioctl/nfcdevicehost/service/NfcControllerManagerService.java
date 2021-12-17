@@ -7,11 +7,11 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import cc.ioctl.nfcdevicehost.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.ipc.INfcControllerManager;
 import cc.ioctl.nfcdevicehost.ipc.NfcControllerManager;
 import cc.ioctl.nfcdevicehost.ipc.NfcOperatingMode;
-import cc.ioctl.nfcdevicehost.procedure.WorkerApplicationImpl;
+import cc.ioctl.nfcdevicehost.startup.WorkerApplicationImpl;
 
 public class NfcControllerManagerService extends Service {
 

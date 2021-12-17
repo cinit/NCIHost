@@ -1,4 +1,4 @@
-package cc.ioctl.nfcdevicehost.activity;
+package cc.ioctl.nfcdevicehost.activity.base;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -14,8 +14,8 @@ import androidx.fragment.app.FragmentManager;
 import java.lang.reflect.Field;
 
 import cc.ioctl.nfcdevicehost.activity.ui.startup.TransientInitActivity;
-import cc.ioctl.nfcdevicehost.procedure.MainApplicationImpl;
-import cc.ioctl.nfcdevicehost.procedure.StartupDirector;
+import cc.ioctl.nfcdevicehost.startup.MainApplicationImpl;
+import cc.ioctl.nfcdevicehost.startup.StartupDirector;
 
 /**
  * Late-onCreate feature for Activity

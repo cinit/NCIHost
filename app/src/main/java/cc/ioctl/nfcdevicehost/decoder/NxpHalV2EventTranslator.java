@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 
 public class NxpHalV2EventTranslator {
     private final HashMap<Integer, INciHostDaemon.IoEventPacket> mRawIoEventPackets = new HashMap<>();

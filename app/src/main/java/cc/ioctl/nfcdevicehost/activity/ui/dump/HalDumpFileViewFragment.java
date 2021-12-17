@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
-import cc.ioctl.nfcdevicehost.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
