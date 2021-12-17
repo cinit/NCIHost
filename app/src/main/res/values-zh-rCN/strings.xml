@@ -62,5 +62,6 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="action_view_dump_file">浏览转储文件</string>
     <string name="ui_dialog_title_requesting_root">请求 root 权限</string>
     <string name="ui_dialog_msg_body_requesting_root">正在请求 root 权限，请授予本应用 root 权限</string>
+    <string name="label_nav_main_dump_file">HAL Dump File</string>
 
 </resources>

@@ -91,4 +91,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="action_view_dump_file">View dump file</string>
     <string name="ui_dialog_title_requesting_root">Requesting root</string>
     <string name="ui_dialog_msg_body_requesting_root">Please grant root permission</string>
+    <string name="label_nav_main_dump_file">HAL Dump File</string>
 </resources>

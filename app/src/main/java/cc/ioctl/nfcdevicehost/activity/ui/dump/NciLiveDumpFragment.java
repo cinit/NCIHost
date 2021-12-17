@@ -162,11 +162,11 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
             }
             case R.id.action_view_dump_file: {
                 SafUtils.requestOpenFile(requireActivity()).setMimeType("application/*").onResult(uri -> {
-                    Intent intent = new Intent(Intent.ACTION_VIEW);
-                    intent.setComponent(new ComponentName(requireContext(), SidebandHostActivity.class));
-                    intent.setData(uri);
-                    startActivity(intent);
+                    Bundle args = new Bundle();
+                    args.putString(HalDumpFileViewFragment.EXTRA_CONTENT, uri.toString());
+                    ((MainUiFragmentActivity) requireActivity()).getNavController().navigate(R.id.nav_main_dump_file, args);
                 }).commit();
+                return true;
             }
             default:
                 return super.onContextItemSelected(item);

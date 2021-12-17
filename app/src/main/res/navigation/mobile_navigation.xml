@@ -12,7 +12,7 @@
         tools:layout="@layout/fragment_main_home" />
 
     <fragment
-        android:id="@+id/nav_main_dump"
+        android:id="@+id/nav_main_dump_live"
         android:name="cc.ioctl.nfcdevicehost.activity.ui.dump.NciLiveDumpFragment"
         android:label="@string/menu_fragment_dump"
         tools:layout="@layout/fragment_main_dump" />
@@ -22,4 +22,10 @@
         android:name="cc.ioctl.nfcdevicehost.activity.ui.cards.CardListFragment"
         android:label="@string/menu_fragment_cards"
         tools:layout="@layout/fragment_main_card_list" />
+
+    <fragment
+        android:id="@+id/nav_main_dump_file"
+        android:name="cc.ioctl.nfcdevicehost.activity.ui.dump.HalDumpFileViewFragment"
+        android:label="@string/label_nav_main_dump_file" />
+
 </navigation>

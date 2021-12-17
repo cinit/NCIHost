@@ -74,7 +74,7 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
         Bundle args = getArguments();
         final String uriPath = args == null ? null : args.getString(EXTRA_CONTENT);
         if (uriPath == null) {
-            requireActivity().finish();
+            popSelf();
             return null;
         }
         Uri uri = Uri.parse(uriPath);
@@ -101,7 +101,7 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
                             .setTitle(R.string.ui_dialog_error_title)
                             .setMessage(e.toString())
                             .setCancelable(false)
-                            .setPositiveButton(android.R.string.ok, (dialog1, which) -> requireActivity().finish())
+                            .setPositiveButton(android.R.string.ok, (dialog1, which) -> popSelf())
                             .show());
                 }
             } catch (IOException e) {
@@ -110,7 +110,7 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
                         .setMessage(context.getString(R.string.ui_dialog_unable_to_open_file_v0s, uri.toString())
                                 + "\n" + e)
                         .setCancelable(false)
-                        .setPositiveButton(android.R.string.ok, (dialog1, which) -> requireActivity().finish())
+                        .setPositiveButton(android.R.string.ok, (dialog1, which) -> popSelf())
                         .show());
             }
         });
@@ -127,4 +127,9 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
         }
 
     }
+
+    private void popSelf() {
+        requireActivity().onBackPressed();
+    }
+
 }
