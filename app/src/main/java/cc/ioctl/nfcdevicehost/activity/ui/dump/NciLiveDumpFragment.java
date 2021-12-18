@@ -44,6 +44,7 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
 
     private FragmentMainDumpBinding mBinding;
     private NciDumpViewModel mNciDumpViewModel;
+    private boolean mShowDecodedPacket = true;
     private final AbsNciDumpAdapter mDumpAdapter = new AbsNciDumpAdapter() {
         @Override
         public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
@@ -129,7 +130,8 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        requireActivity().getMenuInflater().inflate(R.menu.menu_main_fragment_dump, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+        requireActivity().getMenuInflater().inflate(R.menu.menu_main_fragment_dump_live, menu);
     }
 
     @Override

@@ -1,15 +1,20 @@
 package cc.ioctl.nfcdevicehost.activity.ui.dump;
 
+import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Date;
 import java.util.Locale;
 
+import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.util.ByteUtils;
@@ -117,4 +122,14 @@ public abstract class BaseHalDumpFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        requireActivity().getMenuInflater().inflate(R.menu.menu_main_fragment_dump_common, menu);
+    }
 }
