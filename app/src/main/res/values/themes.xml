@@ -22,6 +22,8 @@
             shortEdges
         </item>
 
+        <!-- BaseBottomSheetDialogFragment round corners -->
+        <item name="bottomSheetDialogTheme">@style/CustomBottomSheetDialog</item>
     </style>
 
     <!-- Translucent Activity for Shadow Dialog Host -->

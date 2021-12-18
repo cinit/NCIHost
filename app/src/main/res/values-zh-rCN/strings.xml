@@ -63,5 +63,9 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_dialog_title_requesting_root">请求 root 权限</string>
     <string name="ui_dialog_msg_body_requesting_root">正在请求 root 权限，请授予本应用 root 权限</string>
     <string name="label_nav_main_dump_file">HAL Dump File</string>
+    <string name="action_close">关闭</string>
+    <string name="action_submit">提交</string>
+    <string name="ui_toast_operation_success_v0s">操作成功: %s</string>
+    <string name="ui_dialog_error_message_invalid_input_syntax_v0s">输入的数据格式有误: %s</string>
 
 </resources>

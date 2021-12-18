@@ -101,7 +101,7 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
         Activity activity = getActivity();
         if (activity instanceof MainUiFragmentActivity) {
             FloatingActionButton fab = ((MainUiFragmentActivity) activity).showFloatingActionButton();
-            fab.setOnClickListener(v -> Snackbar.make(v, R.string.ui_toast_not_implemented, Snackbar.LENGTH_SHORT).show());
+            fab.setOnClickListener(v -> showDeviceDriverRawIoOperationDialog());
         }
         INciHostDaemon daemon = IpcNativeHandler.peekConnection();
         if (daemon == null) {
@@ -113,6 +113,12 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
                         .setAction(R.string.ui_snackbar_action_view_or_jump, v -> jumpToHomeFragment()).show();
             }
         }
+    }
+
+    @UiThread
+    private void showDeviceDriverRawIoOperationDialog() {
+        HalOperationDialogFragment dialog = new HalOperationDialogFragment();
+        dialog.show(requireActivity().getSupportFragmentManager(), getTag());
     }
 
     @UiThread

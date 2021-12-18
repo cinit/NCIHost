@@ -92,4 +92,8 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_dialog_title_requesting_root">Requesting root</string>
     <string name="ui_dialog_msg_body_requesting_root">Please grant root permission</string>
     <string name="label_nav_main_dump_file">HAL Dump File</string>
+    <string name="action_close">Close</string>
+    <string name="action_submit">Submit</string>
+    <string name="ui_toast_operation_success_v0s">Operation success: %s</string>
+    <string name="ui_dialog_error_message_invalid_input_syntax_v0s">Invalid input: %s</string>
 </resources>
