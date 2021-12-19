@@ -98,4 +98,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_dialog_error_message_invalid_input_syntax_v0s">Invalid input: %s</string>
     <string name="action_decoder_config">Decoder properties</string>
     <string name="ui_hal_dump_decoder_config_title">Decoder Properties</string>
+    <string name="action_confirm">Confirm</string>
 </resources>

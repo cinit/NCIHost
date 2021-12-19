@@ -161,11 +161,11 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
                             .setPositiveButton(android.R.string.ok, (dialog1, which) -> popSelf())
                             .show());
                 }
-            } catch (IOException e) {
+            } catch (IOException | SecurityException e) {
                 ThreadManager.runOnUiThread(() -> new AlertDialog.Builder(context)
                         .setTitle(R.string.ui_dialog_error_title)
                         .setMessage(context.getString(R.string.ui_dialog_unable_to_open_file_v0s, uri.toString())
-                                + "\n" + e)
+                                + "\n" + e.getMessage())
                         .setCancelable(false)
                         .setPositiveButton(android.R.string.ok, (dialog1, which) -> popSelf())
                         .show());

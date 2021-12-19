@@ -69,5 +69,6 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_dialog_error_message_invalid_input_syntax_v0s">输入的数据格式有误: %s</string>
     <string name="action_decoder_config">解码选项</string>
     <string name="ui_hal_dump_decoder_config_title">解码选项</string>
+    <string name="action_confirm">确认</string>
 
 </resources>
