@@ -27,6 +27,7 @@ import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
 import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
+import cc.ioctl.nfcdevicehost.util.SafUtils;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
 /**
@@ -134,10 +135,9 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
             return null;
         }
         Uri uri = Uri.parse(uriPath);
-        final ContentResolver resolver = requireContext().getContentResolver();
         ThreadManager.async(() -> {
             try {
-                InputStream is = resolver.openInputStream(uri);
+                InputStream is = SafUtils.openInputStream(requireContext(), uri);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int len;

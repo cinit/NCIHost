@@ -1,11 +1,21 @@
 package cc.ioctl.nfcdevicehost.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+import android.system.ErrnoException;
+import android.system.Os;
+import android.system.OsConstants;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Objects;
 
 import cc.ioctl.nfcdevicehost.activity.ShadowSafTransientActivity;
@@ -136,4 +146,64 @@ public class SafUtils {
         }
 
     }
+
+    private static final HashMap<String, ParcelFileDescriptor> sCachedFileDescriptors = new HashMap<>();
+
+    /**
+     * Open an input stream for the given uri. The result is cached.
+     * TODO: add a lifecycle callback to clear the cached fd when the activity is destroyed.
+     *
+     * @param context the activity or application context
+     * @param uri     the uri of the file to be opened
+     * @return the input stream of the file
+     * @throws IOException       if any error occurs
+     * @throws SecurityException if access denied by the content provider
+     */
+    public static InputStream openInputStream(@NonNull Context context, @NonNull Uri uri)
+            throws IOException, SecurityException {
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(uri, "uri");
+        try {
+            ParcelFileDescriptor fd = context.getContentResolver().openFileDescriptor(uri, "r");
+            if (fd == null) {
+                throw new IOException("Failed to open " + uri + ", is the provider still running?");
+            }
+            ParcelFileDescriptor dup = fd.dup();
+            synchronized (sCachedFileDescriptors) {
+                ParcelFileDescriptor old = sCachedFileDescriptors.put(uri.toString(), dup);
+                if (old != null) {
+                    old.close();
+                }
+                sCachedFileDescriptors.put(uri.toString(), dup);
+            }
+            // do not close the fd, it will be closed when the input stream is closed
+            return new FileInputStream(fd.getFileDescriptor());
+        } catch (SecurityException se) {
+            // the access is denied, maybe there is an activity recreation?
+            // try to open the input stream by a cached file descriptor
+            ParcelFileDescriptor dup = null;
+            synchronized (sCachedFileDescriptors) {
+                ParcelFileDescriptor cached = sCachedFileDescriptors.get(uri.toString());
+                if (cached != null) {
+                    dup = cached.dup();
+                }
+            }
+            if (dup != null) {
+                FileDescriptor fd = dup.getFileDescriptor();
+                try {
+                    // set the offset to 0
+                    Os.lseek(fd, 0, OsConstants.SEEK_SET);
+                    // do not close the fd, it will be closed when the input stream is closed
+                    return new FileInputStream(fd);
+                } catch (ErrnoException e) {
+                    dup.close();
+                    throw new IOException("Failed to seek to the beginning of the file", e);
+                }
+            } else {
+                // we have no cached file descriptor, re-throw the exception
+                throw se;
+            }
+        }
+    }
+
 }
