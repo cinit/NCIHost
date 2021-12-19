@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ui_hal_dump_decoder_config_items">
+        <item>无 (显示原始系统调用)</item>
+        <item>NCI 协议</item>
+    </string-array>
+</resources>

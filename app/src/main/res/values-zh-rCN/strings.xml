@@ -19,7 +19,7 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ntf_text_req_perm">正在请求权限…</string>
     <string name="action_exit">退出</string>
     <string name="action_clear_history_events">清空</string>
-    <string name="action_save_as">保存…</string>
+    <string name="action_save_as">另存为…</string>
     <string name="usage_help">帮助</string>
     <string name="detail_info">信息</string>
     <string name="status">状态</string>
@@ -65,8 +65,9 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="label_nav_main_dump_file">HAL Dump File</string>
     <string name="action_close">关闭</string>
     <string name="action_submit">提交</string>
-    <string name="ui_toast_operation_success_v0s">操作成功: %s</string>
+    <string name="ui_toast_operation_success_v0d">操作成功: %d</string>
     <string name="ui_dialog_error_message_invalid_input_syntax_v0s">输入的数据格式有误: %s</string>
-    <string name="action_decoder_config">解码器配置</string>
+    <string name="action_decoder_config">解码选项</string>
+    <string name="ui_hal_dump_decoder_config_title">解码选项</string>
 
 </resources>

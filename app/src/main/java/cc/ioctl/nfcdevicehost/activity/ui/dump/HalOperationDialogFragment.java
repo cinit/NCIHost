@@ -85,8 +85,8 @@ public class HalOperationDialogFragment extends BaseBottomSheetDialogFragment im
                                         .show());
                             } else {
                                 dismiss();
-                                Snackbar.make(mBinding.getRoot(),
-                                        requireContext().getString(R.string.ui_toast_operation_success_v0s, result),
+                                Snackbar.make(requireActivity().getWindow().getDecorView(),
+                                        requireContext().getString(R.string.ui_toast_operation_success_v0d, result),
                                         Snackbar.LENGTH_SHORT).show();
                             }
                         });

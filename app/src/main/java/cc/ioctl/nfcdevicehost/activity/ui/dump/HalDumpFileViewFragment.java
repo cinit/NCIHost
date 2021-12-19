@@ -38,24 +38,80 @@ import cc.ioctl.nfcdevicehost.util.ThreadManager;
 public class HalDumpFileViewFragment extends BaseHalDumpFragment {
 
     public static final String EXTRA_CONTENT = HalDumpFileViewFragment.class.getName() + ".EXTRA_CONTENT";
+    private static final String STATE_CURRENT_DECODER_INDEX = "STATE_CURRENT_DECODER_INDEX";
 
     private String mRawSerializedDumpData = null;
     private ArrayList<INciHostDaemon.IoEventPacket> mRawIoEvents = null;
     private ArrayList<NxpHalV2EventTranslator.TransactionEvent> mTransactionEvents = null;
+    private int mCurrentDecoderIndex = 1;
 
     private FragmentMainDumpBinding mBinding;
     private final AbsNciDumpAdapter mDumpAdapter = new AbsNciDumpAdapter() {
         @Override
         public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
-            NxpHalV2EventTranslator.TransactionEvent event = mTransactionEvents.get(position);
-            updateListViewItem(holder, event);
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                INciHostDaemon.IoEventPacket event = mRawIoEvents.get(position);
+                updateListViewItemForAuxIoEvent(holder, event);
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                NxpHalV2EventTranslator.TransactionEvent event = mTransactionEvents.get(position);
+                updateListViewItemForNciPacket(holder, event);
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return mTransactionEvents == null ? 0 : mTransactionEvents.size();
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return mRawIoEvents == null ? 0 : mRawIoEvents.size();
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return mTransactionEvents == null ? 0 : mTransactionEvents.size();
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
+        }
+
+        @Override
+        public int getEventSequenceByPosition(int position) {
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return mRawIoEvents.get(position).sequence;
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return (int) mTransactionEvents.get(position).sequence;
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
+        }
+
+        @Override
+        public int findEventPositionBySequence(int sequence) {
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return BaseHalDumpFragment.findItemIndexBySequenceIoEventPacket(mRawIoEvents, sequence);
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return BaseHalDumpFragment.findItemIndexBySequenceTransactionEvent(mTransactionEvents, sequence);
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
         }
     };
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            int idx = savedInstanceState.getInt(STATE_CURRENT_DECODER_INDEX, -1);
+            if (idx >= 0) {
+                mCurrentDecoderIndex = idx;
+            }
+        }
+    }
 
     @Nullable
     @Override
@@ -95,7 +151,8 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
                     NxpHalV2EventTranslator translator = new NxpHalV2EventTranslator();
                     translator.pushBackRawIoEvents(mRawIoEvents);
                     mTransactionEvents = translator.getTransactionEvents();
-                    ThreadManager.runOnUiThread(() -> mDumpAdapter.notifyDataSetChanged());
+                    // notify adapter
+                    ThreadManager.runOnUiThread(mDumpAdapter::notifyDataSetChanged);
                 } catch (RuntimeException e) {
                     ThreadManager.runOnUiThread(() -> new AlertDialog.Builder(context)
                             .setTitle(R.string.ui_dialog_error_title)
@@ -128,8 +185,47 @@ public class HalDumpFileViewFragment extends BaseHalDumpFragment {
 
     }
 
-    private void popSelf() {
+    protected void popSelf() {
         requireActivity().onBackPressed();
     }
 
+    @Override
+    protected int getCurrentDecoderIndex() {
+        return mCurrentDecoderIndex;
+    }
+
+    @Override
+    protected void setCurrentDecoderIndex(int newDecoderIndex) {
+        // get the current RecyclerView item index
+        RecyclerView recyclerView = mBinding.recyclerViewMainFragmentDumpList;
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+        assert layoutManager != null;
+        int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+        View firstVisibleView = firstVisibleItemPosition == RecyclerView.NO_POSITION ? null
+                : layoutManager.findViewByPosition(firstVisibleItemPosition);
+        int itemTopOffset = firstVisibleView == null ? 0 : firstVisibleView.getTop();
+        int currentEventSequence = -1;
+        if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
+            currentEventSequence = mDumpAdapter.getEventSequenceByPosition(firstVisibleItemPosition);
+        }
+        mCurrentDecoderIndex = newDecoderIndex;
+        // the entire data set is changed, call notifyDataSetChanged
+        mDumpAdapter.notifyDataSetChanged();
+        // find the index of the current event in the new data set
+        if (currentEventSequence != -1) {
+            int pos = mDumpAdapter.findEventPositionBySequence(currentEventSequence);
+            pos = Math.min(Math.abs(pos), mDumpAdapter.getItemCount() - 1);
+            if (layoutManager.getStackFromEnd()) {
+                layoutManager.scrollToPositionWithOffset(pos, recyclerView.getHeight() - itemTopOffset);
+            } else {
+                layoutManager.scrollToPositionWithOffset(pos, itemTopOffset);
+            }
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(STATE_CURRENT_DECODER_INDEX, mCurrentDecoderIndex);
+    }
 }

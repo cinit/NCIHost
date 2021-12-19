@@ -1,5 +1,7 @@
 package cc.ioctl.nfcdevicehost.decoder;
 
+import androidx.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -36,20 +38,26 @@ public class NxpHalV2IoEventHandler {
     public static class ReadEvent implements BaseEvent {
         public FileType fileType;
         public byte[] data;
+        @Nullable
+        public String auxPath;
 
-        public ReadEvent(FileType fileType, byte[] data) {
+        public ReadEvent(FileType fileType, byte[] data, @Nullable String auxPath) {
             this.fileType = fileType;
             this.data = data;
+            this.auxPath = auxPath;
         }
     }
 
     public static class WriteEvent implements BaseEvent {
         public FileType fileType;
         public byte[] data;
+        @Nullable
+        public String auxPath;
 
-        public WriteEvent(FileType fileType, byte[] data) {
+        public WriteEvent(FileType fileType, byte[] data, @Nullable String auxPath) {
             this.fileType = fileType;
             this.data = data;
+            this.auxPath = auxPath;
         }
     }
 
@@ -57,11 +65,14 @@ public class NxpHalV2IoEventHandler {
         public FileType fileType;
         public int request;
         public long arg;
+        @Nullable
+        public String auxPath;
 
-        public IoctlEvent(FileType fileType, int request, long arg) {
+        public IoctlEvent(FileType fileType, int request, long arg, @Nullable String auxPath) {
             this.fileType = fileType;
             this.request = request;
             this.arg = arg;
+            this.auxPath = auxPath;
         }
     }
 
@@ -86,10 +97,17 @@ public class NxpHalV2IoEventHandler {
      */
     public BaseEvent update(INciHostDaemon.IoEventPacket event) {
         Objects.requireNonNull(event, "event is null");
+        if (event.opType != INciHostDaemon.IoEventPacket.IoOperationType.OPEN && event.fd >= 0) {
+            String path = mFilePathMap.get(event.fd);
+            if (path != null) {
+                event.auxPath = path;
+            }
+        }
         switch (event.opType) {
             case OPEN: {
                 String fileName = new String(event.buffer, 0, event.buffer.length);
                 mFilePathMap.put(event.fd, fileName);
+                event.auxPath = fileName;
                 return null;
             }
             case CLOSE: {
@@ -100,7 +118,7 @@ public class NxpHalV2IoEventHandler {
                 String fileName = mFilePathMap.get(event.fd);
                 if (fileName != null && !fileName.startsWith("/dev/")) {
                     // not a device file, just return as is
-                    return new ReadEvent(FileType.NON_DEVICE, event.buffer);
+                    return new ReadEvent(FileType.NON_DEVICE, event.buffer, fileName);
                 } else {
                     FileType fileType = fileName != null ? FileType.DEVICE : FileType.UNKNOWN;
                     // treat as a device file, each read is separated by a select system call
@@ -112,7 +130,7 @@ public class NxpHalV2IoEventHandler {
                             return null;
                         } else {
                             // not a valid message header, return as is
-                            return new ReadEvent(fileType, event.buffer);
+                            return new ReadEvent(fileType, event.buffer, fileName);
                         }
                     } else {
                         // we have payload, combine the last read buffer with this one
@@ -121,7 +139,7 @@ public class NxpHalV2IoEventHandler {
                         System.arraycopy(event.buffer, 0, combinedBuffer, mLastReadBuffer.length, event.buffer.length);
                         mLastReadBuffer = null;
                         mReadStatus = ReadStatus.RESET;
-                        return new ReadEvent(fileType, combinedBuffer);
+                        return new ReadEvent(fileType, combinedBuffer, fileName);
                     }
                 }
             }
@@ -130,22 +148,23 @@ public class NxpHalV2IoEventHandler {
                 String fileName = mFilePathMap.get(event.fd);
                 FileType fileType = fileName != null ? (
                         fileName.startsWith("/dev/") ? FileType.DEVICE : FileType.NON_DEVICE) : FileType.UNKNOWN;
-                return new WriteEvent(fileType, event.buffer);
+                return new WriteEvent(fileType, event.buffer, fileName);
             }
             case IOCTL: {
                 String fileName = mFilePathMap.get(event.fd);
                 FileType fileType = fileName != null ? (
                         fileName.startsWith("/dev/") ? FileType.DEVICE : FileType.NON_DEVICE) : FileType.UNKNOWN;
-                return new IoctlEvent(fileType, (int) (event.directArg1), event.directArg2);
+                return new IoctlEvent(fileType, (int) (event.directArg1), event.directArg2, fileName);
             }
             case SELECT: {
+                String fileName = mFilePathMap.get(event.fd);
                 // select is used to separate the read events, if we have a previous read event, but we are waiting
                 // for the payload, we should flush it out
                 if (mReadStatus == ReadStatus.WAIT_FOR_PAYLOAD) {
                     mReadStatus = ReadStatus.RESET;
                     byte[] unknownBuffer = mLastReadBuffer;
                     mLastReadBuffer = null;
-                    return new ReadEvent(FileType.UNKNOWN, unknownBuffer);
+                    return new ReadEvent(FileType.UNKNOWN, unknownBuffer, fileName);
                 } else {
                     return null;
                 }

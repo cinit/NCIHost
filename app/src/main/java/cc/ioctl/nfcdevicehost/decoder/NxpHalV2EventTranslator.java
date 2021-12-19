@@ -15,6 +15,8 @@ public class NxpHalV2EventTranslator {
     // guarded by this
     private final ArrayList<TransactionEvent> mTransactionEvents = new ArrayList<>();
     // guarded by this
+    private final ArrayList<INciHostDaemon.IoEventPacket> mAuxIoEvents = new ArrayList<>();
+    // guarded by this
     private int mLastUpdateTransactionSequence = 0;
     // guarded by this
     private int mLastSuccessTransactionSequence = 0;
@@ -24,6 +26,10 @@ public class NxpHalV2EventTranslator {
 
     public ArrayList<TransactionEvent> getTransactionEvents() {
         return mTransactionEvents;
+    }
+
+    public ArrayList<INciHostDaemon.IoEventPacket> getAuxIoEvents() {
+        return mAuxIoEvents;
     }
 
     public enum Direction {
@@ -80,13 +86,18 @@ public class NxpHalV2EventTranslator {
         }
     }
 
-    private synchronized boolean translateIoEvents() {
+    private synchronized int translateRawIoEvents() {
         ArrayList<TransactionEvent> transactionEvents = mTransactionEvents;
-        boolean updated = false;
+        boolean auxIoEventUpdated = false;
+        boolean transactionEventUpdated = false;
         while (mLastUpdateTransactionSequence < mLastRawEventSequence) {
             // translate the events
             INciHostDaemon.IoEventPacket eventPacket = mRawIoEventPackets.get(mLastUpdateTransactionSequence + 1);
             if (eventPacket != null) {
+                // do not ignore the failed event for mAuxIoEvents
+                NxpHalV2IoEventHandler.BaseEvent baseEvent = mNxpHalIoEventHandler.update(eventPacket);
+                mAuxIoEvents.add(eventPacket);
+                auxIoEventUpdated = true;
                 boolean isFailedReadOrWrite = (eventPacket.opType == INciHostDaemon.IoEventPacket.IoOperationType.READ
                         || eventPacket.opType == INciHostDaemon.IoEventPacket.IoOperationType.WRITE)
                         && eventPacket.retValue < 0;
@@ -95,7 +106,6 @@ public class NxpHalV2EventTranslator {
                     mLastUpdateTransactionSequence++;
                     continue;
                 }
-                NxpHalV2IoEventHandler.BaseEvent baseEvent = mNxpHalIoEventHandler.update(eventPacket);
                 if (baseEvent != null) {
                     if (baseEvent instanceof NxpHalV2IoEventHandler.WriteEvent
                             || baseEvent instanceof NxpHalV2IoEventHandler.ReadEvent) {
@@ -128,13 +138,13 @@ public class NxpHalV2EventTranslator {
                                 ((NxpHalV2IoEventHandler.IoctlEvent) baseEvent).arg);
                         transactionEvents.add(result);
                     }
-                    updated = true;
+                    transactionEventUpdated = true;
                     mLastSuccessTransactionSequence = eventPacket.sequence;
                 }
             }
             mLastUpdateTransactionSequence++;
         }
-        return updated;
+        return (auxIoEventUpdated ? 1 : 0) | (transactionEventUpdated ? 2 : 0);
     }
 
     public StringBuilder exportRawEventsAsCsv() {
@@ -193,9 +203,9 @@ public class NxpHalV2EventTranslator {
      * @param eventPacket the event packet to add
      * @return true if there is a transaction event generated from this raw event
      */
-    public boolean pushBackRawIoEvent(@NonNull INciHostDaemon.IoEventPacket eventPacket) {
+    public int pushBackRawIoEvent(@NonNull INciHostDaemon.IoEventPacket eventPacket) {
         mRawIoEventPackets.put(eventPacket.sequence, eventPacket);
-        return translateIoEvents();
+        return translateRawIoEvents();
     }
 
     /**
@@ -205,14 +215,14 @@ public class NxpHalV2EventTranslator {
      * @param eventPackets the event packets to add
      * @return true if there are any transaction events generated from these raw events
      */
-    public boolean pushBackRawIoEvents(@NonNull List<INciHostDaemon.IoEventPacket> eventPackets) {
+    public int pushBackRawIoEvents(@NonNull List<INciHostDaemon.IoEventPacket> eventPackets) {
         for (INciHostDaemon.IoEventPacket eventPacket : eventPackets) {
             mRawIoEventPackets.put(eventPacket.sequence, eventPacket);
             if (eventPacket.sequence > mLastRawEventSequence) {
                 mLastRawEventSequence = eventPacket.sequence;
             }
         }
-        return translateIoEvents();
+        return translateRawIoEvents();
     }
 
     public int getLastRawEventSequence() {
@@ -243,5 +253,6 @@ public class NxpHalV2EventTranslator {
         mLastSuccessTransactionSequence = 0;
         mRawIoEventPackets.clear();
         mTransactionEvents.clear();
+        mAuxIoEvents.clear();
     }
 }

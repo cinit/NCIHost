@@ -6,17 +6,18 @@ import androidx.lifecycle.ViewModel;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
-import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 
-public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcConnectionListener, INciHostDaemon.OnRemoteEventListener {
+public class NciLiveDumpViewModel extends ViewModel implements IpcNativeHandler.IpcConnectionListener, INciHostDaemon.OnRemoteEventListener {
 
     private final MutableLiveData<INciHostDaemon> mNciHostDaemon;
     private final MutableLiveData<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> mTransactionEvents = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<ArrayList<INciHostDaemon.IoEventPacket>> mAuxIoEvents = new MutableLiveData<>(new ArrayList<>());
     private final NxpHalV2EventTranslator mTranslator = new NxpHalV2EventTranslator();
 
-    public NciDumpViewModel() {
+    public NciLiveDumpViewModel() {
         mNciHostDaemon = new MutableLiveData<>();
         IpcNativeHandler.registerConnectionListener(this);
         mNciHostDaemon.setValue(IpcNativeHandler.peekConnection());
@@ -38,9 +39,14 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
     public void onIoEvent(INciHostDaemon.IoEventPacket event) {
         int lastSeq = mTranslator.getLastRawEventSequence();
         if (event.sequence == lastSeq + 1) {
-            if (mTranslator.pushBackRawIoEvent(event)) {
+            int updateResult = mTranslator.pushBackRawIoEvent(event);
+            if ((updateResult & 2) != 0) {
                 // notify the observer
                 mTransactionEvents.postValue(mTranslator.getTransactionEvents());
+            }
+            if ((updateResult & 1) != 0) {
+                // notify the observer
+                mAuxIoEvents.postValue(mTranslator.getAuxIoEvents());
             }
         } else {
             // we are out of sync, sync now
@@ -87,10 +93,15 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
                 }
                 // if we got less than maxCountPerRequest, we have reached the end
             } while (historyList.events.length >= maxCountPerRequest);
-            if (deltaRawIoEventPackets.size() > 0
-                    && mTranslator.pushBackRawIoEvents(deltaRawIoEventPackets)) {
+            if (deltaRawIoEventPackets.size() > 0) {
+                int updateStatus = mTranslator.pushBackRawIoEvents(deltaRawIoEventPackets);
                 // notify the observer
-                mTransactionEvents.postValue(mTranslator.getTransactionEvents());
+                if ((updateStatus & 2) != 0) {
+                    mTransactionEvents.postValue(mTranslator.getTransactionEvents());
+                }
+                if ((updateStatus & 1) != 0) {
+                    mAuxIoEvents.postValue(mTranslator.getAuxIoEvents());
+                }
             }
         }
     }
@@ -102,6 +113,7 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
         }
         mTranslator.clearTransactionEvents();
         mTransactionEvents.postValue(mTranslator.getTransactionEvents());
+        mAuxIoEvents.postValue(mTranslator.getAuxIoEvents());
     }
 
     /**
@@ -131,15 +143,18 @@ public class NciDumpViewModel extends ViewModel implements IpcNativeHandler.IpcC
             // if we got less than maxCountPerRequest, we have reached the end
         } while (historyList.events.length >= maxCountPerRequest);
         // translate events to transactions
-        if (deltaRawIoEventPackets.size() > 0
-                && mTranslator.pushBackRawIoEvents(deltaRawIoEventPackets)) {
-            // notify the observer
-            mTransactionEvents.postValue(mTranslator.getTransactionEvents());
-        }
+        mTranslator.pushBackRawIoEvents(deltaRawIoEventPackets);
+        // notify the observer
+        mTransactionEvents.postValue(mTranslator.getTransactionEvents());
+        mAuxIoEvents.postValue(mTranslator.getAuxIoEvents());
     }
 
     public MutableLiveData<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> getTransactionEvents() {
         return mTransactionEvents;
+    }
+
+    public MutableLiveData<ArrayList<INciHostDaemon.IoEventPacket>> getAuxIoEvents() {
+        return mAuxIoEvents;
     }
 
     public NxpHalV2EventTranslator getTranslator() {

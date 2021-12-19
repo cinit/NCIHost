@@ -112,6 +112,10 @@ public class NciPacketDecoder {
     // end of static declarations
 
     static class State {
+        private State() {
+            throw new AssertionError("State class is not instantiable");
+        }
+
         /**
          * Wait for next packet.
          */

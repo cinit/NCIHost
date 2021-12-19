@@ -80,6 +80,7 @@ public interface INciHostDaemon {
             this.halServiceExecutableSecurityLabel = halServiceExecutableSecurityLabel;
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "DaemonStatus{" +
@@ -148,6 +149,9 @@ public interface INciHostDaemon {
         public long directArg1;
         public long directArg2;
         public byte[] buffer;
+
+        @Nullable
+        public String auxPath;
 
         public IoEventPacket() {
         }

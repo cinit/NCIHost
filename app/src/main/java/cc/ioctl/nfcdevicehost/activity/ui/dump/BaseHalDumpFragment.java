@@ -4,19 +4,25 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.util.ByteUtils;
 
 public abstract class BaseHalDumpFragment extends Fragment {
@@ -37,8 +43,67 @@ public abstract class BaseHalDumpFragment extends Fragment {
         }
     }
 
-    protected void updateListViewItem(@NonNull NciDumpViewHolder holder,
-                                      @NonNull NxpHalV2EventTranslator.TransactionEvent event) {
+    protected void updateListViewItemForAuxIoEvent(@NonNull NciDumpViewHolder holder,
+                                                   @NonNull INciHostDaemon.IoEventPacket event) {
+        long timestamp = event.timestamp;
+        String seqTime;
+        Date now = new Date();
+        Date seqTimeDate = new Date(timestamp);
+        if (now.getYear() == seqTimeDate.getYear() && now.getMonth() == seqTimeDate.getMonth()
+                && now.getDate() == seqTimeDate.getDate()) {
+            // the same day, HH:mm:ss.SSS
+            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+                    + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+        } else {
+            // not the same day, yyyy-MM-dd HH:mm:ss.SSS
+            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+                    + String.format(Locale.ROOT, "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
+        }
+        String eventType = event.opType.toString();
+        StringBuilder sb = new StringBuilder();
+        switch (event.opType) {
+            case OPEN: {
+                String path = event.auxPath;
+                sb.append(String.format(Locale.ROOT, "open(%s)=%d", path, event.retValue));
+                break;
+            }
+            case CLOSE: {
+                sb.append(String.format(Locale.ROOT, "close(%d)", event.fd));
+                break;
+            }
+            case READ: {
+                sb.append(String.format(Locale.ROOT, "read(%d)=%d", event.fd, event.retValue));
+                sb.append("\ndata(").append(event.directArg2).append(")").append('\n');
+                sb.append(ByteUtils.bytesToHexString(event.buffer));
+                break;
+            }
+            case WRITE: {
+                sb.append(String.format(Locale.ROOT, "write(%d)=%d", event.fd, event.retValue));
+                sb.append("\ndata(").append(event.directArg2).append(")").append('\n');
+                sb.append(ByteUtils.bytesToHexString(event.buffer));
+                break;
+            }
+            case IOCTL: {
+                sb.append(String.format(Locale.ROOT, "ioctl(%d, 0x%x, 0x%x)=%d",
+                        event.fd, event.directArg1, event.directArg2, event.retValue));
+                break;
+            }
+            case SELECT: {
+                sb.append(String.format(Locale.ROOT, "select(%d)=%d", event.fd, event.retValue));
+                break;
+            }
+            default: {
+                sb.append(String.format(Locale.ROOT, "%s(%d, %d, %d)=%d",
+                        event.opType, event.fd, event.directArg1, event.directArg2, event.retValue));
+            }
+        }
+        holder.binding.textViewItemNciDumpTime.setText(seqTime);
+        holder.binding.textViewItemNciDumpType.setText(eventType);
+        holder.binding.textViewItemNciDumpMessage.setText(sb.toString());
+    }
+
+    protected void updateListViewItemForNciPacket(@NonNull NciDumpViewHolder holder,
+                                                  @NonNull NxpHalV2EventTranslator.TransactionEvent event) {
         long timestamp = event.timestamp;
         String seqTime;
         Date now = new Date();
@@ -120,6 +185,10 @@ public abstract class BaseHalDumpFragment extends Fragment {
                     parent, false);
             return new NciDumpViewHolder(binding, NciDumpViewHolder.ViewType.TRANSACTION);
         }
+
+        public abstract int getEventSequenceByPosition(int position);
+
+        public abstract int findEventPositionBySequence(int sequence);
     }
 
     @Override
@@ -128,8 +197,72 @@ public abstract class BaseHalDumpFragment extends Fragment {
         setHasOptionsMenu(true);
     }
 
+    @UiThread
+    protected void showDecoderOptionDialog() {
+        int currentDecoder = getCurrentDecoderIndex();
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.ui_hal_dump_decoder_config_title)
+                .setSingleChoiceItems(R.array.ui_hal_dump_decoder_config_items, currentDecoder, null)
+                .setCancelable(true)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    int newDecoder = ((AlertDialog) dialog).getListView().getCheckedItemPosition();
+                    if (newDecoder != -1 && newDecoder != currentDecoder) {
+                        setCurrentDecoderIndex(newDecoder);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    protected abstract int getCurrentDecoderIndex();
+
+    @UiThread
+    protected abstract void setCurrentDecoderIndex(int index);
+
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         requireActivity().getMenuInflater().inflate(R.menu.menu_main_fragment_dump_common, menu);
     }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_decoder_config: {
+                showDecoderOptionDialog();
+                return true;
+            }
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
+     * Find the index of the event list by the given event sequence.
+     *
+     * @param packets  the event list
+     * @param sequence the sequence of the event
+     * @return a non-negative index if found, otherwise the negative value of the index where the event should be inserted.
+     */
+    public static int findItemIndexBySequenceIoEventPacket(List<INciHostDaemon.IoEventPacket> packets, int sequence) {
+        INciHostDaemon.IoEventPacket dummy = new INciHostDaemon.IoEventPacket();
+        dummy.sequence = sequence;
+        return Collections.binarySearch(packets, dummy, (o1, o2) -> {
+            if (o1.sequence == o2.sequence) {
+                return 0;
+            }
+            return o1.sequence < o2.sequence ? -1 : 1;
+        });
+    }
+
+    public static int findItemIndexBySequenceTransactionEvent(List<NxpHalV2EventTranslator.TransactionEvent> packets, int sequence) {
+        NxpHalV2EventTranslator.TransactionEvent dummy = new NxpHalV2EventTranslator.TransactionEvent();
+        dummy.sequence = sequence;
+        return Collections.binarySearch(packets, dummy, (o1, o2) -> {
+            if (o1.sequence == o2.sequence) {
+                return 0;
+            }
+            return o1.sequence < o2.sequence ? -1 : 1;
+        });
+    }
+
 }

@@ -34,27 +34,71 @@ import java.util.Objects;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
-import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
-import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainDumpBinding;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
+import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
+import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
 import cc.ioctl.nfcdevicehost.util.SafUtils;
 
 public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer<ArrayList<NxpHalV2EventTranslator.TransactionEvent>> {
 
+    private static final String STATE_CURRENT_DECODER_INDEX = "STATE_CURRENT_DECODER_INDEX";
     private FragmentMainDumpBinding mBinding;
-    private NciDumpViewModel mNciDumpViewModel;
-    private boolean mShowDecodedPacket = true;
+    private NciLiveDumpViewModel mNciDumpViewModel;
+    private int mCurrentDecoderIndex = 1;
     private final AbsNciDumpAdapter mDumpAdapter = new AbsNciDumpAdapter() {
         @Override
         public void onBindViewHolder(@NonNull NciDumpViewHolder holder, int position) {
-            NxpHalV2EventTranslator.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
-            updateListViewItem(holder, event);
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                INciHostDaemon.IoEventPacket event = mNciDumpViewModel.getAuxIoEvents().getValue().get(position);
+                updateListViewItemForAuxIoEvent(holder, event);
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                NxpHalV2EventTranslator.TransactionEvent event = mNciDumpViewModel.getTransactionEvents().getValue().get(position);
+                updateListViewItemForNciPacket(holder, event);
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
         }
 
         @Override
         public int getItemCount() {
-            return mNciDumpViewModel.getTransactionEvents().getValue().size();
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return mNciDumpViewModel.getAuxIoEvents().getValue().size();
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return mNciDumpViewModel.getTransactionEvents().getValue().size();
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
+        }
+
+        @Override
+        public int getEventSequenceByPosition(int position) {
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return mNciDumpViewModel.getAuxIoEvents().getValue().get(position).sequence;
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return (int) mNciDumpViewModel.getTransactionEvents().getValue().get(position).sequence;
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
+        }
+
+        @Override
+        public int findEventPositionBySequence(int sequence) {
+            if (mCurrentDecoderIndex == 0) {
+                // raw aux IO events
+                return BaseHalDumpFragment.findItemIndexBySequenceIoEventPacket(mNciDumpViewModel.getAuxIoEvents().getValue(), sequence);
+            } else if (mCurrentDecoderIndex == 1) {
+                // decoded NCI packets
+                return BaseHalDumpFragment.findItemIndexBySequenceTransactionEvent(mNciDumpViewModel.getTransactionEvents().getValue(), sequence);
+            } else {
+                throw new IllegalStateException("Unknown decoder index: " + mCurrentDecoderIndex);
+            }
         }
     };
 
@@ -77,13 +121,19 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        if (savedInstanceState != null) {
+            int idx = savedInstanceState.getInt(STATE_CURRENT_DECODER_INDEX, -1);
+            if (idx >= 0) {
+                mCurrentDecoderIndex = idx;
+            }
+        }
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         Context context = inflater.getContext();
-        mNciDumpViewModel = new ViewModelProvider(this).get(NciDumpViewModel.class);
+        mNciDumpViewModel = new ViewModelProvider(this).get(NciLiveDumpViewModel.class);
         mBinding = FragmentMainDumpBinding.inflate(inflater, container, false);
         mNciDumpViewModel.getTransactionEvents().observe(getViewLifecycleOwner(), this);
         LinearLayoutManager layoutManager = new LinearLayoutManager(context);
@@ -174,7 +224,49 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
                 return true;
             }
             default:
-                return super.onContextItemSelected(item);
+                return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    protected int getCurrentDecoderIndex() {
+        return mCurrentDecoderIndex;
+    }
+
+    @UiThread
+    @Override
+    @SuppressLint("NotifyDataSetChanged")
+    protected void setCurrentDecoderIndex(int newDecoderIndex) {
+        // get the current RecyclerView item index
+        RecyclerView recyclerView = mBinding.recyclerViewMainFragmentDumpList;
+        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+        assert layoutManager != null;
+        int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+        View firstVisibleView = firstVisibleItemPosition == RecyclerView.NO_POSITION ? null
+                : layoutManager.findViewByPosition(firstVisibleItemPosition);
+        int itemTopOffset = firstVisibleView == null ? 0 : firstVisibleView.getTop();
+        int currentEventSequence = -1;
+        if (firstVisibleItemPosition != RecyclerView.NO_POSITION) {
+            currentEventSequence = mDumpAdapter.getEventSequenceByPosition(firstVisibleItemPosition);
+        }
+        mCurrentDecoderIndex = newDecoderIndex;
+        // the entire data set is changed, call notifyDataSetChanged
+        mDumpAdapter.notifyDataSetChanged();
+        // find the index of the current event in the new data set
+        if (currentEventSequence != -1) {
+            int pos = mDumpAdapter.findEventPositionBySequence(currentEventSequence);
+            pos = Math.min(Math.abs(pos), mDumpAdapter.getItemCount() - 1);
+            if (layoutManager.getStackFromEnd()) {
+                layoutManager.scrollToPositionWithOffset(pos, recyclerView.getHeight() - itemTopOffset);
+            } else {
+                layoutManager.scrollToPositionWithOffset(pos, itemTopOffset);
+            }
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(STATE_CURRENT_DECODER_INDEX, mCurrentDecoderIndex);
     }
 }
