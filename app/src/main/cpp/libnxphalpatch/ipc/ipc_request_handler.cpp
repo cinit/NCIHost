@@ -90,6 +90,11 @@ void handleDeviceWriteRequest(uint32_t requestId, const void *payload, uint32_t 
         auto size = size_t(requestBody->length);
         if (sNciDeviceFd > 0) {
             ssize_t result = write(fd, data, size);
+            if (result < 0 && errno == EIO) {
+                // NFCC may be in standby mode, wait 5ms and retry once
+                usleep(5000);
+                result = write(fd, data, size);
+            }
             if (result == -1) {
                 result = -errno;
             }
