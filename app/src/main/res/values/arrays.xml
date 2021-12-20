@@ -9,8 +9,14 @@
         <item>reply</item>
         <item>reply_all</item>
     </string-array>
+
     <string-array name="ui_hal_dump_decoder_config_items">
         <item>None(raw syscall dump)</item>
         <item>NCI protocol</item>
     </string-array>
+
+    <string-array name="xposedscope">
+        <item>com.android.nfc</item>
+    </string-array>
+
 </resources>

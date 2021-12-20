@@ -99,4 +99,5 @@ By using this application, you accept all responsibility using it and agree that
     <string name="action_decoder_config">Decoder properties</string>
     <string name="ui_hal_dump_decoder_config_title">Decoder Properties</string>
     <string name="action_confirm">Confirm</string>
+    <string name="xposeddescription">Extra features for NFC service.</string>
 </resources>
