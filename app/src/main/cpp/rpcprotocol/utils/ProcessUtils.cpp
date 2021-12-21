@@ -6,11 +6,15 @@
 #include <fstream>
 #include <unistd.h>
 #include <dirent.h>
+#include <string>
+#include <array>
+#include <fcntl.h>
+#include <cstring>
 #include <algorithm>
 #include <sys/utsname.h>
-#include <unistd.h>
 
 #include "../log/Log.h"
+#include "TextUtils.h"
 
 #include "ProcessUtils.h"
 
@@ -60,10 +64,29 @@ std::vector<ProcessInfo> getRunningProcessInfo() {
         } else {
             uid = -1;
         }
+        std::string procCmdlinePath = procPath + pidStr + "/cmdline";
+        std::vector<uint8_t> cmdlineBytes;
+        if (int cmdlineFd = open(procCmdlinePath.c_str(), O_RDONLY); cmdlineFd >= 0) {
+            std::array<uint8_t, 256> buf = {};
+            ssize_t n;
+            while ((n = read(cmdlineFd, buf.data(), buf.size())) > 0) {
+                cmdlineBytes.insert(cmdlineBytes.end(), buf.begin(), buf.begin() + n);
+            }
+            close(cmdlineFd);
+        }
         ProcessInfo processInfo = {};
         processInfo.pid = pid;
         processInfo.uid = uid;
         processInfo.exe = exe;
+        // cmdline is split by '\0', remove the last '\0' if it exists
+        if (!cmdlineBytes.empty() && cmdlineBytes.back() == '\0') {
+            cmdlineBytes.pop_back();
+        }
+        if (!cmdlineBytes.empty()) {
+            processInfo.cmdline = utils::splitString(std::string(
+                    reinterpret_cast<const char *>(cmdlineBytes.data()), cmdlineBytes.size()), std::string("\0", 1));
+            processInfo.argv0 = processInfo.cmdline.front();
+        }
         if (!processInfo.exe.empty()) {
             processInfo.name = processInfo.exe.substr(processInfo.exe.find_last_of('/') + 1);
         }
@@ -92,6 +115,25 @@ bool getProcessInfo(int pid, ProcessInfo &info) {
         procStatusFile.close();
     } else {
         return false;
+    }
+    std::string procCmdlinePath = procPath + pidStr + "/cmdline";
+    std::vector<uint8_t> cmdlineBytes;
+    if (int cmdlineFd = open(procCmdlinePath.c_str(), O_RDONLY); cmdlineFd >= 0) {
+        std::array<uint8_t, 256> buf = {};
+        ssize_t n;
+        while ((n = read(cmdlineFd, buf.data(), buf.size())) > 0) {
+            cmdlineBytes.insert(cmdlineBytes.end(), buf.begin(), buf.begin() + n);
+        }
+        close(cmdlineFd);
+    }
+    // cmdline is split by '\0', remove the last '\0' if it exists
+    if (!cmdlineBytes.empty() && cmdlineBytes.back() == '\0') {
+        cmdlineBytes.pop_back();
+    }
+    if (!cmdlineBytes.empty()) {
+        info.cmdline = utils::splitString(std::string(
+                reinterpret_cast<const char *>(cmdlineBytes.data()), cmdlineBytes.size()), std::string("\0", 1));
+        info.argv0 = info.cmdline.front();
     }
     info.pid = pid;
     info.uid = uid;

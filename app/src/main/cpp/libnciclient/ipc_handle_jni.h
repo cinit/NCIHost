@@ -194,6 +194,38 @@ JNIEXPORT jobject JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHos
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    isAndroidNfcServiceConnected
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isAndroidNfcServiceConnected
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    connectToAndroidNfcService
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_connectToAndroidNfcService
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    isNfcDiscoverySoundDisabled
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isNfcDiscoverySoundDisabled
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    setNfcDiscoverySoundDisabled
+ * Signature: (Z)Z
+ */
+JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_setNfcDiscoverySoundDisabled
+  (JNIEnv *, jobject, jboolean);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    clearHistoryIoEvents
  * Signature: ()Z
  */

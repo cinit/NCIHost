@@ -35,6 +35,14 @@ public interface INciHostDaemon {
 
     int deviceDriverIoctl0(long request, long arg);
 
+    boolean isAndroidNfcServiceConnected();
+
+    boolean connectToAndroidNfcService();
+
+    boolean isNfcDiscoverySoundDisabled();
+
+    boolean setNfcDiscoverySoundDisabled(boolean disable);
+
     interface OnRemoteEventListener {
         void onIoEvent(IoEventPacket event);
 

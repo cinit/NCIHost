@@ -11,6 +11,8 @@
 #include "ncihostd/service/hw/nxpnci/NxpHalHandler.h"
 #include "ncihostd/inject/SysServicePatch.h"
 #include "ncihostd/service/ServiceManager.h"
+#include "ncihostd/service/xposed/AndroidNfcService.h"
+
 #include "rpcprotocol/utils/TextUtils.h"
 #include "rpcprotocol/utils/auto_close_fd.h"
 #include "rpcprotocol/utils/SELinux.h"
@@ -115,6 +117,24 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
         case Ids::deviceDriverIoctl0: {
             result = R::invoke(this, args, R::is(+[](T *p, uint64_t req, uint64_t arg) {
                 return p->deviceDriverIoctl0(req, arg);
+            }));
+            return true;
+        }
+        case Ids::isAndroidNfcServiceConnected: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->isAndroidNfcServiceConnected(); }));
+            return true;
+        }
+        case Ids::connectToAndroidNfcService: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->connectToAndroidNfcService(); }));
+            return true;
+        }
+        case Ids::isNfcDiscoverySoundDisabled: {
+            result = R::invoke(this, args, R::is(+[](T *p) { return p->isNfcDiscoverySoundDisabled(); }));
+            return true;
+        }
+        case Ids::setNfcDiscoverySoundDisabled: {
+            result = R::invoke(this, args, R::is(+[](T *p, bool disabled) {
+                return p->setNfcDiscoverySoundDisabled(disabled);
             }));
             return true;
         }
@@ -228,6 +248,13 @@ TypedLpcResult<bool> NciHostDaemonImpl::initHwServiceConnection(const std::strin
             LOGI("remote hook initialized");
         }
     }
+    {
+        auto &androidNfcSvc = androidsvc::AndroidNfcService::getInstance();
+        if (!androidNfcSvc.isConnected()) {
+            // we don't care about the result, the client will check the status later
+            (void) androidNfcSvc.tryConnect();
+        }
+    }
     return true;
 }
 
@@ -323,4 +350,24 @@ TypedLpcResult<int> NciHostDaemonImpl::deviceDriverIoctl0(uint64_t request, uint
     } else {
         return {-ENOSYS};
     }
+}
+
+TypedLpcResult<bool> NciHostDaemonImpl::isAndroidNfcServiceConnected() {
+    const auto &androidNfcService = androidsvc::AndroidNfcService::getInstance();
+    return {androidNfcService.isConnected()};
+}
+
+TypedLpcResult<bool> NciHostDaemonImpl::connectToAndroidNfcService() {
+    auto &androidNfcService = androidsvc::AndroidNfcService::getInstance();
+    return {androidNfcService.tryConnect()};
+}
+
+TypedLpcResult<bool> NciHostDaemonImpl::isNfcDiscoverySoundDisabled() {
+    auto &androidNfcService = androidsvc::AndroidNfcService::getInstance();
+    return {androidNfcService.isNfcDiscoverySoundDisabled()};
+}
+
+TypedLpcResult<bool> NciHostDaemonImpl::setNfcDiscoverySoundDisabled(bool disable) {
+    auto &androidNfcService = androidsvc::AndroidNfcService::getInstance();
+    return {androidNfcService.setNfcDiscoverySoundDisabled(disable)};
 }

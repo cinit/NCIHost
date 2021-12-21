@@ -111,6 +111,18 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public native DaemonStatus getDaemonStatus();
 
     @Override
+    public native boolean isAndroidNfcServiceConnected();
+
+    @Override
+    public native boolean connectToAndroidNfcService();
+
+    @Override
+    public native boolean isNfcDiscoverySoundDisabled();
+
+    @Override
+    public native boolean setNfcDiscoverySoundDisabled(boolean disable);
+
+    @Override
     public HistoryIoEventList getHistoryIoEvents(int startIndex, int count) {
         RawHistoryIoEventList raw = ntGetHistoryIoEvents(startIndex, count);
         HistoryIoEventList list = new HistoryIoEventList();

@@ -15,6 +15,8 @@ struct ProcessInfo {
     int uid;
     std::string name;
     std::string exe;
+    std::vector<std::string> cmdline;
+    std::string argv0;
 };
 
 // get all running process info

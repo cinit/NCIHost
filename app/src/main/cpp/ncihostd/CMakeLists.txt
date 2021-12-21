@@ -8,7 +8,8 @@ add_executable(ncihostd startup/startup.c startup/daemon.cpp ipc/IpcStateControl
         service/front/NciHostDaemonImpl.cpp service/front/NciClientProxy.cpp service/HwServiceStatus.cpp
         elfsym/ElfView.cpp elfsym/ProcessView.cpp inject/Injector.cpp inject/arch/ptrace_inject_utils.cpp
         inject/arch/ptrace_inject_arm_impl.cpp inject/arch/ptrace_inject_x86_impl.cpp inject/SysServicePatch.cpp
-        service/ServiceManager.cpp service/hw/BaseHwHalHandler.cpp service/hw/nxpnci/NxpHalHandler.cpp)
+        service/ServiceManager.cpp service/hw/BaseHwHalHandler.cpp service/hw/nxpnci/NxpHalHandler.cpp
+        service/xposed/BaseRemoteAndroidService.cpp service/xposed/AndroidNfcService.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")

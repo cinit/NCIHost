@@ -649,7 +649,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_ntGetHistoryI
 * Method:    clearHistoryIoEvents
 * Signature: ()Z
 */
-extern "C" [[maybe_unused]]  JNIEXPORT jboolean JNICALL
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_clearHistoryIoEvents
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
@@ -679,7 +679,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_clearHistoryI
  * Method:    getDaemonStatus
  * Signature: ()Lcc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon/DaemonStatus;
  */
-extern "C" [[maybe_unused]]  JNIEXPORT jobject JNICALL
+extern "C" [[maybe_unused]] JNIEXPORT jobject JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_getDaemonStatus
         (JNIEnv *env, jobject) {
     IpcConnector &connector = IpcConnector::getInstance();
@@ -722,7 +722,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_getDaemonStat
  * Method:    deviceDriverWriteRaw
  * Signature: ([B)I
  */
-extern "C" [[maybe_unused]]  JNIEXPORT  jint JNICALL
+extern "C" [[maybe_unused]] JNIEXPORT  jint JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverWriteRaw
         (JNIEnv *env, jobject, jbyteArray jdata) {
     if (jdata == nullptr) {
@@ -760,7 +760,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverW
  * Method:    deviceDriverIoctl0
  * Signature: (JJ)I
  */
-extern "C" [[maybe_unused]]  JNIEXPORT  jint JNICALL
+extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverIoctl0
         (JNIEnv *env, jobject, jlong request, jlong arg) {
     IpcConnector &connector = IpcConnector::getInstance();
@@ -773,6 +773,126 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverI
         if (auto lpcResult = proxy->deviceDriverIoctl0(uint64_t(request), uint64_t(arg));
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
             int r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    isAndroidNfcServiceConnected
+ * Signature: ()Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isAndroidNfcServiceConnected
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->isAndroidNfcServiceConnected();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    connectToAndroidNfcService
+ * Signature: ()Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_connectToAndroidNfcService
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->connectToAndroidNfcService();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    isNfcDiscoverySoundDisabled
+ * Signature: ()Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isNfcDiscoverySoundDisabled
+        (JNIEnv *env, jobject) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->isNfcDiscoverySoundDisabled();
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
+            if (lpcResult.getResult(&r)) {
+                return r;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    setNfcDiscoverySoundDisabled
+ * Signature: (Z)Z
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
+Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_setNfcDiscoverySoundDisabled
+        (JNIEnv *env, jobject, jboolean jdisable) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return 0;
+    } else {
+        if (auto lpcResult = proxy->setNfcDiscoverySoundDisabled(jdisable);
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            bool r;
             if (lpcResult.getResult(&r)) {
                 return r;
             } else {

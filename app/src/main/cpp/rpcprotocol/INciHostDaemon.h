@@ -92,6 +92,18 @@ public:
     [[nodiscard]]
     virtual TypedLpcResult<int> deviceDriverIoctl0(uint64_t request, uint64_t arg) = 0;
 
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> isAndroidNfcServiceConnected() = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> connectToAndroidNfcService() = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> isNfcDiscoverySoundDisabled() = 0;
+
+    [[nodiscard]]
+    virtual TypedLpcResult<bool> setNfcDiscoverySoundDisabled(bool disable) = 0;
+
     class TransactionIds {
     public:
         static constexpr uint32_t getVersionName = 1;
@@ -107,6 +119,10 @@ public:
         static constexpr uint32_t getDaemonStatus = 16;
         static constexpr uint32_t deviceDriverWriteRawBuffer = 17;
         static constexpr uint32_t deviceDriverIoctl0 = 18;
+        static constexpr uint32_t isAndroidNfcServiceConnected = 19;
+        static constexpr uint32_t connectToAndroidNfcService = 20;
+        static constexpr uint32_t isNfcDiscoverySoundDisabled = 21;
+        static constexpr uint32_t setNfcDiscoverySoundDisabled = 22;
     };
 };
 
