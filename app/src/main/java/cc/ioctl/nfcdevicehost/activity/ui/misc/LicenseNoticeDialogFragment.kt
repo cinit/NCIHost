@@ -14,6 +14,7 @@ import cc.ioctl.nfcdevicehost.databinding.ItemLicenseNoticeBinding
 import de.psdev.licensesdialog.LicensesDialog
 import de.psdev.licensesdialog.licenses.ApacheSoftwareLicense20
 import de.psdev.licensesdialog.licenses.BSD3ClauseLicense
+import de.psdev.licensesdialog.licenses.MITLicense
 import de.psdev.licensesdialog.model.Notice
 import de.psdev.licensesdialog.model.Notices
 import io.noties.markwon.Markwon
@@ -49,9 +50,9 @@ class LicenseNoticeDialogFragment : BaseBottomSheetDialogFragment() {
         private val notices: Notices = Notices().also {
             it.addNotice(
                 Notice(
-                    "Markwon",
-                    "https://github.com/noties/Markwon",
-                    "Copyright 2017 Dimitry Ivanov (mail@dimitryivanov.ru)",
+                    "nfcandroid_nfc_hidlimpl",
+                    "https://github.com/NXPNFCProject/nfcandroid_nfc_hidlimpl",
+                    "Copyright 2020-2021 NXP",
                     ApacheSoftwareLicense20()
                 )
             )
@@ -64,9 +65,18 @@ class LicenseNoticeDialogFragment : BaseBottomSheetDialogFragment() {
             )
             it.addNotice(
                 Notice(
-                    "nfcandroid_nfc_hidlimpl",
-                    "https://github.com/NXPNFCProject/nfcandroid_nfc_hidlimpl",
-                    "Copyright 2020-2021 NXP",
+                    "xHook", "https://github.com/iqiyi/xHook",
+                    "Copyright (c) 2018-present, iQIYI, Inc. All rights reserved.\n\n" +
+                            "Most source code in xhook are MIT licensed. " +
+                            "Some other source code have BSD-style licenses.",
+                    MITLicense()
+                )
+            )
+            it.addNotice(
+                Notice(
+                    "libsu",
+                    "https://github.com/topjohnwu/libsu",
+                    "Copyright 2021 John \"topjohnwu\" Wu",
                     ApacheSoftwareLicense20()
                 )
             )
@@ -80,17 +90,17 @@ class LicenseNoticeDialogFragment : BaseBottomSheetDialogFragment() {
             )
             it.addNotice(
                 Notice(
-                    "libsu",
-                    "https://github.com/topjohnwu/libsu",
-                    "Copyright 2021 John \"topjohnwu\" Wu",
+                    "Xposed",
+                    "https://github.com/rovo89/XposedBridge",
+                    "Copyright 2013 rovo89, Tungstwenty",
                     ApacheSoftwareLicense20()
                 )
             )
             it.addNotice(
                 Notice(
-                    "Xposed",
-                    "https://github.com/rovo89/XposedBridge",
-                    "Copyright 2013 rovo89, Tungstwenty",
+                    "Markwon",
+                    "https://github.com/noties/Markwon",
+                    "Copyright 2017 Dimitry Ivanov (mail@dimitryivanov.ru)",
                     ApacheSoftwareLicense20()
                 )
             )
