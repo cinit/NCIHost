@@ -1,34 +1,46 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/messages_header">
+    <PreferenceCategory app:title="@string/ui_pref_category_general">
+
+        <SwitchPreferenceCompat
+            app:key="#core:cfgStartDaemonStartBoot"
+            app:summary="@string/ui_summary_cfg_start_daemon_after_boot"
+            app:title="@string/ui_title_cfg_start_daemon_after_boot" />
 
         <EditTextPreference
-            app:key="signature"
-            app:title="@string/signature_title"
+            app:key="#core:cfgCustomSuCommand"
+            app:title="@string/ui_title_cfg_custom_su_command"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="reply"
-            app:title="@string/reply_title"
+            app:entries="@array/nfc_dev_entries"
+            app:entryValues="@array/nfc_dev_values"
+            app:key="#core:cfgNfcDeviceType"
+            app:title="@string/ui_title_cfg_nfc_device_type"
             app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/sync_header">
+    <PreferenceCategory app:title="@string/ui_pref_category_xposed">
 
         <SwitchPreferenceCompat
-            app:key="sync"
-            app:title="@string/sync_title" />
+            app:key="#core:cfgDisableNfcDiscoverySound"
+            app:summary="@string/ui_summary_cfg_disable_nfc_discovery_sound"
+            app:title="@string/ui_title_cfg_disable_nfc_discovery_sound" />
 
         <SwitchPreferenceCompat
-            app:dependency="sync"
-            app:key="attachment"
-            app:summaryOff="@string/attachment_summary_off"
-            app:summaryOn="@string/attachment_summary_on"
-            app:title="@string/attachment_title" />
+            app:enabled="false"
+            app:key="#core:cfgEnableNfcEmulationWhenScreenOff"
+            app:summary="@string/ui_toast_not_implemented"
+            app:title="@string/ui_title_cfg_enable_nfc_emulation_when_screen_off" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/label_about">
+
+        <Preference
+            app:key="pref_open_source_licenses"
+            app:title="@string/notices_title" />
 
     </PreferenceCategory>
 

@@ -1,13 +1,33 @@
 <resources>
     <!-- Reply Preference -->
-    <string-array name="reply_entries">
-        <item>Reply</item>
-        <item>Reply to all</item>
+    <string-array name="nfc_dev_entries">
+        <item>SN100x</item>
+        <item>SN200x</item>
+        <item>NQ3xx</item>
+        <item>NQ2xx</item>
+        <item>PN71xx</item>
+        <item>PN80T</item>
+        <item>PN66T</item>
+        <item>PN55x</item>
+        <item>PN54x</item>
+        <item>PN53x</item>
+        <item>Other NCI device</item>
+        <item>Other non-NCI device</item>
     </string-array>
 
-    <string-array name="reply_values">
-        <item>reply</item>
-        <item>reply_all</item>
+    <string-array name="nfc_dev_values">
+        <item>sn100x</item>
+        <item>sn200x</item>
+        <item>nq3xx</item>
+        <item>nq2xx</item>
+        <item>pn71xx</item>
+        <item>pn80t</item>
+        <item>pn66t</item>
+        <item>pn55x</item>
+        <item>pn54x</item>
+        <item>pn53x</item>
+        <item>generic_nci</item>
+        <item>unknown</item>
     </string-array>
 
     <string-array name="ui_hal_dump_decoder_config_items">

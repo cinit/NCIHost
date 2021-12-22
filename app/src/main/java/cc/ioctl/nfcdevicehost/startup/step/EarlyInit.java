@@ -16,8 +16,9 @@ public class EarlyInit extends Step {
         Context ctx = BaseApplicationImpl.getInstance();
         System.loadLibrary("mmkv");
         MMKV.initialize(ctx);
-        MMKV def = MMKV.mmkvWithID("default_config");
-        ConfigManager.setDefaultConfig(def);
+        MMKV.mmkvWithID("default_config");
+        ConfigManager.getDefaultConfig();
+        ConfigManager.getCache();
         // if in service process, init the NCI daemon IPC
         if (BaseApplicationImpl.isServiceProcess()) {
             IpcNativeHandler.init(ctx);

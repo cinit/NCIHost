@@ -1,7 +1,6 @@
 package cc.ioctl.nfcdevicehost.activity;
 
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,11 +21,11 @@ import com.google.android.material.navigation.NavigationView;
 import java.io.File;
 import java.io.IOException;
 
-import cc.ioctl.nfcdevicehost.util.NativeInterface;
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
 import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
 import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler;
+import cc.ioctl.nfcdevicehost.util.NativeInterface;
 import cc.ioctl.nfcdevicehost.util.RootShell;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
@@ -153,7 +152,7 @@ public class MainUiFragmentActivity extends BaseActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings: {
-                startActivity(new Intent(this, SettingsActivity.class));
+                mNavController.navigate(R.id.nav_main_settings);
                 return true;
             }
             case R.id.action_exit: {

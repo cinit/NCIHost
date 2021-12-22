@@ -64,9 +64,14 @@
         tools:targetApi="s">
 
         <activity
-            android:name="cc.ioctl.nfcdevicehost.activity.SettingsActivity"
+            android:name="cc.ioctl.nfcdevicehost.activity.ui.settings.SettingsActivity"
             android:exported="true"
-            android:label="@string/title_activity_settings" />
+            android:label="@string/label_settings">
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name="cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity"

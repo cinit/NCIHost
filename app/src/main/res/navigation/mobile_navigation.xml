@@ -28,4 +28,9 @@
         android:name="cc.ioctl.nfcdevicehost.activity.ui.dump.HalDumpFileViewFragment"
         android:label="@string/label_nav_main_dump_file" />
 
+    <fragment
+        android:id="@+id/nav_main_settings"
+        android:name="cc.ioctl.nfcdevicehost.activity.ui.settings.SettingsFragment"
+        android:label="@string/label_settings" />
+
 </navigation>

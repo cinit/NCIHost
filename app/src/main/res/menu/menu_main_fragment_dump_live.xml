@@ -11,14 +11,21 @@
     <item
         android:id="@+id/action_save"
         android:icon="@drawable/ic_outline_save_24"
-        android:menuCategory="alternative"
+        android:menuCategory="secondary"
         android:orderInCategory="102"
         android:title="@string/action_save_as"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/action_view_dump_file"
+        android:id="@+id/action_refresh"
+        android:icon="@drawable/ic_baseline_refresh_24"
         android:menuCategory="secondary"
         android:orderInCategory="101"
+        android:title="@string/action_refresh"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_view_dump_file"
+        android:menuCategory="secondary"
+        android:orderInCategory="111"
         android:title="@string/action_view_dump_file"
         app:showAsAction="never" />
 </menu>

@@ -1,10 +1,8 @@
-package cc.ioctl.nfcdevicehost.activity;
+package cc.ioctl.nfcdevicehost.activity.ui.settings;
 
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.appcompat.app.ActionBar;
-import androidx.preference.PreferenceFragmentCompat;
 
 import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.base.BaseActivity;
@@ -16,12 +14,11 @@ public class SettingsActivity extends BaseActivity {
     @Override
     protected boolean doOnCreate(Bundle savedInstanceState) {
         super.doOnCreate(savedInstanceState);
-        Log.d(TAG, "doOnCreate: invoked");
-        setContentView(R.layout.settings_activity);
+        setContentView(R.layout.activity_empty_fragment_container);
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.settings, new SettingsFragment())
+                    .replace(R.id.fragment_container, new SettingsFragment())
                     .commit();
         }
         ActionBar actionBar = getSupportActionBar();
@@ -29,12 +26,5 @@ public class SettingsActivity extends BaseActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
         return true;
-    }
-
-    public static class SettingsFragment extends PreferenceFragmentCompat {
-        @Override
-        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-            setPreferencesFromResource(R.xml.root_preferences, rootKey);
-        }
     }
 }

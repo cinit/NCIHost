@@ -202,7 +202,7 @@ public class TransientInitActivity extends BaseActivity {
     }
 
     public abstract static class AbsInteractiveStepFragment extends Fragment implements InteractiveStep, Comparable<AbsInteractiveStepFragment> {
-        protected MMKV config = ConfigManager.getDefaultConfig();
+        protected ConfigManager config = ConfigManager.getDefaultConfig();
         protected TransientInitActivity activity;
 
         @Override

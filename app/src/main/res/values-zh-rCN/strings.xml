@@ -71,5 +71,18 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_hal_dump_decoder_config_title">解码选项</string>
     <string name="action_confirm">确认</string>
     <string name="xposeddescription">NFC 系统服务附加功能</string>
+    <string name="label_settings">设置</string>
+    <string name="ui_title_cfg_start_daemon_after_boot">开机自启</string>
+    <string name="ui_summary_cfg_start_daemon_after_boot">开机后自动启动后台服务进程</string>
+    <string name="ui_pref_category_general">通用</string>
+    <string name="ui_title_cfg_custom_su_command">自定义 su 命令</string>
+    <string name="ui_pref_category_xposed">Xposed 扩展功能</string>
+    <string name="ui_title_cfg_disable_nfc_discovery_sound">禁用 NFC 刷卡声音</string>
+    <string name="ui_summary_cfg_disable_nfc_discovery_sound">去除在检测到 NFC 卡片时系统播放的声音</string>
+    <string name="ui_title_cfg_enable_nfc_emulation_when_screen_off">启用息屏刷卡</string>
+    <string name="ui_title_cfg_nfc_device_type">NFC 硬件型号</string>
+    <string name="ui_toast_save_error_v0s">保存错误: %s</string>
+    <string name="label_about">关于</string>
+    <string name="ui_summary_not_implemented">暂不开放</string>
 
 </resources>

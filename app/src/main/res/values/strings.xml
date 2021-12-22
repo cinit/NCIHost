@@ -12,21 +12,6 @@
     <string name="menu_fragment_dump">NCI Dump</string>
     <string name="menu_fragment_cards">Cards</string>
     <string name="title_activity_settings">SettingsActivity</string>
-
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="initializing">Initializing…</string>
     <string name="title_warning">Warning</string>
     <string name="btn_continue">Continue</string>
@@ -100,4 +85,17 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_hal_dump_decoder_config_title">Decoder Properties</string>
     <string name="action_confirm">Confirm</string>
     <string name="xposeddescription">Extra features for NFC service.</string>
+    <string name="label_settings">Settings</string>
+    <string name="ui_title_cfg_start_daemon_after_boot">Start daemon after boot</string>
+    <string name="ui_summary_cfg_start_daemon_after_boot">Automacally start daemon after device boots.</string>
+    <string name="ui_pref_category_general">General</string>
+    <string name="ui_title_cfg_custom_su_command">Use custom su command</string>
+    <string name="ui_pref_category_xposed">Xposed features</string>
+    <string name="ui_title_cfg_disable_nfc_discovery_sound">Disable NFC sound</string>
+    <string name="ui_summary_cfg_disable_nfc_discovery_sound">Disable the sound when a NFC tag is detected.</string>
+    <string name="ui_title_cfg_enable_nfc_emulation_when_screen_off">Keep NFC active when screen off</string>
+    <string name="ui_title_cfg_nfc_device_type">NFC hardware model</string>
+    <string name="ui_toast_save_error_v0s">Save error: %s</string>
+    <string name="label_about">About</string>
+    <string name="ui_summary_not_implemented">Not implemented.</string>
 </resources>
