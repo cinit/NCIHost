@@ -14,7 +14,7 @@ constexpr int MAX_PACKET_SIZE = 65536;
 const char *const LOG_TAG = "BaseRemoteAndroidService";
 
 std::vector<uint8_t> BaseRemoteAndroidService::RequestPacket::toByteArray() const {
-    const uint32_t type = BaseRemoteAndroidService::TYPE_RESPONSE;
+    const uint32_t type = BaseRemoteAndroidService::TYPE_REQUEST;
     std::vector<uint8_t> data;
     data.reserve(sizeof(uint32_t) * 4 + payload.size());
     data.insert(data.end(), (uint8_t *) &type, (uint8_t *) &type + sizeof(uint32_t));
@@ -28,7 +28,7 @@ std::vector<uint8_t> BaseRemoteAndroidService::RequestPacket::toByteArray() cons
 }
 
 std::vector<uint8_t> BaseRemoteAndroidService::RequestPacket::toByteArray(uint32_t overrideSequence) const {
-    const uint32_t type = BaseRemoteAndroidService::TYPE_RESPONSE;
+    const uint32_t type = BaseRemoteAndroidService::TYPE_REQUEST;
     std::vector<uint8_t> data;
     data.reserve(sizeof(uint32_t) * 4 + payload.size());
     data.insert(data.end(), (uint8_t *) &type, (uint8_t *) &type + sizeof(uint32_t));

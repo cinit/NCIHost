@@ -1,8 +1,11 @@
 package cc.ioctl.nfcdevicehost.xposed;
 
+import android.app.AndroidAppHelper;
+import android.content.Context;
 import android.net.Credentials;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,18 +15,35 @@ import de.robv.android.xposed.XposedBridge;
 
 public class SysNfcSvcPatch {
 
+    private static final String TAG = "SysNfcSvcPatch";
+    private static final String PREF_DISABLE_NFC_DISCOVERY_SOUND = "disable_nfc_discovery_sound";
+
     private static Thread sWorkingThread = null;
     public static boolean sDisableNfcDiscoverySound = false;
     private static boolean sShouldRunning = true;
 
     static void run() {
         try {
+            // wait for system service to start
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        try {
+            initMisc();
+        } catch (RuntimeException | LinkageError e) {
+            XposedBridge.log("SysNfcSvcPatch: " + e.getMessage());
+        }
+        try {
             int myPid = android.os.Process.myPid();
+            Log.d(TAG, "SysNfcSvcPatch.run: myPid = " + myPid);
             while (sShouldRunning) {
                 LocalServerSocket localServerSocket;
                 try {
                     localServerSocket = new LocalServerSocket("com.android.nfc/cc.ioctl.nfcdevicehost.xposed.SysNfcSvcPatch@" + myPid);
                     while (sShouldRunning) {
+                        Log.i(TAG, "SysNfcSvcPatch.run: waiting for connection");
                         LocalSocket localSocket = localServerSocket.accept();
                         Credentials cred = null;
                         try {
@@ -31,6 +51,8 @@ public class SysNfcSvcPatch {
                         } catch (IOException ignored) {
                         }
                         if (cred != null && cred.getUid() == 0) {
+                            Log.i(TAG, "SysNfcSvcPatch.run: connection accepted, uid = " + cred.getUid()
+                                    + ", pid = " + cred.getPid() + ", gid = " + cred.getGid());
                             localServerSocket.close();
                             handleTransaction(localSocket);
                             // socket is closed in handleTransaction
@@ -69,6 +91,7 @@ public class SysNfcSvcPatch {
                 // read 4 bytes length
                 readFully(is, buffer, 0, 4);
                 int length = getInt32Le(buffer, 0);
+                Log.d(TAG, "handleTransaction: length = " + length);
                 if (length < 16 || length > 65535) {
                     break;
                 }
@@ -96,6 +119,7 @@ public class SysNfcSvcPatch {
                     case TYPE_RESPONSE:
                     case TYPE_EVENT:
                     default:
+                        XposedBridge.log("SysNfcSvcPatch: unknown type " + type);
                         break;
                 }
             }
@@ -112,6 +136,12 @@ public class SysNfcSvcPatch {
         switch (requestCode) {
             case REQUEST_SET_NFC_SOUND_DISABLE: {
                 sDisableNfcDiscoverySound = (arg0 != 0);
+                try {
+                    Context ctx = getApplicationContext();
+                    setStringConfig(ctx, PREF_DISABLE_NFC_DISCOVERY_SOUND, sDisableNfcDiscoverySound ? "1" : "0");
+                } catch (RuntimeException | LinkageError e) {
+                    XposedBridge.log(e);
+                }
                 sendResponse(socket, sequence, 0, 0, null);
                 break;
             }
@@ -120,6 +150,7 @@ public class SysNfcSvcPatch {
                 break;
             }
             default: {
+                Log.e(TAG, "handleRequest: requestCode = " + requestCode + ", arg0 = " + arg0);
                 sendResponse(socket, sequence, -1, -1, null);
             }
         }
@@ -190,5 +221,30 @@ public class SysNfcSvcPatch {
         buffer[offset + 1] = (byte) ((value >> 8) & 0xFF);
         buffer[offset + 2] = (byte) ((value >> 16) & 0xFF);
         buffer[offset + 3] = (byte) ((value >> 24) & 0xFF);
+    }
+
+    private static void initMisc() {
+        Context ctx = getApplicationContext();
+        String disableNfcDiscoverySound = getStringConfig(ctx, PREF_DISABLE_NFC_DISCOVERY_SOUND, "0");
+        sDisableNfcDiscoverySound = "1".equals(disableNfcDiscoverySound);
+    }
+
+    public static Context getApplicationContext() {
+        Context ctx = AndroidAppHelper.currentApplication();
+        if (ctx == null) {
+            IllegalStateException t = new IllegalStateException("SysNfcSvcPatch: getApplicationContext() failed");
+            XposedBridge.log(t);
+            Log.e(TAG, "SysNfcSvcPatch: getApplicationContext() failed", t);
+            throw t;
+        }
+        return ctx;
+    }
+
+    private static String getStringConfig(Context ctx, String key, String def) {
+        return ctx.getSharedPreferences("cc.ioctl.nfcdevicehost", Context.MODE_PRIVATE).getString(key, def);
+    }
+
+    private static boolean setStringConfig(Context ctx, String key, String value) {
+        return ctx.getSharedPreferences("cc.ioctl.nfcdevicehost", Context.MODE_PRIVATE).edit().putString(key, value).commit();
     }
 }
