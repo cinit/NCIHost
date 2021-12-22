@@ -15,7 +15,7 @@ public class GenericConfig {
     public static final NonNullConfigItem<String> cfgNfcDeviceType =
             new LazyNonNullMmkvItemConfig<>("core", "cfg_nfc_device_type", "sn100x");
     public static final NonNullConfigItem<Boolean> cfgDisableNfcDiscoverySound =
-            new NonNullConstantValueConfigItem<>(false, false);
+            new LazyNonNullMmkvItemConfig<>("core", "cfg_disable_nfc_discovery_sound", false);
     public static final NonNullConfigItem<Boolean> cfgEnableNfcEmulationWhenScreenOff =
             new NonNullConstantValueConfigItem<>(false, false);
 

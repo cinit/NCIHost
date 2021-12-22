@@ -26,7 +26,7 @@ import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
 public abstract class BaseBottomSheetDialogFragment extends BottomSheetDialogFragment {
-
+    // TODO: 2021-12-22 don't use rounded corners if the bottom sheet is expanded to the status bar or the top of window
     private View mRootView = null;
     private Dialog mDialog = null;
     private BottomSheetBehavior mBehavior = null;
@@ -34,9 +34,13 @@ public abstract class BaseBottomSheetDialogFragment extends BottomSheetDialogFra
         @Override
         public void onStateChanged(@NonNull View bottomSheet, int newState) {
             if (newState == BottomSheetBehavior.STATE_EXPANDED) {
-                // In the EXPANDED STATE apply a new MaterialShapeDrawable with rounded corners
-                MaterialShapeDrawable newMaterialShapeDrawable = createMaterialShapeDrawable(bottomSheet);
-                bottomSheet.setBackground(newMaterialShapeDrawable);
+                // don't use rounded corners if the bottom sheet is expanded to the status bar or the top of the screen
+                boolean isExpandedToWindowTop = mBehavior.getPeekHeight() == 0;
+                if (!isExpandedToWindowTop) {
+                    // In the EXPANDED STATE apply a new MaterialShapeDrawable with rounded corners
+                    MaterialShapeDrawable newMaterialShapeDrawable = createMaterialShapeDrawable(bottomSheet);
+                    bottomSheet.setBackground(newMaterialShapeDrawable);
+                }
             }
         }
 
@@ -71,6 +75,15 @@ public abstract class BaseBottomSheetDialogFragment extends BottomSheetDialogFra
                 lp.gravity = Gravity.BOTTOM;
                 lp.windowAnimations = R.style.BottomSheetDialogAnimation;
                 window.setAttributes(lp);
+                // allow the bottom sheet to extend under the system status bar
+                View containerView = findViewById(com.google.android.material.R.id.container);
+                if (containerView != null) {
+                    containerView.setFitsSystemWindows(false);
+                }
+                View coordinatorView = findViewById(com.google.android.material.R.id.coordinator);
+                if (coordinatorView != null) {
+                    coordinatorView.setFitsSystemWindows(false);
+                }
             }
         };
         return mDialog;
@@ -84,12 +97,17 @@ public abstract class BaseBottomSheetDialogFragment extends BottomSheetDialogFra
         }
         mBehavior.addBottomSheetCallback(mBottomSheetCallback);
         // update bottom sheet background with round corners
+        // don't use rounded corners if the bottom sheet is expanded to the status bar or the top of the screen
         View bottomSheet = mDialog.getWindow().findViewById(com.google.android.material.R.id.design_bottom_sheet);
-        ThreadManager.post(() -> {
-            // I don't know why, but this works, it won't work if you call it directly here
-            MaterialShapeDrawable newMaterialShapeDrawable = createMaterialShapeDrawable(bottomSheet);
-            bottomSheet.setBackground(newMaterialShapeDrawable);
-        });
+        boolean isExpandedToWindowTop = (mBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED)
+                && (mBehavior.getPeekHeight() == 0);
+        if (!isExpandedToWindowTop) {
+            ThreadManager.post(() -> {
+                // I don't know why, but this works, it won't work if you call it directly here
+                MaterialShapeDrawable newMaterialShapeDrawable = createMaterialShapeDrawable(bottomSheet);
+                bottomSheet.setBackground(newMaterialShapeDrawable);
+            });
+        }
     }
 
     @Override

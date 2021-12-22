@@ -98,4 +98,6 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_toast_save_error_v0s">Save error: %s</string>
     <string name="label_about">About</string>
     <string name="ui_summary_not_implemented">Not implemented.</string>
+    <string name="ui_toast_android_nfc_service_not_connected">Android NFC service not connected, is Xposed module enabled?</string>
+    <string name="ui_toast_operation_failed">Operation failed.</string>
 </resources>

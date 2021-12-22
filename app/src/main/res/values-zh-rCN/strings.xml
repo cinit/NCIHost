@@ -84,5 +84,7 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_toast_save_error_v0s">保存错误: %s</string>
     <string name="label_about">关于</string>
     <string name="ui_summary_not_implemented">暂不开放</string>
+    <string name="ui_toast_android_nfc_service_not_connected">无法连接 NFC 系统服务, 可能是 Xposed 模块没有启用</string>
+    <string name="ui_toast_operation_failed">操作失败</string>
 
 </resources>
