@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_decoder_config"
-        android:icon="@drawable/ic_project_properties"
+        android:icon="@drawable/ic_outline_handyman_24"
         android:menuCategory="alternative"
         android:orderInCategory="99"
         android:title="@string/action_decoder_config"

@@ -10,7 +10,7 @@
             android:title="@string/menu_fragment_home" />
         <item
             android:id="@+id/nav_main_dump_live"
-            android:icon="@drawable/ic_baseline_swap_vert_24"
+            android:icon="@drawable/ic_baseline_swap_horiz_24"
             android:title="@string/menu_fragment_dump" />
         <item
             android:id="@+id/nav_main_cards"
