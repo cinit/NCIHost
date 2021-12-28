@@ -13,6 +13,7 @@
 
 using namespace hwhal;
 using namespace halpatch;
+using namespace halpatch::nxphal;
 using namespace ipcprotocol;
 
 static const char *const LOG_TAG = "NxpHalHandler";

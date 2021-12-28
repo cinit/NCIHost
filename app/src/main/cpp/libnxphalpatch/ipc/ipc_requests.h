@@ -7,6 +7,8 @@
 
 #include <cstdint>
 
+namespace halpatch::nxphal {
+
 enum class RequestId : uint32_t {
     GET_VERSION = 0x1,
     GET_HOOK_STATUS = 0x40,
@@ -42,5 +44,7 @@ struct DeviceWriteRequest {
     uint8_t data[];
 };
 // no size static assert...
+
+}
 
 #endif //NCI_HOST_NATIVES_IPC_REQUESTS_H

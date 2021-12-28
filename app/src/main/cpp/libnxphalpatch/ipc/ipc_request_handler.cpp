@@ -12,6 +12,7 @@
 #include "../../libbasehalpatch/hook/hook_proc_symbols.h"
 
 using namespace halpatch;
+using namespace halpatch::nxphal;
 
 static volatile bool sInitialized = false;
 static volatile int sNciDeviceFd = -1;
