@@ -74,6 +74,8 @@ public:
                 } else {
                     memset(newBuffer, 0, newSize);
                 }
+                // fill the old buffer with 0xCC before free for debugging purpose
+                memset(mBuffer, 0xCC, mActualSize);
                 free(mBuffer);
                 mBuffer = newBuffer;
                 mActualSize = newSize;

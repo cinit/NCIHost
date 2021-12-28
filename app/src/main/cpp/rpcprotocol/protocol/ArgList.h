@@ -221,6 +221,17 @@ public:
         constexpr static bool isImmediateValue(uint32_t type) {
             return isPrimitiveType(type) && ((type & (F_IMMEDIATE | F_BUFFER_POOL)) == F_IMMEDIATE);
         }
+
+        // complex types
+    private:
+        constexpr static uint32_t F_COMPLEX = 1u << (SHIFT_COMPLEX + 6u);
+        constexpr static uint32_t C_ARRAY = F_COMPLEX;
+
+    public:
+
+        template<uint32_t BaseType>
+        constexpr static std::enable_if_t<isPrimitiveType(BaseType), uint32_t> TYPE_ARRAY_OF = BaseType | C_ARRAY;
+
     };
 
     class Builder {
@@ -291,6 +302,81 @@ public:
                 // should not happen
                 abort();
             }
+            return *this;
+        }
+
+        template<typename BaseType, uint32_t BaseTypeId = Types::getPrimitiveTypeId<BaseType>(),
+                uint32_t ComplexTypeId = Types::TYPE_ARRAY_OF<BaseTypeId>, typename ComplexType = std::vector<BaseType>,
+                typename CheckType = std::enable_if_t<!std::is_same_v<BaseType, uint8_t>
+                                                      && Types::isPrimitiveType(BaseTypeId), ComplexType>>
+        ArgList::Builder &push(const std::vector<BaseType> &value) {
+            SharedBuffer sb;
+            sb.ensureCapacity(8);
+            struct ElementIndex {
+                uint32_t offset; // from the start of the buffer
+                uint32_t length; // in bytes
+            };
+            struct ArrayBufferHeader {
+                uint32_t count;
+                uint32_t rfu;
+                // ElementIndex index[]
+            };
+            static_assert(sizeof(ArrayBufferHeader) == 8);
+            static_assert(sizeof(ElementIndex) == 8);
+            std::vector<std::vector<uint8_t>> buffers;
+            for (int i = 0; i < value.size(); ++i) {
+                const BaseType &v = value[i];
+                if constexpr(Types::isImmediateValue(BaseTypeId)) {
+                    // immediate value
+                    uint64_t tmp = 0;
+                    memcpy(&tmp, &v, sizeof(BaseType));
+                    buffers.emplace_back(reinterpret_cast<const uint8_t *>(&tmp), 8);
+                } else if constexpr(Types::isStructure(BaseTypeId)) {
+                    // structure
+                    buffers.emplace_back(reinterpret_cast<const uint8_t *>(&v), sizeof(BaseType));
+                } else if constexpr(Types::isString(BaseTypeId)) {
+                    // string
+                    std::string str = v;
+                    const auto *first = reinterpret_cast<const uint8_t *>(str.c_str());
+                    const auto *last = first + str.length();
+                    buffers.emplace_back(first, last);
+                } else if constexpr(Types::isByteBuffer(BaseTypeId)) {
+                    // byte buffer
+                    const std::vector<uint8_t> &ref = v;
+                    buffers.emplace_back(ref.data(), ref.size());
+                } else if constexpr(Types::isSerializedBuffer(BaseTypeId)) {
+                    // serialized buffer
+                    std::vector<uint8_t> buffer = v.serializeToByteVector();
+                    buffers.emplace_back(buffer.data(), buffer.size());
+                } else {
+                    // should not be here
+                    abort();
+                }
+            }
+            sb.ensureCapacity(8 + buffers.size() * 8);
+            memset(sb.get(), 0, 8 + 8 * buffers.size());
+            *sb.at<ArrayBufferHeader>(0) = {uint32_t(value.size()), 0};
+            ElementIndex *index = sb.at<ElementIndex>(8);
+            for (int i = 0; i < buffers.size(); ++i) {
+                index[i] = {0, uint32_t(buffers[i].size())}; // offset will be set later
+            }
+            // arrange buffers in the order of increasing offset
+            size_t currentOffset = 8 + 8 * buffers.size();
+            for (int i = 0; i < buffers.size(); ++i) {
+                const std::vector<uint8_t> &buffer = buffers[i];
+                index[i].offset = currentOffset;
+                size_t alignedSize = std::max((buffer.size() + 7u) & ~7u, size_t(8u));
+                sb.ensureCapacity(currentOffset + alignedSize);
+                // reassign the index pointer due to the reallocation
+                index = sb.at<ElementIndex>(8);
+                if (alignedSize != buffer.size()) {
+                    // fill the rest padding with zeros
+                    memset(sb.at<uint8_t>(0) + currentOffset + buffer.size(), 0, alignedSize - buffer.size());
+                }
+                memcpy(sb.at<uint8_t>(0) + currentOffset, buffer.data(), buffer.size());
+                currentOffset += alignedSize;
+            }
+            pushRawBuffer(ComplexTypeId, sb.get(), currentOffset);
             return *this;
         }
 
@@ -452,6 +538,88 @@ public:
         }
         out->resize(len);
         memcpy(out->data(), reinterpret_cast<const char *>(mBuffer) + offset, len);
+        return true;
+    }
+
+    template<typename BaseType, uint32_t BaseTypeId = Types::getPrimitiveTypeId<BaseType>(),
+            uint32_t ComplexTypeId = Types::TYPE_ARRAY_OF<BaseTypeId>, typename ComplexType = std::vector<BaseType>,
+            typename CheckType = std::enable_if_t<!std::is_same_v<BaseType, uint8_t>
+                                                  && Types::isPrimitiveType(BaseTypeId), ComplexType>>
+    [[nodiscard]] inline bool get(std::vector<BaseType> *out, int index) const {
+        uint64_t reg = 0;
+        if (!readRawInlineValue(&reg, index)) {
+            return false;
+        }
+        if (Types::TYPE_ARRAY_OF<BaseTypeId> != getType(index)) {
+            return false;
+        }
+        struct BufferEntry {
+            uint32_t offset;
+            uint32_t length; // in bytes
+        };
+        static_assert(sizeof(BufferEntry) == 8);
+        const BufferEntry *pBufferEntry = reinterpret_cast<BufferEntry *>(&reg); // ub
+        auto bufferOffset = pBufferEntry->offset;
+        auto bufferLength = pBufferEntry->length;
+        if (bufferOffset + bufferLength > mLength || bufferLength < 8) {
+            return false;
+        }
+        struct ElementIndex {
+            uint32_t offset; // from the start of the buffer
+            uint32_t length; // in bytes
+        };
+        struct ArrayBufferHeader {
+            uint32_t count;
+            uint32_t rfu;
+            // ElementIndex index[]
+        };
+        static_assert(sizeof(ArrayBufferHeader) == 8);
+        static_assert(sizeof(ElementIndex) == 8);
+        const auto *header = reinterpret_cast<const ArrayBufferHeader *>(((const uint8_t *) mBuffer) + bufferOffset);
+        const auto *indexTable = reinterpret_cast<const ElementIndex *>(((const uint8_t *) mBuffer)
+                                                                        + bufferOffset + sizeof(ArrayBufferHeader));
+        out->resize(header->count);
+        for (uint32_t i = 0; i < header->count; ++i) {
+            const auto &elementEntry = indexTable[i];
+            if (elementEntry.offset + elementEntry.length > bufferLength) {
+                return false;
+            }
+            if constexpr(Types::isImmediateValue(BaseTypeId)) {
+                // immediate value
+                if (elementEntry.length != 8) {
+                    return false;
+                }
+                uint64_t tmp = 0;
+                memcpy(&tmp, ((const uint8_t *) mBuffer) + bufferOffset + elementEntry.offset, 8);
+                out->at(i) = *reinterpret_cast<const BaseType *>(&tmp);
+            } else if constexpr(Types::isStructure(BaseTypeId)) {
+                // structure
+                out->at(i) = *reinterpret_cast<const BaseType *>(((const uint8_t *) mBuffer) + bufferOffset +
+                                                                 elementEntry.offset);
+            } else if constexpr(Types::isString(BaseTypeId)) {
+                // string
+                out->at(i) = std::string((const char *) (((const uint8_t *) mBuffer)
+                                                         + bufferOffset + elementEntry.offset), elementEntry.length);
+            } else if constexpr(Types::isByteBuffer(BaseTypeId)) {
+                // byte buffer
+                std::vector<uint8_t> &ref = out->at(i);
+                ref.resize(elementEntry.length);
+                memcpy(ref.data(), ((const uint8_t *) mBuffer) + bufferOffset + elementEntry.offset,
+                       elementEntry.length);
+            } else if constexpr(Types::isSerializedBuffer(BaseTypeId)) {
+                // serialized buffer
+                std::vector<uint8_t> buffer = {
+                        reinterpret_cast<const uint8_t *>(mBuffer) + bufferOffset + elementEntry.offset,
+                        reinterpret_cast<const uint8_t *>(mBuffer) + bufferOffset + elementEntry.offset +
+                        elementEntry.length};
+                if (!out->at(i).deserializeFromByteVector(buffer)) {
+                    return false;
+                }
+            } else {
+                // should not be here
+                return false;
+            }
+        }
         return true;
     }
 };
