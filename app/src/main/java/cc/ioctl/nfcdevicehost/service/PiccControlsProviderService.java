@@ -18,9 +18,9 @@ import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
 @SuppressWarnings("Since15")
 @RequiresApi(api = Build.VERSION_CODES.R)
-public class CardEmuCtrlSvc extends ControlsProviderService {
+public class PiccControlsProviderService extends ControlsProviderService {
 
-    public static final String TAG = "CardEmuCtrlSvc";
+    public static final String TAG = "PiccControlsProvider";
 
     @NonNull
     @Override

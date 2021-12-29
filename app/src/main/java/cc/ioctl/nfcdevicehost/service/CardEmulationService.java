@@ -18,7 +18,7 @@ import cc.ioctl.nfcdevicehost.R;
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity;
 import cc.ioctl.nfcdevicehost.util.ThreadManager;
 
-public class NfcCardEmuFgSvc extends Service {
+public class CardEmulationService extends Service {
 
     private static final String TAG = "NfcCardEmuFgSvc";
     private static final String CHN_NAME_NFC_EMU_ID = "CHN_NAME_NFC_EMU_ID";
@@ -42,8 +42,8 @@ public class NfcCardEmuFgSvc extends Service {
         PendingIntent configIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, MainUiFragmentActivity.class), 0);
         PendingIntent stopIntent = PendingIntent.getService(this, 0,
-                new Intent(this, NfcCardEmuFgSvc.class)
-                        .setAction(NfcCardEmuFgSvc.ACTION_STOP_CARD_EMU), 0);
+                new Intent(this, CardEmulationService.class)
+                        .setAction(CardEmulationService.ACTION_STOP_CARD_EMU), 0);
         Notification.Builder builder;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -128,8 +128,8 @@ public class NfcCardEmuFgSvc extends Service {
     }
 
     public static void requestStartEmulation(Context ctx, String id) {
-        Intent intent = new Intent(ctx, NfcCardEmuFgSvc.class)
-                .setAction(NfcCardEmuFgSvc.ACTION_START_CARD_EMU).putExtra(ARGV_CARD_ID, id);
+        Intent intent = new Intent(ctx, CardEmulationService.class)
+                .setAction(CardEmulationService.ACTION_START_CARD_EMU).putExtra(ARGV_CARD_ID, id);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ctx.startForegroundService(intent);
         } else {
@@ -138,7 +138,7 @@ public class NfcCardEmuFgSvc extends Service {
     }
 
     public static void requestStopEmulation(Context ctx) {
-        ctx.startService(new Intent(ctx, NfcCardEmuFgSvc.class)
-                .setAction(NfcCardEmuFgSvc.ACTION_STOP_CARD_EMU));
+        ctx.startService(new Intent(ctx, CardEmulationService.class)
+                .setAction(CardEmulationService.ACTION_STOP_CARD_EMU));
     }
 }

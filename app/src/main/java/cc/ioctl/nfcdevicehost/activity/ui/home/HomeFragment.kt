@@ -15,7 +15,7 @@ import cc.ioctl.nfcdevicehost.R
 import cc.ioctl.nfcdevicehost.activity.MainUiFragmentActivity
 import cc.ioctl.nfcdevicehost.ipc.daemon.IpcNativeHandler
 import cc.ioctl.nfcdevicehost.databinding.FragmentMainHomeBinding
-import cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc
+import cc.ioctl.nfcdevicehost.service.CardEmulationService
 import cc.ioctl.nfcdevicehost.util.NativeUtils
 import cc.ioctl.nfcdevicehost.util.ThreadManager.async
 import cc.ioctl.nfcdevicehost.util.UiUtils
@@ -263,11 +263,11 @@ class HomeFragment : Fragment() {
                 true
             }
             R.id.action_tmp_start -> {
-                NfcCardEmuFgSvc.requestStartEmulation(requireActivity(), "0")
+                CardEmulationService.requestStartEmulation(requireActivity(), "0")
                 true
             }
             R.id.action_tmp_stop -> {
-                NfcCardEmuFgSvc.requestStopEmulation(requireActivity())
+                CardEmulationService.requestStopEmulation(requireActivity())
                 true
             }
             else -> super.onOptionsItemSelected(item)

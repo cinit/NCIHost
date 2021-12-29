@@ -122,7 +122,7 @@
             android:exported="false" />
 
         <service
-            android:name="cc.ioctl.nfcdevicehost.service.CardEmuCtrlSvc"
+            android:name="cc.ioctl.nfcdevicehost.service.PiccControlsProviderService"
             android:exported="true"
             android:label="@string/name_emu_pwm_ctrl_svc"
             android:permission="android.permission.BIND_CONTROLS">
@@ -132,15 +132,7 @@
         </service>
 
         <service
-            android:name="cc.ioctl.nfcdevicehost.service.NfcControllerManagerService"
-            android:exported="false" />
-
-        <service
-            android:name="cc.ioctl.nfcdevicehost.service.NfcCoreService"
-            android:exported="false" />
-
-        <service
-            android:name="cc.ioctl.nfcdevicehost.service.NfcCardEmuFgSvc"
+            android:name="cc.ioctl.nfcdevicehost.service.CardEmulationService"
             android:exported="false"
             android:label="@string/name_nfc_emu_svc" />
 
