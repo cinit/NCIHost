@@ -29,7 +29,7 @@ bool NciClientImpl::dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eve
     switch (eventId) {
         case Ids::IO_EVENT : {
             R::invoke(this, args, R::is(
-                    +[](T *p, const IoOperationEvent &event, const std::vector<uint8_t> &payload) {
+                    +[](T *p, const IoSyscallEvent &event, const std::vector<uint8_t> &payload) {
                         p->onIoEvent(event, payload);
                     }));
             return true;
@@ -43,7 +43,7 @@ bool NciClientImpl::dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eve
     }
 }
 
-void NciClientImpl::onIoEvent(const IoOperationEvent &event, const std::vector<uint8_t> &payload) {
+void NciClientImpl::onIoEvent(const IoSyscallEvent &event, const std::vector<uint8_t> &payload) {
     NciClientImpl_forwardRemoteIoEvent(event, payload);
 }
 

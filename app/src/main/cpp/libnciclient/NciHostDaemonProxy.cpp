@@ -40,8 +40,8 @@ TypedLpcResult<bool> NciHostDaemonProxy::isHwServiceConnected() {
     return invokeRemoteProcedure<bool>(Ids::isHwServiceConnected);
 }
 
-TypedLpcResult<bool> NciHostDaemonProxy::initHwServiceConnection(const std::string &soPath) {
-    return invokeRemoteProcedure<bool, const std::string &>(Ids::initHwServiceConnection, soPath);
+TypedLpcResult<bool> NciHostDaemonProxy::initHwServiceConnection(const std::vector<std::string> &soPath) {
+    return invokeRemoteProcedure<bool, const std::vector<std::string> &>(Ids::initHwServiceConnection, soPath);
 }
 
 TypedLpcResult<INciHostDaemon::HistoryIoOperationEventList>

@@ -24,7 +24,7 @@ public:
 
     NciClientProxy &operator=(const NciClientProxy &) = delete;
 
-    void onIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) override;
+    void onIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload) override;
 
     void onRemoteDeath(int pid) override;
 };

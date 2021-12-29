@@ -45,6 +45,8 @@ public class NxpHalV2EventTranslator {
 
     public static class TransactionEvent {
         public long sequence;
+        public int sourceType;
+        public int sourceSequence;
         public long timestamp;
     }
 
@@ -53,8 +55,11 @@ public class NxpHalV2EventTranslator {
         public Direction direction;
         public NciPacketDecoder.NciPacket packet;
 
-        public NciTransactionEvent(long sequence, long timestamp, NciPacketDecoder.Type type, Direction direction, NciPacketDecoder.NciPacket packet) {
+        public NciTransactionEvent(long sequence, int sourceType, int sourceSequence, long timestamp,
+                                   NciPacketDecoder.Type type, Direction direction, NciPacketDecoder.NciPacket packet) {
             this.sequence = sequence;
+            this.sourceType = sourceType;
+            this.sourceSequence = sourceSequence;
             this.timestamp = timestamp;
             this.type = type;
             this.direction = direction;
@@ -62,27 +67,15 @@ public class NxpHalV2EventTranslator {
         }
     }
 
-    public static class IoctlTransactionEvent extends TransactionEvent {
-        public int request;
-        public long arg;
-
-        public IoctlTransactionEvent(long sequence, long timestamp, int request, long arg) {
-            this.sequence = sequence;
-            this.timestamp = timestamp;
-            this.request = request;
-            this.arg = arg;
-        }
-    }
-
     public static class RawTransactionEvent extends TransactionEvent {
-        public Direction direction;
-        public byte[] data;
+        public INciHostDaemon.IoEventPacket packet;
 
-        public RawTransactionEvent(long sequence, long timestamp, Direction direction, byte[] data) {
-            this.sequence = sequence;
-            this.timestamp = timestamp;
-            this.direction = direction;
-            this.data = data;
+        public RawTransactionEvent(INciHostDaemon.IoEventPacket rawIoEventPacket) {
+            this.sequence = rawIoEventPacket.sequence;
+            this.sourceType = rawIoEventPacket.sourceType;
+            this.sourceSequence = rawIoEventPacket.sourceSequence;
+            this.timestamp = rawIoEventPacket.timestamp;
+            this.packet = rawIoEventPacket;
         }
     }
 
@@ -122,20 +115,18 @@ public class NxpHalV2EventTranslator {
                             NciPacketDecoder.NciPacket packet = mNciPacketDecoder.decode(data);
                             if (packet != null) {
                                 NciTransactionEvent result = new NciTransactionEvent(eventPacket.sequence,
+                                        eventPacket.sourceType, eventPacket.sourceSequence,
                                         eventPacket.timestamp, packet.type, direction, packet);
                                 transactionEvents.add(result);
                             }
                         } catch (NciPacketDecoder.InvalidNciPacketException e) {
                             // decode failed, push as a raw event
-                            RawTransactionEvent result = new RawTransactionEvent(eventPacket.sequence,
-                                    eventPacket.timestamp, direction, data);
+                            RawTransactionEvent result = new RawTransactionEvent(eventPacket);
                             transactionEvents.add(result);
                         }
-                    } else if (baseEvent instanceof NxpHalV2IoEventHandler.IoctlEvent) {
+                    } else {
                         // ioctl event
-                        IoctlTransactionEvent result = new IoctlTransactionEvent(eventPacket.sequence,
-                                eventPacket.timestamp, ((NxpHalV2IoEventHandler.IoctlEvent) baseEvent).request,
-                                ((NxpHalV2IoEventHandler.IoctlEvent) baseEvent).arg);
+                        RawTransactionEvent result = new RawTransactionEvent(eventPacket);
                         transactionEvents.add(result);
                     }
                     transactionEventUpdated = true;

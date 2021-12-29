@@ -13,8 +13,9 @@ import cc.ioctl.nfcdevicehost.startup.BaseApplicationImpl;
 public class NativeInterface {
 
     public enum NfcHalServicePatch {
-        NXP_PATCH,
+        NXP_NFC_HAL_PATCH,
         ST_PATCH,
+        QTI_ESE_PM_PATCH
     }
 
     private NativeInterface() {
@@ -89,11 +90,14 @@ public class NativeInterface {
     public static File getNfcHalServicePatchFile(NfcHalServicePatch patch, int abi) {
         String patchFileName;
         switch (patch) {
-            case NXP_PATCH:
+            case NXP_NFC_HAL_PATCH:
                 patchFileName = "libnxphalpatch.so";
                 break;
             case ST_PATCH:
                 patchFileName = "libsthalpatch.so";
+                break;
+            case QTI_ESE_PM_PATCH:
+                patchFileName = "libqtiesepmpatch.so";
                 break;
             default:
                 throw new IllegalArgumentException("Unknown patch type");

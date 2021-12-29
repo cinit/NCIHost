@@ -25,20 +25,23 @@ static uint64_t getCurrentTimeMillis() {
 
 static void postIoEvent(const IoSyscallInfo &opInfo, const void *ioBuffer, size_t ioBufSize) {
     if (int fd = getDaemonIpcSocket(); fd > 0) {
-        size_t pkLen = sizeof(HalTrxnPacketHeader) + sizeof(IoOperationEvent) + (ioBuffer == nullptr ? 0 : ioBufSize);
+        size_t pkLen = sizeof(HalTrxnPacketHeader) + sizeof(IoSyscallEvent) + (ioBuffer == nullptr ? 0 : ioBufSize);
         void *buf = malloc(pkLen);
         if (buf == nullptr) {
             return;
         }
         if (ioBuffer != nullptr && ioBufSize > 0) {
-            memcpy(((char *) buf) + sizeof(HalTrxnPacketHeader) + sizeof(IoOperationEvent), ioBuffer, ioBufSize);
+            memcpy(((char *) buf) + sizeof(HalTrxnPacketHeader) + sizeof(IoSyscallEvent), ioBuffer, ioBufSize);
         }
         auto *pHeader = static_cast<HalTrxnPacketHeader *>(buf);
         pHeader->type = TrxnType::IO_EVENT;
         pHeader->length = int(pkLen);
-        auto *pEvent = reinterpret_cast<IoOperationEvent *>(((char *) buf) + sizeof(HalTrxnPacketHeader));
+        auto *pEvent = reinterpret_cast<IoSyscallEvent *>(((char *) buf) + sizeof(HalTrxnPacketHeader));
         pEvent->rfu = 0;
-        pEvent->sequence = g_IoEventSequence++;
+        // we don't know the uniqueSequence and sourceType, leave them as 0, they will be filled in by the daemon
+        pEvent->uniqueSequence = 0;
+        pEvent->sourceType = 0;
+        pEvent->sourceSequence = g_IoEventSequence++;
         pEvent->timestamp = getCurrentTimeMillis();
         pEvent->info = opInfo;
         pEvent->info.bufferLength = int64_t(ioBufSize);

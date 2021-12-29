@@ -23,7 +23,7 @@ public:
     public:
         uint32_t totalStartIndex = 0;
         uint32_t totalCount = 0;
-        std::vector<halpatch::IoOperationEvent> events; // contains index and length
+        std::vector<halpatch::IoSyscallEvent> events; // contains index and length
         std::vector<std::vector<uint8_t>> payloads;
 
         [[nodiscard]] bool deserializeFromByteVector(const std::vector<uint8_t> &src);
@@ -33,17 +33,25 @@ public:
 
     class DaemonStatus {
     public:
+        class HalServiceStatus {
+        public:
+            bool isHalServiceAttached;
+            int halServicePid;
+            int halServiceUid;
+            std::string halServiceExePath;
+            int halServiceArch;
+            std::string halServiceProcessSecurityContext;
+            std::string halServiceExecutableSecurityLabel;
+        };
+
+        // daemon process info
         int processId;
         std::string versionName;
         int abiArch;
         std::string daemonProcessSecurityContext;
-        bool isHalServiceAttached;
-        int halServicePid;
-        int halServiceUid;
-        std::string halServiceExePath;
-        int halServiceArch;
-        std::string halServiceProcessSecurityContext;
-        std::string halServiceExecutableSecurityLabel;
+        // NFC HAL service info
+        HalServiceStatus nfcHalServiceStatus;
+        HalServiceStatus esePmServiceStatus;
 
         [[nodiscard]] bool deserializeFromByteVector(const std::vector<uint8_t> &src);
 
@@ -75,7 +83,7 @@ public:
     virtual TypedLpcResult<bool> isHwServiceConnected() = 0;
 
     [[nodiscard]]
-    virtual TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) = 0;
+    virtual TypedLpcResult<bool> initHwServiceConnection(const std::vector<std::string> &soPath) = 0;
 
     [[nodiscard]]
     virtual TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) = 0;

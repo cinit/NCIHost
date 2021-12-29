@@ -12,7 +12,7 @@ uint32_t NciClientProxy::getProxyId() const {
     return PROXY_ID;
 }
 
-void NciClientProxy::onIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) {
+void NciClientProxy::onIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload) {
     (void) onProxyEvent(false, Ids::IO_EVENT, event, payload);
 }
 

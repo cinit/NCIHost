@@ -22,7 +22,7 @@ public:
 
     virtual ~INciClient() = default;
 
-    virtual void onIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) = 0;
+    virtual void onIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload) = 0;
 
     virtual void onRemoteDeath(int pid) = 0;
 

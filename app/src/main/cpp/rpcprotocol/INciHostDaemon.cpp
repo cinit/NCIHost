@@ -55,15 +55,22 @@ bool INciHostDaemon::DaemonStatus::deserializeFromByteVector(const vector<uint8_
         return false;
     }
     ArgList args(src.data(), src.size());
-    if (!(args.get(&processId, 0) && args.get(&versionName, 1)
-          && args.get(&abiArch, 2) && args.get(&daemonProcessSecurityContext, 3)
-          && args.get(&isHalServiceAttached, 4) && args.get(&halServicePid, 5)
-          && args.get(&halServiceUid, 6) && args.get(&halServiceExePath, 7)
-          && args.get(&halServiceArch, 8) && args.get(&halServiceProcessSecurityContext, 9)
-          && args.get(&halServiceExecutableSecurityLabel, 10))) {
-        return false;
-    }
-    return true;
+    return args.get(&processId, 0) && args.get(&versionName, 1)
+           && args.get(&abiArch, 2) && args.get(&daemonProcessSecurityContext, 3)
+           && args.get(&nfcHalServiceStatus.isHalServiceAttached, 4)
+           && args.get(&nfcHalServiceStatus.halServicePid, 5)
+           && args.get(&nfcHalServiceStatus.halServiceUid, 6)
+           && args.get(&nfcHalServiceStatus.halServiceExePath, 7)
+           && args.get(&nfcHalServiceStatus.halServiceArch, 8)
+           && args.get(&nfcHalServiceStatus.halServiceProcessSecurityContext, 9)
+           && args.get(&nfcHalServiceStatus.halServiceExecutableSecurityLabel, 10)
+           && args.get(&esePmServiceStatus.isHalServiceAttached, 11)
+           && args.get(&esePmServiceStatus.halServicePid, 12)
+           && args.get(&esePmServiceStatus.halServiceUid, 13)
+           && args.get(&esePmServiceStatus.halServiceExePath, 14)
+           && args.get(&esePmServiceStatus.halServiceArch, 15)
+           && args.get(&esePmServiceStatus.halServiceProcessSecurityContext, 16)
+           && args.get(&esePmServiceStatus.halServiceExecutableSecurityLabel, 17);
 }
 
 std::vector<uint8_t> INciHostDaemon::DaemonStatus::serializeToByteVector() const {
@@ -72,12 +79,19 @@ std::vector<uint8_t> INciHostDaemon::DaemonStatus::serializeToByteVector() const
     builder.push(versionName);
     builder.push(abiArch);
     builder.push(daemonProcessSecurityContext);
-    builder.push(isHalServiceAttached);
-    builder.push(halServicePid);
-    builder.push(halServiceUid);
-    builder.push(halServiceExePath);
-    builder.push(halServiceArch);
-    builder.push(halServiceProcessSecurityContext);
-    builder.push(halServiceExecutableSecurityLabel);
+    builder.push(nfcHalServiceStatus.isHalServiceAttached);
+    builder.push(nfcHalServiceStatus.halServicePid);
+    builder.push(nfcHalServiceStatus.halServiceUid);
+    builder.push(nfcHalServiceStatus.halServiceExePath);
+    builder.push(nfcHalServiceStatus.halServiceArch);
+    builder.push(nfcHalServiceStatus.halServiceProcessSecurityContext);
+    builder.push(nfcHalServiceStatus.halServiceExecutableSecurityLabel);
+    builder.push(esePmServiceStatus.isHalServiceAttached);
+    builder.push(esePmServiceStatus.halServicePid);
+    builder.push(esePmServiceStatus.halServiceUid);
+    builder.push(esePmServiceStatus.halServiceExePath);
+    builder.push(esePmServiceStatus.halServiceArch);
+    builder.push(esePmServiceStatus.halServiceProcessSecurityContext);
+    builder.push(esePmServiceStatus.halServiceExecutableSecurityLabel);
     return builder.build().toVector();
 }

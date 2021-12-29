@@ -115,11 +115,11 @@ void BaseHwHalHandler::dispatchHwHalPatchIpcPacket(const void *packetBuffer, siz
     }
     switch (header->type) {
         case TrxnType::IO_EVENT: {
-            const auto *event = reinterpret_cast<const IoOperationEvent *>(
+            const auto *event = reinterpret_cast<const IoSyscallEvent *>(
                     (const char *) packetBuffer + sizeof(HalTrxnPacketHeader));
             const void *payload = nullptr;
             if (event->info.bufferLength != 0) {
-                payload = (const char *) packetBuffer + sizeof(HalTrxnPacketHeader) + sizeof(IoOperationEvent);
+                payload = (const char *) packetBuffer + sizeof(HalTrxnPacketHeader) + sizeof(IoSyscallEvent);
             }
             dispatchHwHalIoEvent(*event, payload);
             break;

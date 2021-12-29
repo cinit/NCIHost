@@ -61,6 +61,13 @@ enum class OpType : uint32_t {
     OP_TYPE_IO_SELECT = 6,
 };
 
+class SourceType {
+public:
+    static constexpr uint32_t UNKNOWN = 0;
+    static constexpr uint32_t NFC_CONTROLLER = 0x100;
+    static constexpr uint32_t SECURE_ELEMENT_EMBEDDED = 0x200;
+};
+
 struct IoSyscallInfo {
     int32_t opType;
     int32_t fd;
@@ -70,14 +77,16 @@ struct IoSyscallInfo {
     int64_t bufferLength;
 };
 
-struct IoOperationEvent {
-    uint32_t sequence;
+struct IoSyscallEvent {
+    uint32_t uniqueSequence;
+    uint32_t sourceType;
+    uint32_t sourceSequence;
     uint32_t rfu;
     uint64_t timestamp;
     IoSyscallInfo info;
 };
 static_assert(sizeof(IoSyscallInfo) == 40);
-static_assert(sizeof(IoOperationEvent) == sizeof(IoSyscallInfo) + 16);
+static_assert(sizeof(IoSyscallEvent) == sizeof(IoSyscallInfo) + 24);
 static_assert(sizeof(OriginHookProcedure) == 56);
 
 struct SharedObjectInfo {

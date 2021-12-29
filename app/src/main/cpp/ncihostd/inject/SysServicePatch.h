@@ -5,6 +5,7 @@
 #ifndef NCI_HOST_NATIVES_SYSSERVICEPATCH_H
 #define NCI_HOST_NATIVES_SYSSERVICEPATCH_H
 
+#include <cstdint>
 #include <string_view>
 #include <string>
 
@@ -15,6 +16,16 @@
 namespace halpatch {
 
 class SysServicePatch {
+public:
+    class PltHookTarget {
+    public:
+        static constexpr uint32_t OPEN = 1u << 1u;
+        static constexpr uint32_t CLOSE = 1u << 2u;
+        static constexpr uint32_t READ = 1u << 3u;
+        static constexpr uint32_t WRITE = 1u << 4u;
+        static constexpr uint32_t IOCTL = 1u << 5u;
+    };
+
 private:
     int mTargetPid = -1;
     int mSharedObjectFd = -1;
@@ -107,7 +118,8 @@ public:
      * @param targetSoname the target shared object name
      * @return 0 on success, -errno on failure.
      */
-    [[nodiscard]] int getPltHookEntries(OriginHookProcedure &hookProc, std::string_view targetSoname) const;
+    [[nodiscard]] int getPltHookEntries(OriginHookProcedure &hookProc, std::string_view targetSoname,
+                                        uint32_t targetHookEntries) const;
 };
 
 }

@@ -96,7 +96,7 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public native boolean isHwServiceConnected();
 
     @Override
-    public native boolean initHwServiceConnection(String soPath) throws IOException;
+    public native boolean initHwServiceConnection(@NonNull String[] soPath) throws IOException;
 
     private native RawHistoryIoEventList ntGetHistoryIoEvents(int startIndex, int count);
 

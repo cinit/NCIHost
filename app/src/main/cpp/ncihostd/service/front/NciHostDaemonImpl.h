@@ -5,6 +5,11 @@
 #ifndef NCIHOSTD_NCIHOSTDAEMONIMPL_H
 #define NCIHOSTD_NCIHOSTDAEMONIMPL_H
 
+#include <vector>
+#include <tuple>
+#include <deque>
+#include <atomic>
+
 #include "libbasehalpatch/ipc/daemon_ipc_struct.h"
 #include "rpcprotocol/protocol/IpcTransactor.h"
 #include "rpcprotocol/protocol/BaseIpcObject.h"
@@ -29,6 +34,8 @@ public:
 
     bool dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eventId, const ArgList &args) override;
 
+    void handleIoSyscallEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload);
+
     TypedLpcResult<std::string> getVersionName() override;
 
     TypedLpcResult<int> getVersionCode() override;
@@ -43,7 +50,7 @@ public:
 
     TypedLpcResult<bool> isHwServiceConnected() override;
 
-    TypedLpcResult<bool> initHwServiceConnection(const std::string &soPath) override;
+    TypedLpcResult<bool> initHwServiceConnection(const std::vector<std::string> &soPath) override;
 
     TypedLpcResult<HistoryIoOperationEventList> getHistoryIoOperations(uint32_t start, uint32_t length) override;
 
@@ -62,6 +69,17 @@ public:
     TypedLpcResult<bool> isNfcDiscoverySoundDisabled() override;
 
     TypedLpcResult<bool> setNfcDiscoverySoundDisabled(bool disable) override;
+
+private:
+    std::mutex mEventMutex;
+    std::deque<std::tuple<halpatch::IoSyscallEvent, std::vector<uint8_t>>> mHistoryIoEvents;
+    std::atomic_uint32_t mNextIoEventId = 0;
+
+public:
+    inline uint32_t nextIoSyscallEventSequence() {
+        return mNextIoEventId++;
+    }
+
 };
 
 }

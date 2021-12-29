@@ -78,7 +78,7 @@ private:
     void dispatchHwHalPatchIpcPacket(const void *packet, size_t length);
 
 protected:
-    virtual void dispatchHwHalIoEvent(const halpatch::IoOperationEvent &event, const void *payload) = 0;
+    virtual void dispatchHwHalIoEvent(const halpatch::IoSyscallEvent &event, const void *payload) = 0;
 
     virtual void dispatchRemoteProcessDeathEvent() = 0;
 

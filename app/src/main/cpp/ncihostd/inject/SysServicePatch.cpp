@@ -210,7 +210,8 @@ int SysServicePatch::connectToService(int &localSocket, int &remoteSocket) {
     return 0;
 }
 
-int SysServicePatch::getPltHookEntries(OriginHookProcedure &hookProc, std::string_view targetSoname) const {
+int SysServicePatch::getPltHookEntries(OriginHookProcedure &hookProc, std::string_view targetSoname,
+                                       uint32_t targetHookEntries) const {
     uintptr_t targetBase = mInjector.getModuleBaseAddress(targetSoname);
     if (targetBase == 0) {
         LOGE("Failed to get base address of %s", targetSoname.data());
@@ -288,10 +289,22 @@ int SysServicePatch::getPltHookEntries(OriginHookProcedure &hookProc, std::strin
                 hookProc.off_plt_close = uint32_t(addr);
             }
         }
-        if ((hookProc.off_plt_read_chk || hookProc.off_plt_read)
-            && (hookProc.off_plt_write_chk || hookProc.off_plt_write)) {
+        if ((((targetHookEntries & PltHookTarget::OPEN) == 0) ||
+             (hookProc.off_plt_open != 0 || hookProc.off_plt_open_2 != 0))
+            && (((targetHookEntries & PltHookTarget::CLOSE) == 0) || (hookProc.off_plt_close != 0))
+            && (((targetHookEntries & PltHookTarget::WRITE) == 0) ||
+                (hookProc.off_plt_write_chk != 0 || hookProc.off_plt_write != 0))
+            && (((targetHookEntries & PltHookTarget::READ) == 0) ||
+                (hookProc.off_plt_read_chk != 0 || hookProc.off_plt_read != 0))
+            && (((targetHookEntries & PltHookTarget::IOCTL) == 0) || (hookProc.off_plt_ioctl != 0))) {
             return 0;
         } else {
+            LOGE("Failed to get plt hook entries of %s", targetSoname.data());
+            LOGE("targetHookEntries: %x", targetHookEntries);
+            LOGE("open: %x, open_2: %x, close: %x, write: %x, write_chk: %x, read: %x, read_chk: %x, ioctl: %x",
+                 hookProc.off_plt_open, hookProc.off_plt_open_2, hookProc.off_plt_close,
+                 hookProc.off_plt_write, hookProc.off_plt_write_chk, hookProc.off_plt_read,
+                 hookProc.off_plt_read_chk, hookProc.off_plt_ioctl);
             return -EFAULT;
         }
     }

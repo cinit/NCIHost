@@ -155,10 +155,10 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHo
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    initHwServiceConnection
- * Signature: (Ljava/lang/String;)Z
+ * Signature: ([Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jobjectArray);
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy

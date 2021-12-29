@@ -27,14 +27,14 @@ public:
 
     bool dispatchEvent(const IpcTransactor::LpcEnv &env, uint32_t eventId, const ArgList &args) override;
 
-    void onIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) override;
+    void onIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload) override;
 
     void onRemoteDeath(int pid) override;
 };
 
 }
 
-void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload);
+void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload);
 
 void NciClientImpl_forwardRemoteDeathEvent(int pid);
 

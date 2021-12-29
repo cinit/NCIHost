@@ -25,7 +25,7 @@ using namespace ipcprotocol;
 
 static std::mutex g_EventMutex;
 static std::condition_variable g_EventWaitCondition;
-static std::vector<std::tuple<halpatch::IoOperationEvent, std::vector<uint8_t>>> g_IoEventVec;
+static std::vector<std::tuple<halpatch::IoSyscallEvent, std::vector<uint8_t>>> g_IoEventVec;
 static std::vector<int> g_RemoteDeathVec;
 static bool g_isNciHostDaemonConnectedPrevious = false;
 
@@ -129,6 +129,31 @@ bool jniThrowLpcResultErrorOrCorruption(JNIEnv *env, const TypedLpcResult<T> &re
         return false;
     }
     return false;
+}
+
+jobject createHalServiceStatusObject(JNIEnv *env, const INciHostDaemon::DaemonStatus::HalServiceStatus &status) {
+    jclass clazz = env->FindClass("cc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$DaemonStatus$HalServiceStatus");
+    jmethodID constructor = env->GetMethodID(clazz, "<init>",
+                                             "(ZIILjava/lang/String;ILjava/lang/String;Ljava/lang/String;)V");
+    jobject jexecPath = getJStringOrNull(env, status.halServiceExePath);
+    jobject jcontext = getJStringOrNull(env, status.halServiceProcessSecurityContext);
+    jobject jlabel = getJStringOrNull(env, status.halServiceExecutableSecurityLabel);
+    jobject jstatus = env->NewObject(clazz, constructor, status.isHalServiceAttached, status.halServicePid,
+                                     status.halServiceUid, jexecPath, status.halServiceArch, jcontext, jlabel);
+    return jstatus;
+}
+
+jobject createDaemonStatusObject(JNIEnv *env, const INciHostDaemon::DaemonStatus &status) {
+    jclass clazz = env->FindClass("cc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$DaemonStatus");
+    jmethodID constructor = env->GetMethodID(clazz, "<init>",
+                                             "(ILjava/lang/String;ILjava/lang/String;Lcc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$DaemonStatus$HalServiceStatus;Lcc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$DaemonStatus$HalServiceStatus;)V");
+    jobject jexecPath = getJStringOrNull(env, status.versionName);
+    jobject jcontext = getJStringOrNull(env, status.daemonProcessSecurityContext);
+    jobject jnfc = createHalServiceStatusObject(env, status.nfcHalServiceStatus);
+    jobject jese = createHalServiceStatusObject(env, status.esePmServiceStatus);
+    jobject jstatus = env->NewObject(clazz, constructor, status.processId, jexecPath, status.abiArch,
+                                     jcontext, jnfc, jese);
+    return jstatus;
 }
 
 void IpcNativeCallback_IpcStatusChangeListener(IpcConnector::IpcStatusEvent event, IpcTransactor *obj);
@@ -433,24 +458,51 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isHwServiceCo
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    initHwServiceConnection
- * Signature: (Ljava/lang/String;)Z
+ * Signature: ([Ljava/lang/String;)Z
  */
 extern "C" [[maybe_unused]] JNIEXPORT jboolean JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_initHwServiceConnection
-        (JNIEnv *env, jobject, jstring jstrSoPath) {
-    if (jstrSoPath == nullptr) {
+        (JNIEnv *env, jobject, jobjectArray jstrSoPathArray) {
+    if (jstrSoPathArray == nullptr) {
         env->ThrowNew(env->FindClass("java/lang/NullPointerException"),
-                      "null so path");
+                      "null so path array");
         return 0;
     }
-    const char *strSoPath = env->GetStringUTFChars(jstrSoPath, nullptr);
-    if (strSoPath == nullptr) {
+    std::string path1, path2;
+    // length of the array should be 2
+    if (env->GetArrayLength(jstrSoPathArray) != 2) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"),
+                      "invalid so path array length, expected 2");
+        return 0;
+    }
+    auto jstr1 = static_cast<jstring>(env->GetObjectArrayElement(jstrSoPathArray, 0));
+    if (jstr1 == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/NullPointerException"),
+                      "null jstrSoPathArray[0]");
+        return 0;
+    }
+    auto jstr2 = static_cast<jstring>(env->GetObjectArrayElement(jstrSoPathArray, 1));
+    if (jstr2 == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/NullPointerException"),
+                      "null jstrSoPathArray[1]");
+        return 0;
+    }
+    const char *strSoPath1 = env->GetStringUTFChars(jstr1, nullptr);
+    if (strSoPath1 == nullptr) {
         env->ThrowNew(env->FindClass("java/lang/OutOfMemoryError"),
                       "out of memory");
         return 0;
     }
-    std::string soPath(strSoPath);
-    env->ReleaseStringUTFChars(jstrSoPath, strSoPath);
+    path1 = strSoPath1;
+    env->ReleaseStringUTFChars(jstr1, strSoPath1);
+    const char *strSoPath2 = env->GetStringUTFChars(jstr2, nullptr);
+    if (strSoPath2 == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/OutOfMemoryError"),
+                      "out of memory");
+        return 0;
+    }
+    path2 = strSoPath2;
+    env->ReleaseStringUTFChars(jstr2, strSoPath2);
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
     if (proxy == nullptr) {
@@ -458,7 +510,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_initHwService
                       "attempt to transact while proxy object not available");
         return false;
     } else {
-        if (auto lpcResult = proxy->initHwServiceConnection(soPath);
+        if (auto lpcResult = proxy->initHwServiceConnection({path1, path2});
                 !jniThrowLpcResultErrorOrCorruption(env, lpcResult)) {
             bool r;
             if (lpcResult.hasException()) {
@@ -480,7 +532,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_initHwService
 }
 
 
-void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoOperationEvent &event, const std::vector<uint8_t> &payload) {
+void NciClientImpl_forwardRemoteIoEvent(const halpatch::IoSyscallEvent &event, const std::vector<uint8_t> &payload) {
     std::scoped_lock<std::mutex> lock(g_EventMutex);
     g_IoEventVec.emplace_back(event, payload);
     g_EventWaitCondition.notify_all();
@@ -538,14 +590,14 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_waitForEvent
     }
     // check for io event
     if (!g_IoEventVec.empty()) {
-        halpatch::IoOperationEvent event = std::get<0>(g_IoEventVec.back());
+        halpatch::IoSyscallEvent event = std::get<0>(g_IoEventVec.back());
         std::vector<uint8_t> payload = std::get<1>(g_IoEventVec.back());
         g_IoEventVec.pop_back();
         jmethodID ctor = env->GetMethodID(
                 env->FindClass("cc/ioctl/nfcdevicehost/ipc/daemon/internal/NciHostDaemonProxy$RawIoEventPacket"),
                 "<init>", "([B[B)V");
-        jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
-        env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent), (jbyte *) &event);
+        jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoSyscallEvent));
+        env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoSyscallEvent), (jbyte *) &event);
         jbyteArray buffer2 = nullptr;
         if (!payload.empty()) {
             buffer2 = env->NewByteArray(payload.size());
@@ -621,8 +673,8 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_ntGetHistoryI
                 size_t resultSize = r.events.size();
                 jobjectArray array = env->NewObjectArray(resultSize, clRawEvent, nullptr);
                 for (size_t i = 0; i < resultSize; ++i) {
-                    jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoOperationEvent));
-                    env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoOperationEvent),
+                    jbyteArray buffer1 = env->NewByteArray(sizeof(halpatch::IoSyscallEvent));
+                    env->SetByteArrayRegion(buffer1, 0, sizeof(halpatch::IoSyscallEvent),
                                             (jbyte *) &r.events[i]);
                     jbyteArray buffer2 = nullptr;
                     if (!r.payloads[i].empty()) {
@@ -693,20 +745,8 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_getDaemonStat
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
             INciHostDaemon::DaemonStatus r;
             if (lpcResult.getResult(&r)) {
-                jclass klass = env->FindClass("cc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$DaemonStatus");
-                jmethodID ctor = env->GetMethodID(klass, "<init>",
-                                                  "(ILjava/lang/String;ILjava/lang/String;ZIILjava/lang/String;ILjava/lang/String;Ljava/lang/String;)V");
-                jstring jversionName = env->NewStringUTF(r.versionName.c_str());
-                jstring jdaemonProcessSecurityContext = getJStringOrNull(env, r.daemonProcessSecurityContext);
-                jstring jhalServiceExePath = getJStringOrNull(env, r.halServiceExePath);
-                jstring jhalServiceProcessSecurityContext = getJStringOrNull(env, r.halServiceProcessSecurityContext);
-                jstring jhalServiceExecutableSecurityLabel = getJStringOrNull(env, r.halServiceExecutableSecurityLabel);
-                jobject status = env->NewObject(klass, ctor, jint(r.processId), jversionName, jint(r.abiArch),
-                                                jdaemonProcessSecurityContext, jboolean(r.isHalServiceAttached),
-                                                jint(r.halServicePid), jint(r.halServiceUid), jhalServiceExePath,
-                                                jint(r.halServiceArch), jhalServiceProcessSecurityContext,
-                                                jhalServiceExecutableSecurityLabel);
-                return status;
+                jobject jstatus = createDaemonStatusObject(env, r);
+                return jstatus;
             } else {
                 env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
                               "error while read data from LpcResult");

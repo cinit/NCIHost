@@ -49,14 +49,16 @@ public abstract class BaseHalDumpFragment extends Fragment {
         String seqTime;
         Date now = new Date();
         Date seqTimeDate = new Date(timestamp);
+        String sequenceStr = String.format(Locale.ROOT, "#%d/%s-%d", event.sequence,
+                INciHostDaemon.IoEventPacket.SourceType.getShortString(event.sourceType), event.sourceSequence);
         if (now.getYear() == seqTimeDate.getYear() && now.getMonth() == seqTimeDate.getMonth()
                 && now.getDate() == seqTimeDate.getDate()) {
             // the same day, HH:mm:ss.SSS
-            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+            seqTime = sequenceStr + " "
                     + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
         } else {
             // not the same day, yyyy-MM-dd HH:mm:ss.SSS
-            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+            seqTime = sequenceStr + " "
                     + String.format(Locale.ROOT, "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
         }
         String eventType = event.opType.toString();
@@ -108,29 +110,25 @@ public abstract class BaseHalDumpFragment extends Fragment {
         String seqTime;
         Date now = new Date();
         Date seqTimeDate = new Date(timestamp);
+        String sequenceStr = String.format(Locale.ROOT, "#%d/%s-%d", event.sequence,
+                INciHostDaemon.IoEventPacket.SourceType.getShortString(event.sourceType), event.sourceSequence);
         if (now.getYear() == seqTimeDate.getYear() && now.getMonth() == seqTimeDate.getMonth()
                 && now.getDate() == seqTimeDate.getDate()) {
             // the same day, HH:mm:ss.SSS
-            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+            seqTime = sequenceStr + " "
                     + String.format(Locale.ROOT, "%1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
         } else {
             // not the same day, yyyy-MM-dd HH:mm:ss.SSS
-            seqTime = String.format(Locale.ROOT, "#%d ", event.sequence)
+            seqTime = sequenceStr + " "
                     + String.format(Locale.ROOT, "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL", event.timestamp);
         }
         String typeText = "<INVALID>";
         StringBuilder dataText = new StringBuilder();
-        if (event instanceof NxpHalV2EventTranslator.IoctlTransactionEvent) {
-            typeText = "IOCTL";
-            NxpHalV2EventTranslator.IoctlTransactionEvent ev = (NxpHalV2EventTranslator.IoctlTransactionEvent) event;
-            dataText.append("request: 0x").append(Integer.toHexString(ev.request));
-            dataText.append(" arg: 0x").append(Long.toHexString(ev.arg));
-        } else if (event instanceof NxpHalV2EventTranslator.RawTransactionEvent) {
-            typeText = "???";
-            NxpHalV2EventTranslator.RawTransactionEvent ev = (NxpHalV2EventTranslator.RawTransactionEvent) event;
-            dataText.append(ev.direction);
-            dataText.append("\n");
-            dataText.append(ByteUtils.bytesToHexString(ev.data));
+        if (event instanceof NxpHalV2EventTranslator.RawTransactionEvent) {
+            // raw packet
+            INciHostDaemon.IoEventPacket packet = ((NxpHalV2EventTranslator.RawTransactionEvent) event).packet;
+            updateListViewItemForAuxIoEvent(holder, packet);
+            return;
         } else if (event instanceof NxpHalV2EventTranslator.NciTransactionEvent) {
             NxpHalV2EventTranslator.NciTransactionEvent ev = (NxpHalV2EventTranslator.NciTransactionEvent) event;
             switch (ev.type) {

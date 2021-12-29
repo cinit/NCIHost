@@ -2,8 +2,8 @@
 // Created by kinit on 2021-11-17.
 //
 
-#ifndef NCI_HOST_NATIVES_NXPHALHANDLER_H
-#define NCI_HOST_NATIVES_NXPHALHANDLER_H
+#ifndef NCI_HOST_NATIVES_QTIESEPMHANDLER_H
+#define NCI_HOST_NATIVES_QTIESEPMHANDLER_H
 
 #include <string>
 #include <memory>
@@ -17,19 +17,20 @@
 
 namespace hwhal {
 
-class NxpHalHandler : public BaseHwHalHandler {
+class QtiEsePmHandler : public BaseHwHalHandler {
 public:
-    static constexpr const char *EXEC_NAME_BASE = "vendor.nxp.hardware.nfc@";
+    static constexpr const char *EXEC_NAME_BASE = "vendor.qti.esepowermanager@";
     static constexpr const char *EXEC_NAME_SUFFIX = "-service";
-    static constexpr const char *TARGET_SO_NAME = "nfc_nci.nqx.default.hw.so";
-    static constexpr const char *INIT_SYMBOL = "nxp_hal_patch_inject_init";
+    static constexpr const char *TARGET_SO_BASE = "vendor.qti.esepowermanager@";
+    static constexpr const char *TARGET_SO_SUFFIX = "-impl.so";
+    static constexpr const char *INIT_SYMBOL = "qti_esepm_patch_inject_init";
     static constexpr const char *DEV_PATH = "/dev/nq-nci";
 
     using StartupInfo = BaseHwHalHandler::StartupInfo;
 
-    NxpHalHandler() = default;
+    QtiEsePmHandler() = default;
 
-    ~NxpHalHandler() override = default;
+    ~QtiEsePmHandler() override = default;
 
     [[nodiscard]] std::string_view getName() const noexcept override;
 
@@ -43,13 +44,13 @@ public:
 
     [[nodiscard]] int initRemotePltHook(const OriginHookProcedure &hookProc);
 
+    int driverRawIoctl0(uint64_t request, uint64_t arg) override;
+
+    int driverRawWrite(const std::vector<uint8_t> &buffer) override;
+
     void dispatchHwHalIoEvent(const halpatch::IoSyscallEvent &event, const void *payload) override;
 
     void dispatchRemoteProcessDeathEvent() override;
-
-    [[nodiscard]] int driverRawWrite(const std::vector<uint8_t> &buffer) override;
-
-    [[nodiscard]] int driverRawIoctl0(uint64_t request, uint64_t arg) override;
 
     [[nodiscard]] static HwServiceStatus getHwServiceStatus();
 
@@ -62,4 +63,4 @@ private:
 
 }
 
-#endif //NCI_HOST_NATIVES_NXPHALHANDLER_H
+#endif //NCI_HOST_NATIVES_QTIESEPMHANDLER_H
