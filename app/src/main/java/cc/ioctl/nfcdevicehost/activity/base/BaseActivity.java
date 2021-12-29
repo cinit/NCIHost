@@ -105,7 +105,9 @@ public class BaseActivity extends AppActivity {
     @Override
     @Deprecated
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(shouldRetainActivitySavedInstanceState() ? savedInstanceState : null);
+        if (!shouldRetainActivitySavedInstanceState()) {
+            return;
+        }
         if (!this.mIsInitializing) {
             doOnRestoreInstanceState(savedInstanceState);
         } else {

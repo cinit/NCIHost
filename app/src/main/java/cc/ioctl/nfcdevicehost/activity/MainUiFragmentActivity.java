@@ -116,11 +116,15 @@ public class MainUiFragmentActivity extends BaseActivity {
         if (daemon != null) {
             if (!daemon.isHwServiceConnected()) {
                 INciHostDaemon.DaemonStatus status = daemon.getDaemonStatus();
-                if (status.halServiceArch > 0) {
-                    File patchFile = NativeInterface.getNfcHalServicePatchFile(
-                            NativeInterface.NfcHalServicePatch.NXP_PATCH,
-                            status.halServiceArch);
-                    return daemon.initHwServiceConnection(patchFile.getAbsolutePath());
+                if (status.nfcHalServiceStatus.halServiceArch > 0 && status.esePmServiceStatus.halServiceArch > 0) {
+                    File nxpNfcPatchFile = NativeInterface.getNfcHalServicePatchFile(
+                            NativeInterface.NfcHalServicePatch.NXP_NFC_HAL_PATCH,
+                            status.nfcHalServiceStatus.halServiceArch);
+                    File qtiEsePatchFile = NativeInterface.getNfcHalServicePatchFile(
+                            NativeInterface.NfcHalServicePatch.QTI_ESE_PM_PATCH,
+                            status.esePmServiceStatus.halServiceArch);
+                    return daemon.initHwServiceConnection(new String[]{nxpNfcPatchFile.getAbsolutePath(),
+                            qtiEsePatchFile.getAbsolutePath()});
                 } else {
                     throw new IOException("Device is not running NFC HAL service, or device is not supported");
                 }

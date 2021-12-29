@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="nav_header_desc">侧滑道航</string>
     <string name="initializing">正在初始化…</string>
     <string name="text_warn_app_risk">NCI Host 使用 root 权限直接与您的 NFC 驱动程序进行通信，如果使用不当，可能会损坏您的系统以及 NFC 硬件。\
 NCI Host 的开发人员不对使用此应用程序造成的任何损失负责。如果您不完全了解此应用程序的工作原理，那么您可能不应该使用此应用程序，直到您完全了解风险。\
@@ -55,14 +56,14 @@ NCI Host 的开发人员不对使用此应用程序造成的任何损失负责�
     <string name="ui_dialog_error_title">错误</string>
     <string name="ui_toast_no_data_to_save">无数据…</string>
     <string name="ui_toast_data_saved">已保存</string>
-    <string name="ui_toast_operation_canceled">Canceled.</string>
+    <string name="ui_toast_operation_canceled">已取消</string>
     <string name="intent_label_view_hal_dump">查看 HAL 转储</string>
     <string name="ui_dialog_unable_to_open_file_v0s">无法打开文件: %s</string>
-    <string name="ui_title_main_dump">HAL Dump</string>
+    <string name="ui_title_main_dump">HAL 转储</string>
     <string name="action_view_dump_file">浏览转储文件</string>
     <string name="ui_dialog_title_requesting_root">请求 root 权限</string>
     <string name="ui_dialog_msg_body_requesting_root">正在请求 root 权限，请授予本应用 root 权限</string>
-    <string name="label_nav_main_dump_file">HAL Dump File</string>
+    <string name="label_nav_main_dump_file">HAL 转储</string>
     <string name="action_close">关闭</string>
     <string name="action_submit">提交</string>
     <string name="ui_toast_operation_success_v0d">操作成功: %d</string>

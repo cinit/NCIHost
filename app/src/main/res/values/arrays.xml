@@ -4,11 +4,14 @@
         <item>SN100/SN110(JCOP5.1)</item>
         <item>NQ330/NQ310</item>
         <item>NQ220/NQ210</item>
-        <item>PN71xx(none)</item>
         <item>PN80T/PN81T</item>
         <item>PN66T/PN54xC2</item>
         <item>PN553/PN557</item>
+        <item>PN71xx(none)</item>
         <item>PN53x(none)</item>
+        <item>Proxmark3 SERIAL OTG</item>
+        <item>Proxmark3 HID OTG</item>
+        <item>PN532 SERIAL OTG</item>
         <item>Other NCI device</item>
         <item>Other non-NCI device</item>
     </string-array>
@@ -18,11 +21,14 @@
         <item>sn1xx</item>
         <item>nq3xx</item>
         <item>nq2xx</item>
-        <item>pn71xx</item>
         <item>pn80t</item>
         <item>pn66t</item>
         <item>pn55x</item>
+        <item>pn71xx</item>
         <item>pn53x</item>
+        <item>proxmark3_otg_serial</item>
+        <item>proxmark3_otg_hid</item>
+        <item>pn532_otg_serial</item>
         <item>generic_nci</item>
         <item>unknown</item>
     </string-array>

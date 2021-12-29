@@ -1,17 +1,12 @@
 <resources>
     <string name="app_name" translatable="false">NCI Host</string>
-    <string name="title_activity_dashboard">DashboardActivity</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">NFC Device Host</string>
-    <string name="nav_header_subtitle">Freedom of 13.56MHz</string>
+    <string name="nav_header_title" translatable="false">NFC Device Host</string>
+    <string name="nav_header_subtitle" translatable="false">Freedom of 13.56MHz</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
-
-    <string name="menu_fragment_home">Home</string>
-    <string name="menu_fragment_dump">NCI Dump</string>
-    <string name="menu_fragment_cards">Cards</string>
-    <string name="title_activity_settings">SettingsActivity</string>
+    <string name="menu_fragment_home" translatable="false">Home</string>
+    <string name="menu_fragment_dump" translatable="false">HAL Dump</string>
+    <string name="menu_fragment_cards" translatable="false">Cards</string>
     <string name="initializing">Initializing…</string>
     <string name="title_warning">Warning</string>
     <string name="btn_continue">Continue</string>

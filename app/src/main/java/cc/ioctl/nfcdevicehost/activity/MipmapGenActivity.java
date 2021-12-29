@@ -1,5 +1,6 @@
 package cc.ioctl.nfcdevicehost.activity;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Path;
@@ -35,7 +36,7 @@ public class MipmapGenActivity extends BaseActivity {
 
     public void onGenBtnClick(View view) throws IOException, NoSuchFieldException, IllegalAccessException {
         AdaptiveIconDrawable iconDrawable = (AdaptiveIconDrawable) getDrawable(R.mipmap.ic_launcher);
-        Field fMaks = AdaptiveIconDrawable.class.getDeclaredField("sMask");
+        @SuppressLint("SoonBlockedPrivateApi") Field fMaks = AdaptiveIconDrawable.class.getDeclaredField("sMask");
         fMaks.setAccessible(true);
         Path path = new Path();
         path.addRoundRect(0, 0, 100, 100, 18, 18, Path.Direction.CW);

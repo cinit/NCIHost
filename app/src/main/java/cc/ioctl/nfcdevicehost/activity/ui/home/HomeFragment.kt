@@ -131,7 +131,9 @@ class HomeFragment : Fragment() {
             mBinding.homeLinearLayoutOperationC.visibility = View.GONE
         } else {
             // daemon is running
-            if (status.isHalServiceAttached) {
+            if (status.nfcHalServiceStatus.isHalServiceAttached
+                && status.esePmServiceStatus.isHalServiceAttached
+            ) {
                 // HAL attached
                 mBinding.homeMainStatusTitle.text = getString(R.string.status_general_running_ok)
                 mBinding.homeMainStatusDesc.text = getString(R.string.status_hal_service_attached)
@@ -147,10 +149,16 @@ class HomeFragment : Fragment() {
                     R.drawable.bg_green_solid,
                     null
                 )
-                mBinding.homeDetailInfoDesc.text = "HAL Service: ${status.halServicePid}" +
-                        " | Daemon: ${status.processId}"
+                mBinding.homeDetailInfoDesc.text =
+                    "NFC HAL: ${status.nfcHalServiceStatus?.halServicePid}" +
+                            " | eSE PM: ${status.esePmServiceStatus?.halServicePid}" +
+                            " | Daemon: ${status.processId}"
                 mBinding.homeDetailInfoDetailMsg.text =
-                    status.halServiceExePath?.substringAfterLast("/") ?: "<unknown>"
+                    (status.nfcHalServiceStatus?.halServiceExePath?.substringAfterLast("/")
+                        ?: "<unknown>") +
+                            "\n" +
+                            (status.esePmServiceStatus?.halServiceExePath?.substringAfterLast("/")
+                                ?: "<unknown>")
                 mBinding.homeOperationsHints.text = getString(R.string.ui_home_no_operation_needed)
                 mBinding.homeOperationsHintDetails.text =
                     getString(R.string.ui_home_restart_hal_service_if_needed)
@@ -174,16 +182,28 @@ class HomeFragment : Fragment() {
                     R.drawable.bg_yellow_solid,
                     null
                 )
-                if (status.halServicePid > 0) {
+                if (status.nfcHalServiceStatus.halServicePid > 0 || status.esePmServiceStatus.halServicePid > 0) {
                     // found HAL service
                     mBinding.homeDetailInfoDesc.text = String.format(
                         Locale.ROOT,
-                        "HAL service PID: %d, %s",
-                        status.halServicePid,
-                        NativeUtils.archIntToAndroidLibArch(status.halServiceArch)
+                        "NFC HAL: %d, %s | eSE PM: %d, %s",
+                        status.nfcHalServiceStatus?.halServicePid,
+                        if ((status.nfcHalServiceStatus?.halServicePid ?: -1) > 0)
+                            status.nfcHalServiceStatus?.halServiceArch?.let {
+                                NativeUtils.archIntToAndroidLibArch(it)
+                            } else "N/A",
+                        status.esePmServiceStatus?.halServicePid,
+                        if ((status.esePmServiceStatus?.halServicePid ?: -1) > 0)
+                            status.esePmServiceStatus?.halServiceArch?.let {
+                                NativeUtils.archIntToAndroidLibArch(it)
+                            } else "N/A"
                     )
                     mBinding.homeDetailInfoDetailMsg.text =
-                        status.halServiceExePath.toString().substringAfterLast("/")
+                        status.nfcHalServiceStatus?.halServiceExePath.toString()
+                            .substringAfterLast("/") +
+                                "\n" +
+                                status.esePmServiceStatus?.halServiceExePath.toString()
+                                    .substringAfterLast("/")
                 } else {
                     // unable to find HAL service
                     mBinding.homeDetailInfoDesc.text =
