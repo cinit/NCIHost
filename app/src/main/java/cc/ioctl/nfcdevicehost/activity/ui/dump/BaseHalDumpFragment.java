@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 
 import cc.ioctl.nfcdevicehost.R;
+import cc.ioctl.nfcdevicehost.decoder.IoctlDecoder;
 import cc.ioctl.nfcdevicehost.decoder.NciPacketDecoder;
 import cc.ioctl.nfcdevicehost.decoder.NxpHalV2EventTranslator;
 import cc.ioctl.nfcdevicehost.ipc.daemon.INciHostDaemon;
@@ -88,10 +89,16 @@ public abstract class BaseHalDumpFragment extends Fragment {
             case IOCTL: {
                 sb.append(String.format(Locale.ROOT, "ioctl(%d, 0x%x, 0x%x)=%d",
                         event.fd, event.directArg1, event.directArg2, event.retValue));
+                sb.append('\n');
+                String name = IoctlDecoder.getIoctlRequestName((int) event.directArg1);
+                if (name != null) {
+                    sb.append(name).append(' ');
+                }
+                sb.append(IoctlDecoder.requestToString((int) event.directArg1));
                 break;
             }
             case SELECT: {
-                sb.append(String.format(Locale.ROOT, "select(%d)=%d", event.fd, event.retValue));
+                sb.append(String.format(Locale.ROOT, "select(...)=%d", event.retValue));
                 break;
             }
             default: {

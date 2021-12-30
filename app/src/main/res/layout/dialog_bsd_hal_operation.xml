@@ -90,4 +90,35 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/hal_operation_linearLayout_ioctl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:gravity="top"
+        android:minHeight="120dp"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/hal_operation_editText_ioctl_request"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="REQUEST/HEX"
+            android:linksClickable="false"
+            android:minHeight="48dp"
+            android:singleLine="true"
+            android:typeface="monospace" />
+
+        <EditText
+            android:id="@+id/hal_operation_editText_ioctl_arg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="ARG/HEX"
+            android:linksClickable="false"
+            android:minHeight="48dp"
+            android:singleLine="true"
+            android:typeface="monospace" />
+
+    </LinearLayout>
+
 </LinearLayout>

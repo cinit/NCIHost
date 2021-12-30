@@ -167,7 +167,7 @@ std::shared_ptr<IBaseService> QtiEsePmHandler::getWeakInstance() {
     return sWpInstance.lock();
 }
 
-int QtiEsePmHandler::driverRawIoctl0(uint64_t request, uint64_t arg) {
+int QtiEsePmHandler::driverRawIoctl0(uint32_t request, uint64_t arg) {
     return -ENOTSUP;
 }
 

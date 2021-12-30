@@ -53,7 +53,7 @@ public:
 
     [[nodiscard]] virtual int driverRawWrite(const std::vector<uint8_t> &buffer) = 0;
 
-    [[nodiscard]] virtual int driverRawIoctl0(uint64_t request, uint64_t arg) = 0;
+    [[nodiscard]] virtual int driverRawIoctl0(uint32_t request, uint64_t arg) = 0;
 
     void stopSelf();
 

@@ -49,7 +49,7 @@ public:
 
     [[nodiscard]] int driverRawWrite(const std::vector<uint8_t> &buffer) override;
 
-    [[nodiscard]] int driverRawIoctl0(uint64_t request, uint64_t arg) override;
+    [[nodiscard]] int driverRawIoctl0(uint32_t request, uint64_t arg) override;
 
     [[nodiscard]] static HwServiceStatus getHwServiceStatus();
 

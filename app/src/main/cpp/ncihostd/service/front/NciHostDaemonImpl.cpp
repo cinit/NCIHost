@@ -118,7 +118,7 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
             return true;
         }
         case Ids::deviceDriverIoctl0: {
-            result = R::invoke(this, args, R::is(+[](T *p, uint64_t req, uint64_t arg) {
+            result = R::invoke(this, args, R::is(+[](T *p, uint32_t req, uint64_t arg) {
                 return p->deviceDriverIoctl0(req, arg);
             }));
             return true;
@@ -448,7 +448,7 @@ TypedLpcResult<int> NciHostDaemonImpl::deviceDriverWriteRawBuffer(const std::vec
     }
 }
 
-TypedLpcResult<int> NciHostDaemonImpl::deviceDriverIoctl0(uint64_t request, uint64_t arg) {
+TypedLpcResult<int> NciHostDaemonImpl::deviceDriverIoctl0(uint32_t request, uint64_t arg) {
     auto sp = NxpHalHandler::getWeakInstance();
     NxpHalHandler *handler;
     if (auto p = sp.get(); p != nullptr && (handler = dynamic_cast<NxpHalHandler *>(p))) {

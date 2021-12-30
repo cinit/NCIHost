@@ -98,7 +98,7 @@ public:
     virtual TypedLpcResult<int> deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) = 0;
 
     [[nodiscard]]
-    virtual TypedLpcResult<int> deviceDriverIoctl0(uint64_t request, uint64_t arg) = 0;
+    virtual TypedLpcResult<int> deviceDriverIoctl0(uint32_t request, uint64_t arg) = 0;
 
     [[nodiscard]]
     virtual TypedLpcResult<bool> isAndroidNfcServiceConnected() = 0;

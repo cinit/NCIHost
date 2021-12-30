@@ -179,10 +179,10 @@ JNIEXPORT jint JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDa
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    deviceDriverIoctl0
- * Signature: (JJ)I
+ * Signature: (IJ)I
  */
 JNIEXPORT jint JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverIoctl0
-  (JNIEnv *, jobject, jlong, jlong);
+  (JNIEnv *, jobject, jint, jlong);
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy

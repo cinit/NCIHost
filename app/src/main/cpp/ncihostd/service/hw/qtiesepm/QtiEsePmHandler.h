@@ -44,7 +44,7 @@ public:
 
     [[nodiscard]] int initRemotePltHook(const OriginHookProcedure &hookProc);
 
-    int driverRawIoctl0(uint64_t request, uint64_t arg) override;
+    int driverRawIoctl0(uint32_t request, uint64_t arg) override;
 
     int driverRawWrite(const std::vector<uint8_t> &buffer) override;
 

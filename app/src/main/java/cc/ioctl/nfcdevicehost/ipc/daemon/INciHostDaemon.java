@@ -33,7 +33,7 @@ public interface INciHostDaemon {
 
     int deviceDriverWriteRaw(@NonNull byte[] data);
 
-    int deviceDriverIoctl0(long request, long arg);
+    int deviceDriverIoctl0(int request, long arg);
 
     boolean isAndroidNfcServiceConnected();
 

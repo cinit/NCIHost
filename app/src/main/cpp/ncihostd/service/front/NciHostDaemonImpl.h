@@ -60,7 +60,7 @@ public:
 
     TypedLpcResult<int> deviceDriverWriteRawBuffer(const std::vector<uint8_t> &buffer) override;
 
-    TypedLpcResult<int> deviceDriverIoctl0(uint64_t request, uint64_t arg) override;
+    TypedLpcResult<int> deviceDriverIoctl0(uint32_t request, uint64_t arg) override;
 
     TypedLpcResult<bool> isAndroidNfcServiceConnected() override;
 

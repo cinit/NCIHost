@@ -104,7 +104,7 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public native int deviceDriverWriteRaw(@NonNull byte[] data);
 
     @Override
-    public native int deviceDriverIoctl0(long request, long arg);
+    public native int deviceDriverIoctl0(int request, long arg);
 
     @NonNull
     @Override

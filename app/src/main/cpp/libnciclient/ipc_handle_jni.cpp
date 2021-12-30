@@ -798,11 +798,11 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverW
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    deviceDriverIoctl0
- * Signature: (JJ)I
+ * Signature: (IJ)I
  */
 extern "C" [[maybe_unused]] JNIEXPORT jint JNICALL
 Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverIoctl0
-        (JNIEnv *env, jobject, jlong request, jlong arg) {
+        (JNIEnv *env, jobject, jint request, jlong arg) {
     IpcConnector &connector = IpcConnector::getInstance();
     INciHostDaemon *proxy = connector.getNciDaemon();
     if (proxy == nullptr) {
@@ -810,7 +810,7 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_deviceDriverI
                       "attempt to transact while proxy object not available");
         return 0;
     } else {
-        if (auto lpcResult = proxy->deviceDriverIoctl0(uint64_t(request), uint64_t(arg));
+        if (auto lpcResult = proxy->deviceDriverIoctl0(uint32_t(request), uint64_t(arg));
                 !jniThrowLpcResultErrorOrException(env, lpcResult)) {
             int r;
             if (lpcResult.getResult(&r)) {

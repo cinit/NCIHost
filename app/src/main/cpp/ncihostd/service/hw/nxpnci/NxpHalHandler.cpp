@@ -182,7 +182,7 @@ int NxpHalHandler::driverRawWrite(const std::vector<uint8_t> &buffer) {
     return int(response.result);
 }
 
-int NxpHalHandler::driverRawIoctl0(uint64_t request, uint64_t arg) {
+int NxpHalHandler::driverRawIoctl0(uint32_t request, uint64_t arg) {
     HalRequest requestPacket = {};
     requestPacket.requestCode = static_cast<uint32_t>(RequestId::DEVICE_OPERATION_IOCTL0);
     DeviceIoctl0Request requestPayload = {};

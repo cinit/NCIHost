@@ -62,8 +62,8 @@ TypedLpcResult<int> NciHostDaemonProxy::deviceDriverWriteRawBuffer(const std::ve
     return invokeRemoteProcedure<int, const std::vector<uint8_t> &>(Ids::deviceDriverWriteRawBuffer, buffer);
 }
 
-TypedLpcResult<int> NciHostDaemonProxy::deviceDriverIoctl0(uint64_t request, uint64_t arg) {
-    return invokeRemoteProcedure<int, const uint64_t &, const uint64_t &>(Ids::deviceDriverIoctl0, request, arg);
+TypedLpcResult<int> NciHostDaemonProxy::deviceDriverIoctl0(uint32_t request, uint64_t arg) {
+    return invokeRemoteProcedure<int, const uint32_t &, const uint64_t &>(Ids::deviceDriverIoctl0, request, arg);
 }
 
 TypedLpcResult<bool> NciHostDaemonProxy::isAndroidNfcServiceConnected() {
