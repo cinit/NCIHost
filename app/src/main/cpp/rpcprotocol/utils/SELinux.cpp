@@ -22,8 +22,9 @@ bool SELinux::isEnforcing() {
             close(fd);
             return result == '1';
         }
+        int err = errno;
         close(fd);
-        return errno == EACCES;
+        return err == EACCES;
     }
 }
 
@@ -93,8 +94,9 @@ int SELinux::getProcessSecurityContext(int pid, std::string *context) {
             close(fd);
             return 0;
         } else {
+            int err = errno;
             close(fd);
-            return -errno;
+            return -err;
         }
     }
 }

@@ -205,6 +205,14 @@ NciHostDaemonImpl::getHistoryIoOperations(uint32_t start, uint32_t count) {
     return {result};
 }
 
+/**
+ * Get the HW service status, eg. connection with daemon, adapter status, etc.
+ * @tparam TargetHalHandler The target HAL handler type.
+ * @param halStatus The HW result service status, only valid if the return value is true.
+ * @param lpcResult the exception result, only valid if the return value is false.
+ * @param isConnected whether the HW service is connected to the daemon.
+ * @return true if the HW service supported by the daemon, false otherwise.
+ */
 template<typename TargetHalHandler>
 bool getHwServiceSupportStatus(HwServiceStatus &halStatus, LpcResult &lpcResult, bool &isConnected) {
     halStatus = TargetHalHandler::getHwServiceStatus();
@@ -237,10 +245,8 @@ bool injectIntoVendorHalService(LpcResult &lpcResult, const HwServiceStatus &hal
         lpcResult = LpcResult::throwException({1, uint32_t(err), errMsg});
         return false;
     }
-    std::string shortName = [&] {
-        auto s = utils::splitString(soPatchPath, "/");
-        return s[s.size() - 1];
-    }();
+    std::string shortName = soPatchPath.find_last_of('/') == std::string::npos ? soPatchPath :
+                            soPatchPath.substr(soPatchPath.find_last_of('/') + 1);
     auto &serviceManager = ServiceManager::getInstance();
     SysServicePatch servicePatch;
     if (int err = servicePatch.init(shortName, fd.get(), TargetHalHandler::INIT_SYMBOL); err != 0) {
@@ -330,15 +336,16 @@ TypedLpcResult<bool> NciHostDaemonImpl::initHwServiceConnection(const std::vecto
             // hw hal not supported
             return tmpResult;
         }
+        LOGV("NxpHalHandler connected: %d", connected);
         if (!connected && !injectIntoVendorHalService<NxpHalHandler>(tmpResult, halStatus, soPath_nxphalpatch,
                                                                      NxpHalHandler::TARGET_SO_NAME, nfcHalHook)) {
             return tmpResult;
-
         }
         if (!getHwServiceSupportStatus<QtiEsePmHandler>(halStatus, tmpResult, connected)) {
             // hw hal not supported
             return tmpResult;
         }
+        LOGV("QtiEsePmHandler connected: %d", connected);
         if (!connected) {
             constexpr uint32_t qtiEseHalHook = T::OPEN | T::CLOSE | T::IOCTL;
             std::string shortExeName = halStatus.serviceExecPath

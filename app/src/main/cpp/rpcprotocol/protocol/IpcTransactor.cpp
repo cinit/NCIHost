@@ -204,8 +204,8 @@ void IpcTransactor::runIpcLooper() {
         epoll_event event = {};
         if (epoll_wait(epollFd, &event, 1, -1) < 0) {
             int err = errno;
-            LOGE("epoll_wait error: %d %s", err, mName.c_str());
             if (err != EINTR) {
+                LOGE("epoll_wait error: %d %s", err, mName.c_str());
                 abort();
                 break;
             }
@@ -349,6 +349,10 @@ int IpcTransactor::sendEventSync(uint32_t sequence, uint32_t proxyId, uint32_t e
 }
 
 int IpcTransactor::sendEventAsync(uint32_t sequence, uint32_t proxyId, uint32_t eventId, const SharedBuffer &args) {
+    if (mSocketFd == -1) {
+        // no socket, no async events
+        return EBADFD;
+    }
     SharedBuffer result;
     if (!result.ensureCapacity(sizeof(EventTransactionHeader) + args.size(), std::nothrow_t())) {
         throw std::bad_alloc();

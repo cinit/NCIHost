@@ -77,15 +77,17 @@ void BaseHwHalHandler::workerThread(BaseHwHalHandler *self) {
     ssize_t i;
     std::vector<uint8_t> buffer(HAL_PACKET_MAX_LENGTH);
     while (true) {
+        errno = 0; // just in case
         i = read(self->mFd, buffer.data(), HAL_PACKET_MAX_LENGTH);
         if (i > 0) {
             self->dispatchHwHalPatchIpcPacket(buffer.data(), i);
         } else {
             int err = errno;
-            if (err == EPIPE) {
+            if (err == EPIPE || err == 0) {
                 // remote process has closed the connection,
                 // is the remote process still alive?
                 if (access(("/proc/" + std::to_string(self->mRemotePid)).c_str(), F_OK) != 0) {
+                    LOGW("remote process %d has died", self->mRemotePid);
                     // remote process is dead, notify the user
                     self->dispatchRemoteProcessDeathEvent();
                 } else {
@@ -94,11 +96,14 @@ void BaseHwHalHandler::workerThread(BaseHwHalHandler *self) {
                     LOGE("read() failed with EPIPE, but remote process is still alive");
                 }
                 close(self->mFd);
+                self->mFd = -1;
                 break;
             } else if (err == EINTR) {
                 continue;
             } else {
                 LOGE("read() failed with %d", err);
+                close(self->mFd);
+                self->mFd = -1;
                 break;
             }
         }

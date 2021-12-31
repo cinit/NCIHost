@@ -26,8 +26,9 @@ int FileMemMap::mapFilePath(const char *path, bool readOnly, size_t length) {
     if (length == 0) {
         struct stat64 fileInfo = {};
         if (fstat64(fd, &fileInfo) < 0) {
+            int err = errno;
             close(fd);
-            return errno;
+            return err;
         }
         length = size_t(fileInfo.st_size);
     }

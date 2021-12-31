@@ -623,8 +623,9 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_IpcNativeHandler_getKernelArchitecture
         (JNIEnv *env, jclass) {
     struct utsname uts = {};
     if (uname(&uts) != 0) {
+        int err = errno;
         env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
-                      ("uname() failed: " + std::string(strerror(errno))).c_str());
+                      ("uname() failed: " + std::string(strerror(err))).c_str());
         return nullptr;
     }
     return env->NewStringUTF(uts.machine);

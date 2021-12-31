@@ -114,8 +114,8 @@ public class MainUiFragmentActivity extends BaseActivity {
     public boolean attachToHalService() throws IOException {
         INciHostDaemon daemon = IpcNativeHandler.peekConnection();
         if (daemon != null) {
-            if (!daemon.isHwServiceConnected()) {
-                INciHostDaemon.DaemonStatus status = daemon.getDaemonStatus();
+            INciHostDaemon.DaemonStatus status = daemon.getDaemonStatus();
+            if (!status.nfcHalServiceStatus.isHalServiceAttached || !status.esePmServiceStatus.isHalServiceAttached) {
                 if (status.nfcHalServiceStatus.halServiceArch > 0 && status.esePmServiceStatus.halServiceArch > 0) {
                     File nxpNfcPatchFile = NativeInterface.getNfcHalServicePatchFile(
                             NativeInterface.NfcHalServicePatch.NXP_NFC_HAL_PATCH,

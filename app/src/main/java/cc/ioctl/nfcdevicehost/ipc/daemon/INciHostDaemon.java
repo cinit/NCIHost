@@ -23,8 +23,6 @@ public interface INciHostDaemon {
 
     boolean isDeviceSupported();
 
-    boolean isHwServiceConnected();
-
     HistoryIoEventList getHistoryIoEvents(int startIndex, int count);
 
     boolean clearHistoryIoEvents();
@@ -42,6 +40,10 @@ public interface INciHostDaemon {
     boolean isNfcDiscoverySoundDisabled();
 
     boolean setNfcDiscoverySoundDisabled(boolean disable);
+
+    boolean isAllHwServiceConnected();
+
+    boolean isNfcHalHwServiceConnected();
 
     interface OnRemoteEventListener {
         void onIoEvent(IoEventPacket event);

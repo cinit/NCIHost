@@ -159,7 +159,7 @@ public class NciLiveDumpFragment extends BaseHalDumpFragment implements Observer
             Snackbar.make(mBinding.getRoot(), R.string.ui_toast_daemon_is_not_running, Snackbar.LENGTH_LONG)
                     .setAction(R.string.ui_snackbar_action_view_or_jump, v -> jumpToHomeFragment()).show();
         } else {
-            if (!daemon.isHwServiceConnected()) {
+            if (!daemon.isNfcHalHwServiceConnected()) {
                 Snackbar.make(mBinding.getRoot(), R.string.ui_toast_hal_service_not_attached, Snackbar.LENGTH_LONG)
                         .setAction(R.string.ui_snackbar_action_view_or_jump, v -> jumpToHomeFragment()).show();
             }

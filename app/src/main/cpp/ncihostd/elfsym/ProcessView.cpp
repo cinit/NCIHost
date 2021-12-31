@@ -28,8 +28,9 @@ int ProcessView::readProcess(int pid) {
         return errno;
     }
     if (read(fd, buffer, 256) != 256) {
+        int err = errno;
         close(fd);
-        return errno;
+        return err;
     }
     close(fd);
     if (buffer[0] == 0x7F && buffer[1] == 'E' && buffer[2] == 'L' && buffer[3] == 'F') {

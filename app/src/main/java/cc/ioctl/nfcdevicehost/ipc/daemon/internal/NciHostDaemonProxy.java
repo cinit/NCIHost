@@ -93,9 +93,6 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     public native boolean isDeviceSupported();
 
     @Override
-    public native boolean isHwServiceConnected();
-
-    @Override
     public native boolean initHwServiceConnection(@NonNull String[] soPath) throws IOException;
 
     private native RawHistoryIoEventList ntGetHistoryIoEvents(int startIndex, int count);
@@ -121,6 +118,18 @@ public class NciHostDaemonProxy implements INciHostDaemon {
 
     @Override
     public native boolean setNfcDiscoverySoundDisabled(boolean disable);
+
+    @Override
+    public boolean isAllHwServiceConnected() {
+        DaemonStatus status = getDaemonStatus();
+        return status.nfcHalServiceStatus.isHalServiceAttached && status.esePmServiceStatus.isHalServiceAttached;
+    }
+
+    @Override
+    public boolean isNfcHalHwServiceConnected() {
+        DaemonStatus status = getDaemonStatus();
+        return status.nfcHalServiceStatus.isHalServiceAttached;
+    }
 
     @Override
     public HistoryIoEventList getHistoryIoEvents(int startIndex, int count) {

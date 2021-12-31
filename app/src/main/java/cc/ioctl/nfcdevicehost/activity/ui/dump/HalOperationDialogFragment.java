@@ -70,7 +70,7 @@ public class HalOperationDialogFragment extends BaseBottomSheetDialogFragment im
             byte[] bytes = baos.toByteArray();
             if (bytes.length > 0) {
                 INciHostDaemon daemon = IpcNativeHandler.peekConnection();
-                if (daemon != null && daemon.isHwServiceConnected()) {
+                if (daemon != null && daemon.isNfcHalHwServiceConnected()) {
                     ThreadManager.async(() -> {
                         try {
                             int result = daemon.deviceDriverWriteRaw(bytes);
@@ -132,7 +132,7 @@ public class HalOperationDialogFragment extends BaseBottomSheetDialogFragment im
                 return;
             }
             INciHostDaemon daemon = IpcNativeHandler.peekConnection();
-            if (daemon != null && daemon.isHwServiceConnected()) {
+            if (daemon != null && daemon.isNfcHalHwServiceConnected()) {
                 ThreadManager.async(() -> {
                     try {
                         int result = daemon.deviceDriverIoctl0(requestValue, argValue);
