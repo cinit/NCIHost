@@ -150,8 +150,8 @@ class HomeFragment : Fragment() {
                     null
                 )
                 mBinding.homeDetailInfoDesc.text =
-                    "NFC HAL: ${status.nfcHalServiceStatus?.halServicePid}" +
-                            " | eSE PM: ${status.esePmServiceStatus?.halServicePid}" +
+                    "NFC: ${status.nfcHalServiceStatus?.halServicePid}" +
+                            " | eSE: ${status.esePmServiceStatus?.halServicePid}" +
                             " | Daemon: ${status.processId}"
                 mBinding.homeDetailInfoDetailMsg.text =
                     (status.nfcHalServiceStatus?.halServiceExePath?.substringAfterLast("/")

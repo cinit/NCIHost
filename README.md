@@ -2,17 +2,18 @@
 
 ### Features
 
-- [x] Reversed Unix Domain Socket IPC
-- [x] Inject into HW service
-- [x] NCI communication capture
-- [x] /dev/* ioctl/rw operation analysis
+- [x] NFCC NCI communication capture
+- [x] NCI communication packet decoding
 - [x] Disable NFC tag discovery sound(Xposed)
 
 ### TODO List
 
-- [ ] MIFARE Classic card emulation(eSE-based)
+- [ ] MIFARE Classic card emulation(eSE/PN532/Proxmark3)
+- [ ] eSE/TEE(QSEE) communication capture
+- [ ] Proxmark3/PN532 OTG support
 - [ ] Auto device detection
 
 ### Compatible Devices
 
-- [x] /dev/nq-nci
+- [x] /dev/nq-nci (NFCC, NQ330, SN1xx)
+- [ ] /dev/qseecom (eSE, QSEE)
