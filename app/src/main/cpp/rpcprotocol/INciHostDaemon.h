@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "../libbasehalpatch/ipc/daemon_ipc_struct.h"
+#include "log/LogEntryRecord.h"
 #include "protocol/ArgList.h"
 #include "protocol/LpcResult.h"
 
@@ -112,6 +113,9 @@ public:
     [[nodiscard]]
     virtual TypedLpcResult<bool> setNfcDiscoverySoundDisabled(bool disable) = 0;
 
+    [[nodiscard]]
+    virtual TypedLpcResult<std::vector<LogEntryRecord>> getLogsPartial(uint32_t startIndex, uint32_t count) = 0;
+
     class TransactionIds {
     public:
         static constexpr uint32_t getVersionName = 1;
@@ -131,6 +135,7 @@ public:
         static constexpr uint32_t connectToAndroidNfcService = 20;
         static constexpr uint32_t isNfcDiscoverySoundDisabled = 21;
         static constexpr uint32_t setNfcDiscoverySoundDisabled = 22;
+        static constexpr uint32_t getLogsPartial = 23;
     };
 };
 

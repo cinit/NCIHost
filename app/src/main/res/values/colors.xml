@@ -25,4 +25,13 @@
     <color name="nullColor">#00000000</color>
     <color name="backgroundColor">#FFFFFFFF</color>
 
+    <color name="log_level_silent">#616161</color>
+    <color name="log_level_assert">#512DA8</color>
+    <color name="log_level_fatal">#C2185B</color>
+    <color name="log_level_error">#D32F2F</color>
+    <color name="log_level_warning">#E65100</color>
+    <color name="log_level_info">#388E3C</color>
+    <color name="log_level_debug">#1976D2</color>
+    <color name="log_level_verbose">#546E7A</color>
+
 </resources>

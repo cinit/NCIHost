@@ -45,6 +45,8 @@ public interface INciHostDaemon {
 
     boolean isNfcHalHwServiceConnected();
 
+    LogEntryRecord[] getLogsPartial(int startIndex, int count);
+
     interface OnRemoteEventListener {
         void onIoEvent(IoEventPacket event);
 
@@ -54,6 +56,44 @@ public interface INciHostDaemon {
     void registerRemoteEventListener(@NonNull OnRemoteEventListener listener);
 
     boolean unregisterRemoteEventListener(@NonNull OnRemoteEventListener listener);
+
+    class LogEntryRecord {
+        public int id;
+        public long timestamp;
+        public int level;
+        @NonNull
+        public String tag;
+        @NonNull
+        public String message;
+
+        public LogEntryRecord() {
+            id = 0;
+            timestamp = 0;
+            level = 0;
+            tag = "";
+            message = "";
+        }
+
+        public LogEntryRecord(int id, long timestamp, int level,
+                              @NonNull String tag, @NonNull String message) {
+            this.id = id;
+            this.timestamp = timestamp;
+            this.level = level;
+            this.tag = tag;
+            this.message = message;
+        }
+
+        @Override
+        public String toString() {
+            return "LogEntryRecord{" +
+                    "id=" + id +
+                    ", timestamp=" + timestamp +
+                    ", level=" + level +
+                    ", tag='" + tag + '\'' +
+                    ", message='" + message + '\'' +
+                    '}';
+        }
+    }
 
     class DaemonStatus {
         public int processId;

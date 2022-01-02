@@ -14,6 +14,7 @@
 class Log {
 public:
     enum class Level {
+        UNKNOWN = 0,
         VERBOSE = 2,
         DEBUG = 3,
         INFO = 4,

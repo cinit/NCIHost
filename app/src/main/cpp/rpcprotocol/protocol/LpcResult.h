@@ -94,12 +94,22 @@ public:
         mIsValid = true;
     }
 
-    template<class T>
+    template<typename T, uint32_t TypeId = ArgList::Types::getPrimitiveTypeId<T>(),
+            typename CheckType = std::enable_if_t<ArgList::Types::isPrimitiveType(TypeId), T>>
     [[nodiscard]] bool getResult(T *result) const {
         if (!mIsValid || mHasException || mArgsBuffer.get() == nullptr) {
             return false;
         }
         return ArgList(mArgsBuffer.get(), mArgsBuffer.size()).get<T>(result, 0);
+    }
+
+    template<typename BaseType, uint32_t BaseTypeId = ArgList::Types::getPrimitiveTypeId<BaseType>(),
+            typename CheckType = std::enable_if_t<ArgList::Types::isPrimitiveType(BaseTypeId), BaseType>>
+    [[nodiscard]] bool getResult(std::vector<BaseType> *result) const {
+        if (!mIsValid || mHasException || mArgsBuffer.get() == nullptr) {
+            return false;
+        }
+        return ArgList(mArgsBuffer.get(), mArgsBuffer.size()).get(result, 0);
     }
 
     [[nodiscard]] bool getException(RemoteException *exception) const {
@@ -212,7 +222,7 @@ public:
     }
 
     [[nodiscard]] inline bool getResult(T *result) const {
-        return mResult.getResult<T>(result);
+        return mResult.getResult(result);
     }
 
     [[nodiscard]] inline bool getException(RemoteException *exception) const {

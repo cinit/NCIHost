@@ -81,3 +81,8 @@ TypedLpcResult<bool> NciHostDaemonProxy::isNfcDiscoverySoundDisabled() {
 TypedLpcResult<bool> NciHostDaemonProxy::setNfcDiscoverySoundDisabled(bool disable) {
     return invokeRemoteProcedure<bool, const bool &>(Ids::setNfcDiscoverySoundDisabled, disable);
 }
+
+TypedLpcResult<std::vector<LogEntryRecord>> NciHostDaemonProxy::getLogsPartial(uint32_t startIndex, uint32_t count) {
+    return invokeRemoteProcedure<std::vector<LogEntryRecord>, const uint32_t &, const uint32_t &>(
+            Ids::getLogsPartial, startIndex, count);
+}

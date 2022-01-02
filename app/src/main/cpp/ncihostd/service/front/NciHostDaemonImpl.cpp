@@ -19,6 +19,7 @@
 #include "rpcprotocol/utils/auto_close_fd.h"
 #include "rpcprotocol/utils/SELinux.h"
 #include "rpcprotocol/log/Log.h"
+#include "ncihostd/ipc/logbuffer/LocalLogBuffer.h"
 #include "rpcprotocol/protocol/LpcArgListExtractor.h"
 #include "rpcprotocol/utils/ProcessUtils.h"
 
@@ -138,6 +139,12 @@ bool NciHostDaemonImpl::dispatchLpcInvocation([[maybe_unused]] const IpcTransact
         case Ids::setNfcDiscoverySoundDisabled: {
             result = R::invoke(this, args, R::is(+[](T *p, bool disabled) {
                 return p->setNfcDiscoverySoundDisabled(disabled);
+            }));
+            return true;
+        }
+        case Ids::getLogsPartial: {
+            result = R::invoke(this, args, R::is(+[](T *p, uint32_t start, uint32_t length) {
+                return p->getLogsPartial(start, length);
             }));
             return true;
         }
@@ -484,4 +491,10 @@ TypedLpcResult<bool> NciHostDaemonImpl::isNfcDiscoverySoundDisabled() {
 TypedLpcResult<bool> NciHostDaemonImpl::setNfcDiscoverySoundDisabled(bool disable) {
     auto &androidNfcService = androidsvc::AndroidNfcService::getInstance();
     return {androidNfcService.setNfcDiscoverySoundDisabled(disable)};
+}
+
+TypedLpcResult<std::vector<LogEntryRecord>> NciHostDaemonImpl::getLogsPartial(uint32_t startIndex, uint32_t count) {
+    auto &logBuffer = logbuffer::LocalLogBuffer::getInstance();
+    auto logs = logBuffer.getLogsPartial(startIndex, count);
+    return {logs};
 }

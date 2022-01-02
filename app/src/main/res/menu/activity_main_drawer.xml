@@ -16,5 +16,9 @@
             android:id="@+id/nav_main_cards"
             android:icon="@drawable/ic_baseline_layers_24"
             android:title="@string/menu_fragment_cards" />
+        <item
+            android:id="@+id/nav_main_daemon_log"
+            android:icon="@drawable/ic_outline_subject_24"
+            android:title="@string/menu_nav_daemon_log" />
     </group>
 </menu>

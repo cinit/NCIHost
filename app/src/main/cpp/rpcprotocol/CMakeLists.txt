@@ -10,7 +10,7 @@ add_library(rpcprotocol STATIC
         protocol/RemoteException.cpp utils/SharedBuffer.cpp protocol/IpcTransactor.cpp protocol/LpcResult.cpp
         protocol/BaseIpcObject.cpp protocol/BaseIpcProxy.cpp INciHostDaemon.cpp
         log/Log.cpp utils/io_utils.cpp utils/Uuid.cpp utils/SignalHandler.cpp utils/FileMemMap.cpp utils/TextUtils.cpp
-        log/SessionLog.h log/DefaultSessionLogImpl.cpp)
+        log/SessionLog.h log/DefaultSessionLogImpl.cpp log/LogEntryRecord.cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     SET(CLANG_CXX_EXTRA_OPT "-Werror=unknown-warning-option -Werror=format-invalid-specifier -Werror=call-to-pure-virtual-from-ctor-dtor")

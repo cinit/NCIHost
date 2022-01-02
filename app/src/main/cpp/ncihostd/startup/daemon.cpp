@@ -28,6 +28,7 @@
 #include "daemon.h"
 #include "../ipc/IpcStateController.h"
 #include "rpcprotocol/log/Log.h"
+#include "../ipc/logbuffer/LocalLogBuffer.h"
 #include "rpcprotocol/protocol/rpc_struct.h"
 #include "rpcprotocol/protocol/IpcTransactor.h"
 
@@ -156,8 +157,19 @@ bool doConnect(const IpcSocketMeta &target, int uid) {
 
 timespec gStartTime;
 
+void log_to_local_log_buffer(Log::Level level, const char *tag, const char *msg) {
+    timespec systime = {};
+    clock_gettime(CLOCK_REALTIME, &systime);
+    uint64_t timestampMs = uint64_t(systime.tv_sec) * 1000LL + uint64_t(systime.tv_nsec) / 1000000LL;
+    auto &logBuffer = logbuffer::LocalLogBuffer::getInstance();
+    // leave id as 0, it will be filled in by the log buffer
+    LogEntryRecord log = LogEntryRecord(0, timestampMs, level, tag, msg);
+    logBuffer.append(log);
+}
+
 void log_print_handler(Log::Level level, const char *tag, const char *msg) {
-    timespec systime;
+    log_to_local_log_buffer(level, tag, msg);
+    timespec systime = {};
     clock_gettime(CLOCK_MONOTONIC, &systime);
     uint64_t dsec = systime.tv_sec - gStartTime.tv_sec;
     double reltime = double(dsec) + double(int64_t(systime.tv_nsec) - int64_t(gStartTime.tv_sec)) / 1000000000.0;
@@ -228,6 +240,8 @@ extern "C" void startDaemon(int uid, const char *ipcFilePath, int daemonize) {
             printf("startup_do_daemonize error: %d", err);
             exit(-1);
         }
+        // set the log handler
+        Log::setLogHandler(&log_to_local_log_buffer);
     } else {
         // do not daemonize, just use stdout as log output
         Log::setLogHandler(&log_print_handler);

@@ -147,5 +147,8 @@ public class NciHostDaemonProxy implements INciHostDaemon {
     @Override
     public native boolean clearHistoryIoEvents();
 
+    @Override
+    public native LogEntryRecord[] getLogsPartial(int startIndex, int count);
+
     public native NativeEventPacket waitForEvent() throws IOException;
 }

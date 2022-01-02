@@ -15,6 +15,7 @@
 #include "ipc_handle_jni.h"
 #include "IpcConnector.h"
 #include "../rpcprotocol/log/Log.h"
+#include "../rpcprotocol/log/LogEntryRecord.h"
 #include "NciClientImpl.h"
 #include "rpcprotocol/INciHostDaemon.h"
 
@@ -41,6 +42,19 @@ static inline jstring getJString(JNIEnv *env, const std::string &str) {
 
 static inline jstring getJStringOrNull(JNIEnv *env, const std::string &str) {
     return str.empty() ? nullptr : getJString(env, str);
+}
+
+static jobject getJLogEntryRecordObject(JNIEnv *env, const LogEntryRecord &log) {
+    jclass clazz = env->FindClass("cc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$LogEntryRecord");
+    jmethodID constructor = env->GetMethodID(clazz, "<init>", "(IJILjava/lang/String;Ljava/lang/String;)V");
+    jint jlevel = static_cast<jint>(log.level);
+    jstring tag = getJString(env, log.tag);
+    jstring message = getJString(env, log.message);
+    jobject obj = env->NewObject(clazz, constructor, jint(log.id), jlong(log.timestamp), jlevel, tag, message);
+    env->DeleteLocalRef(tag);
+    env->DeleteLocalRef(message);
+    env->DeleteLocalRef(clazz);
+    return obj;
 }
 
 template<class T>
@@ -943,5 +957,42 @@ Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_setNfcDiscove
             }
         }
         return 0;
+    }
+}
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    getLogsPartial
+ * Signature: (II)[Lcc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon/LogEntryRecord;
+ */
+extern "C" [[maybe_unused]] JNIEXPORT jobjectArray JNICALL
+Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_getLogsPartial
+        (JNIEnv *env, jobject, jint start, jint count) {
+    IpcConnector &connector = IpcConnector::getInstance();
+    INciHostDaemon *proxy = connector.getNciDaemon();
+    if (proxy == nullptr) {
+        env->ThrowNew(env->FindClass("java/lang/IllegalStateException"),
+                      "attempt to transact while proxy object not available");
+        return nullptr;
+    } else {
+        if (auto lpcResult = proxy->getLogsPartial(uint32_t(start), uint32_t(count));
+                !jniThrowLpcResultErrorOrException(env, lpcResult)) {
+            std::vector<LogEntryRecord> r;
+            if (lpcResult.getResult(&r)) {
+                jclass clazzArray = env->FindClass(
+                        "cc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon$LogEntryRecord");
+                jobjectArray result = env->NewObjectArray(jint(r.size()), clazzArray, nullptr);
+                for (int i = 0; i < r.size(); ++i) {
+                    jobject obj = getJLogEntryRecordObject(env, r[i]);
+                    env->SetObjectArrayElement(result, i, obj);
+                }
+                return result;
+            } else {
+                env->ThrowNew(env->FindClass("java/lang/RuntimeException"),
+                              "error while read data from LpcResult");
+                return nullptr;
+            }
+        }
+        return nullptr;
     }
 }

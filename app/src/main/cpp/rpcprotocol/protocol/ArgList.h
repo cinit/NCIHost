@@ -347,7 +347,7 @@ public:
                 } else if constexpr(Types::isSerializedBuffer(BaseTypeId)) {
                     // serialized buffer
                     std::vector<uint8_t> buffer = v.serializeToByteVector();
-                    buffers.emplace_back(buffer.data(), buffer.size());
+                    buffers.push_back(buffer);
                 } else {
                     // should not be here
                     abort();

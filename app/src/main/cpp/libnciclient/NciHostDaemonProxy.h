@@ -52,6 +52,8 @@ public:
     TypedLpcResult<bool> isNfcDiscoverySoundDisabled() override;
 
     TypedLpcResult<bool> setNfcDiscoverySoundDisabled(bool disable) override;
+
+    TypedLpcResult<std::vector<LogEntryRecord>> getLogsPartial(uint32_t startIndex, uint32_t count) override;
 };
 
 }

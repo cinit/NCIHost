@@ -29,6 +29,11 @@
         android:label="@string/label_nav_main_dump_file" />
 
     <fragment
+        android:id="@+id/nav_main_daemon_log"
+        android:name="cc.ioctl.nfcdevicehost.activity.ui.log.DaemonLogFragment"
+        android:label="@string/label_daemon_log" />
+
+    <fragment
         android:id="@+id/nav_main_settings"
         android:name="cc.ioctl.nfcdevicehost.activity.ui.settings.SettingsFragment"
         android:label="@string/label_settings" />

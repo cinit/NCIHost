@@ -95,4 +95,7 @@ By using this application, you accept all responsibility using it and agree that
     <string name="ui_summary_not_implemented">Not implemented.</string>
     <string name="ui_toast_android_nfc_service_not_connected">Android NFC service not connected, is Xposed module enabled?</string>
     <string name="ui_toast_operation_failed">Operation failed.</string>
+    <string name="label_daemon_log">Log</string>
+    <string name="menu_nav_daemon_log">Daemon Log</string>
+    <string name="action_filter">Filter…</string>
 </resources>

@@ -70,6 +70,8 @@ public:
 
     TypedLpcResult<bool> setNfcDiscoverySoundDisabled(bool disable) override;
 
+    TypedLpcResult<std::vector<LogEntryRecord>> getLogsPartial(uint32_t startIndex, uint32_t count) override;
+
 private:
     std::mutex mEventMutex;
     std::deque<std::tuple<halpatch::IoSyscallEvent, std::vector<uint8_t>>> mHistoryIoEvents;

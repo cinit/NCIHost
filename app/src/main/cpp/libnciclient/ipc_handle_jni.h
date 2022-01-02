@@ -146,14 +146,6 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHo
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
- * Method:    isHwServiceConnected
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_isHwServiceConnected
-  (JNIEnv *, jobject);
-
-/*
- * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
  * Method:    initHwServiceConnection
  * Signature: ([Ljava/lang/String;)Z
  */
@@ -231,6 +223,14 @@ JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHo
  */
 JNIEXPORT jboolean JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_clearHistoryIoEvents
   (JNIEnv *, jobject);
+
+/*
+ * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
+ * Method:    getLogsPartial
+ * Signature: (II)[Lcc/ioctl/nfcdevicehost/ipc/daemon/INciHostDaemon/LogEntryRecord;
+ */
+JNIEXPORT jobjectArray JNICALL Java_cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy_getLogsPartial
+  (JNIEnv *, jobject, jint, jint);
 
 /*
  * Class:     cc_ioctl_nfcdevicehost_ipc_daemon_internal_NciHostDaemonProxy
